@@ -7,7 +7,7 @@
 //
 
 // voir si on boucle dans le code ou la lib ?
-// ajouter un pot speed
+
 // migrer le hack pitch dans la lib
 // ramener la lib dans le code !
 //TODO: tester le genre dans alphabet for UK voice

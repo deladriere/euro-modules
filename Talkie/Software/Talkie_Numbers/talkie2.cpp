@@ -3,10 +3,10 @@
 // This code is released under GPLv2 license.
 
 #if (ARDUINO >= 100)
- #include "Arduino.h"
+#include "Arduino.h"
 #else
- #include <avr/io.h>
- #include "WProgram.h"
+#include <avr/io.h>
+#include "WProgram.h"
 #endif
 #include "talkie2.h"
 
@@ -30,14 +30,16 @@ int8_t tmsK8[0x08]      = {0xC0,0xD8,0xF0,0x07,0x1F,0x37,0x4F,0x66};
 int8_t tmsK9[0x08]      = {0xC0,0xD4,0xE8,0xFC,0x10,0x25,0x39,0x4D};
 int8_t tmsK10[0x08]     = {0xCD,0xDF,0xF1,0x04,0x16,0x20,0x3B,0x4D};
 
-void Talkie::setPtr(uint8_t* addr) {
+void Talkie::setPtr(uint8_t *addr)
+	{
 	ptrAddr = addr;
 	ptrBit = 0;
-}
+	}
 
 // The ROMs used with the TI speech were serial, not byte wide.
 // Here's a handy routine to flip ROM data which is usually reversed.
-uint8_t Talkie::rev(uint8_t a) {
+uint8_t Talkie::rev(uint8_t a)
+	{
 	// 76543210
 	a = (a>>4) | (a<<4); // Swap in groups of 4
 	// 32107654
@@ -46,32 +48,41 @@ uint8_t Talkie::rev(uint8_t a) {
 	a = ((a & 0xaa)>>1) | ((a & 0x55)<<1); // Swap bit pairs
 	// 01234567
 	return a;
-}
-uint8_t Talkie::getBits(uint8_t bits) {
+	}
+uint8_t Talkie::getBits(uint8_t bits)
+	{
 	uint8_t value;
 	uint16_t data;
 	data = rev(pgm_read_byte(ptrAddr))<<8;
-	if (ptrBit+bits > 8) {
+	if(ptrBit+bits > 8)
+		{
 		data |= rev(pgm_read_byte(ptrAddr+1));
-	}
+		}
 	data <<= ptrBit;
 	value = data >> (16-bits);
 	ptrBit += bits;
-	if (ptrBit >= 8) {
+	if(ptrBit >= 8)
+		{
 		ptrBit -= 8;
 		ptrAddr++;
-	}
+		}
 	return value;
-}
-void Talkie::say(uint8_t* addr) {
+	}
+void Talkie::say(uint8_t *addr)
+	{
 	uint8_t energy;
-    // TRIGGER HACK
-    if (digitalRead(5)==0) return; // ok mute marche : ne démarre pas si =1
-	if (!setup) {
+	// TRIGGER HACK
+	// loop mode
+	if(digitalRead(6)==1)
+		{
+		if(digitalRead(5)==0) return;
+		}
+	if(!setup)
+		{
 		// Auto-setup.
-		// 
+		//
 		// Enable the speech system whenever say() is called.
-		
+
 		pinMode(3,OUTPUT);
 		// Timer 2 set up as a 62500Hz PWM.
 		//
@@ -81,10 +92,10 @@ void Talkie::say(uint8_t* addr) {
 		TCCR2A = _BV(COM2B1) | _BV(WGM21) | _BV(WGM20);
 		TCCR2B = _BV(CS20);
 		TIMSK2 = 0;
-	
+
 		// Unfortunately we can't calculate the next sample every PWM cycle
 		// as the routine is too slow. So use Timer 1 to trigger that.
-		
+
 		// Timer 1 set up as a 8000Hz sample interrupt
 		TCCR1A = 0;
 		TCCR1B = _BV(WGM12) | _BV(CS10);
@@ -93,29 +104,39 @@ void Talkie::say(uint8_t* addr) {
 		TIMSK1 = _BV(OCIE1A);
 
 		setup = 1;
-	}
-    
+		}
+
 	setPtr(addr);
-	do {
+	do
+		{
 		uint8_t repeat;
 
 		// PITCH HACK
 		long val = analogRead(2);
-        val = map(val, 0, 1023, 50, 10000);
-         // se plante si on va trop vite (voir le prescaler ?) marche pas voir la vitesse du pwm  ?
-         OCR1A = F_CPU / val; 
-        
+		val = map(val, 0, 1023, 50, 10000);
+		// se plante si on va trop vite (voir le prescaler ?) marche pas voir la vitesse du pwm  ?
+		OCR1A = F_CPU / val;
+
 		// Read speech data, processing the variable size frames.
-		
+
 		energy = getBits(4);
 		// RESET HACK
 		//if (digitalRead(7)==0) energy=0xf; ok comme reset
 		// TRIGGER HACK
-		if (digitalRead(5)==0) energy=0xf; // c'est plus simple on coupe dès que lon change de niveau
-		if (energy == 0) {
+
+		if(digitalRead(6)==1) // check for O/S mode
+			{
+			if(digitalRead(5)==0) energy=0xf; // if trigger is released in O/S mode then stop
+			}
+
+		//if(digitalRead(5)==0) energy=0xf;  // c'est plus simple on coupe d�s que lon change de niveau
+		if(energy == 0)
+			{
 			// Energy = 0: rest frame
 			synthEnergy = 0;
-		} else if (energy == 0xf) {
+			}
+		else if(energy == 0xf)
+			{
 			// Energy = 15: stop frame. Silence the synthesiser.
 			synthEnergy = 0;
 			synthK1 = 0;
@@ -128,97 +149,119 @@ void Talkie::say(uint8_t* addr) {
 			synthK8 = 0;
 			synthK9 = 0;
 			synthK10 = 0;
-		} else {
+			}
+		else
+			{
 
 			synthEnergy = tmsEnergy[energy];
 			repeat = getBits(1);
 			synthPeriod = tmsPeriod[getBits(6)];
-			
+
+
 			// A repeat frame uses the last coefficients
-			if (!repeat) {
+			if(!repeat)
+				{
 				// All frames use the first 4 coefficients
 				synthK1 = tmsK1[getBits(5)];
 				synthK2 = tmsK2[getBits(5)];
 				synthK3 = tmsK3[getBits(4)];
 				synthK4 = tmsK4[getBits(4)];
-				if (synthPeriod) {
+				if(synthPeriod)
+					{
 					// Voiced frames use 6 extra coefficients.
 					synthK5 = tmsK5[getBits(4)];
+
 					synthK6 = tmsK6[getBits(4)];
 					synthK7 = tmsK7[getBits(4)];
 					synthK8 = tmsK8[getBits(3)];
 					synthK9 = tmsK9[getBits(3)];
 					synthK10 = tmsK10[getBits(3)];
-
+					if (digitalRead(4)==0) /// sorry guys bending the neck here !
+						{
+						synthK5= map(analogRead(4),20,1000,0,200);
+						synthK10= map(analogRead(4),20,1000,200,0);
+						}
+					}
 				}
 			}
-		}
-		
+
 		//SPEED HACK
 		int speed = analogRead(3);
-        speed = map(speed, 0, 1023, 200, 0);
-        delay(speed);
-	} while (energy != 0xf);
-}
+		speed = map(speed, 0, 1023, 200, 0);
+		delay(speed);
+		}
+	while(energy != 0xf);
+	}
 
 #define CHIRP_SIZE 41
 int8_t chirp[CHIRP_SIZE] = {0x00,0x2a,0xd4,0x32,0xb2,0x12,0x25,0x14,0x02,0xe1,0xc5,0x02,0x5f,0x5a,0x05,0x0f,0x26,0xfc,0xa5,0xa5,0xd6,0xdd,0xdc,0xfc,0x25,0x2b,0x22,0x21,0x0f,0xff,0xf8,0xee,0xed,0xef,0xf7,0xf6,0xfa,0x00,0x03,0x02,0x01};
 
-ISR(TIMER1_COMPA_vect) {
-  static uint8_t nextPwm;
-  static uint8_t periodCounter;
-  static int16_t x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10;
-  int16_t u0,u1,u2,u3,u4,u5,u6,u7,u8,u9,u10;
+ISR(TIMER1_COMPA_vect)
+	{
+	static uint8_t nextPwm;
+	static uint8_t periodCounter;
+	static int16_t x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10;
+	int16_t u0,u1,u2,u3,u4,u5,u6,u7,u8,u9,u10;
 
-  OCR2B = nextPwm;
-  sei();
-  if (synthPeriod) {
-    // Voiced source
-    if (periodCounter < synthPeriod) {
-      periodCounter++;
+	OCR2B = nextPwm;
+	sei();
+	if(synthPeriod)
+		{
+		// Voiced source
+		if(periodCounter < synthPeriod)
+			{
+			periodCounter++;
 
-    } else {
-      periodCounter = 0;
-    }
-    if (periodCounter < CHIRP_SIZE) {
-      u10 = ((chirp[periodCounter]) * (uint32_t) synthEnergy) >> 8;
-    } else {
-      u10 = 0;
-    }
-  } else {
-    // Unvoiced source
+			}
+		else
+			{
+			periodCounter = 0;
+			}
+		if(periodCounter < CHIRP_SIZE)
+			{
+			u10 = ((chirp[periodCounter]) * (uint32_t) synthEnergy) >> 8;
+			}
+		else
+			{
+			u10 = 0;
+			}
+		}
+	else
+		{
+		// Unvoiced source
 
-    static uint16_t synthRand = 1;
-    synthRand = (synthRand >> 1) ^ ((synthRand & 1) ? 0xB800 : 0);
-    u10 = (synthRand & 1) ? synthEnergy : -synthEnergy;
-  }
-  // Lattice filter forward path
-  u9 = u10 - (((int16_t)synthK10*x9) >> 7);
-  u8 = u9 - (((int16_t)synthK9*x8) >> 7);
-  u7 = u8 - (((int16_t)synthK8*x7) >> 7);
-  u6 = u7 - (((int16_t)synthK7*x6) >> 7);
-  u5 = u6 - (((int16_t)synthK6*x5) >> 7);
-  u4 = u5 - (((int16_t)synthK5*x4) >> 7);
-  u3 = u4 - (((int16_t)synthK4*x3) >> 7);
-  u2 = u3 - (((int16_t)synthK3*x2) >> 7);
-  u1 = u2 - (((int32_t)synthK2*x1) >> 15);
-  u0 = u1 - (((int32_t)synthK1*x0) >> 15);
+		static uint16_t synthRand = 1;
+		synthRand = (synthRand >> 1) ^ ((synthRand & 1) ? 0xB800 : 0);
+		u10 = (synthRand & 1) ? synthEnergy : -synthEnergy;
+		}
+	// Lattice filter forward path
+	u9 = u10 - (((int16_t)synthK10*x9) >> 7);
+	u8 = u9 - (((int16_t)synthK9*x8) >> 7);
+	u7 = u8 - (((int16_t)synthK8*x7) >> 7);
+	u6 = u7 - (((int16_t)synthK7*x6) >> 7);
+	u5 = u6 - (((int16_t)synthK6*x5) >> 7);
+	u4 = u5 - (((int16_t)synthK5*x4) >> 7);
+	u3 = u4 - (((int16_t)synthK4*x3) >> 7);
+	u2 = u3 - (((int16_t)synthK3*x2) >> 7);
+	u1 = u2 - (((int32_t)synthK2*x1) >> 15);
+	u0 = u1 - (((int32_t)synthK1*x0) >> 15);
 
-  // Output clamp
-  if (u0 > 511) u0 = 511;
-  if (u0 < -512) u0 = -512;
-  
-  // Lattice filter reverse path
-  x9 = x8 + (((int16_t)synthK9*u8) >> 7);
-  x8 = x7 + (((int16_t)synthK8*u7) >> 7);
-  x7 = x6 + (((int16_t)synthK7*u6) >> 7);
-  x6 = x5 + (((int16_t)synthK6*u5) >> 7);
-  x5 = x4 + (((int16_t)synthK5*u4) >> 7);
-  x4 = x3 + (((int16_t)synthK4*u3) >> 7);
-  x3 = x2 + (((int16_t)synthK3*u2) >> 7);
-  x2 = x1 + (((int32_t)synthK2*u1) >> 15);
-  x1 = x0 + (((int32_t)synthK1*u0) >> 15);
-  x0 = u0;
+	// Output clamp
+	if(u0 > 511) u0 = 511;
+	if(u0 < -512) u0 = -512;
 
-  nextPwm = (u0>>2)+0x80;
-}
+
+	// Lattice filter reverse path
+	x9 = x8 + (((int16_t)synthK9*u8) >> 7);
+	x8 = x7 + (((int16_t)synthK8*u7) >> 7);
+	x7 = x6 + (((int16_t)synthK7*u6) >> 7);
+	x6 = x5 + (((int16_t)synthK6*u5) >> 7);
+	x5 = x4 + (((int16_t)synthK5*u4) >> 7);
+	x4 = x3 + (((int16_t)synthK4*u3) >> 7);
+	x3 = x2 + (((int16_t)synthK3*u2) >> 7);
+	x2 = x1 + (((int32_t)synthK2*u1) >> 15);
+	x1 = x0 + (((int32_t)synthK1*u0) >> 15);
+	x0 = u0;
+
+	nextPwm = (u0>>2)+0x80;
+	}

@@ -219,11 +219,11 @@ uint8_t spS_BLEEP2[]         PROGMEM = {0x34,0xE0,0x01,0x0D,0x10,0xA0,0x09,0x97,
 
 //SWITCHES
 #define GENDER 4
-// #define RESET 7 garder l'option si besoin d'un reset apr?s le triger qui ne s'arreterais que si on reset
 #define TRIGGER 5
+#define LOOP 6
 
 //POTs
-#define VALUE 0 
+#define VALUE 0
 #define MODE 1
 #define PITCH 2
 #define SPEED 3
@@ -400,6 +400,10 @@ void frequencemeter()
 void nato()
 	{
 	int letter= map(analogRead(0),0,1000,1,26);
+
+
+
+
 
 	switch(letter)
 		{
@@ -610,9 +614,10 @@ void setup()
 
 
 	pinMode(GENDER, INPUT_PULLUP);
+	pinMode(LOOP, INPUT_PULLUP);
 
 	pinMode(TRIGGER, INPUT);
-//pinMode(RESET, INPUT_PULLUP);
+
 	}
 void digits()
 	{
@@ -623,9 +628,18 @@ void digits()
 void loop()
 	{
 	get_mode();
-
-
 	boolean sex=digitalRead(GENDER);
+
+	if(digitalRead(LOOP)==0)
+		{
+		do
+			{
+			get_mode();
+			boolean sex=digitalRead(GENDER);
+			}
+		while(digitalRead(TRIGGER)==0);
+		}
+
 
 	switch(mode)
 		{
@@ -638,6 +652,7 @@ void loop()
 			break;
 		case 2:
 			frequencemeter();
+			break;
 		case 3:
 			alphabet();
 			break;

@@ -5636,6 +5636,26 @@ Source: http://www2.produktinfo.conrad.com/datenblaetter/700000-724999/705152-da
 <attribute name="OC_FARNELL" value="9472967"/>
 </part>
 <part name="S2" library="switch-omron" deviceset="10-XX" device="" value="Start"/>
+<part name="S3" library="switch" deviceset="TL36PO" device="">
+<attribute name="OC_FARNELL" value="9472967"/>
+</part>
+<part name="U$6" library="thonkiconn" deviceset="THONKICONN" device="" value="J1"/>
+<part name="U$8" library="thonkiconn" deviceset="THONKICONN" device="" value="J1"/>
+<part name="S4" library="switch" deviceset="TL36PO" device="">
+<attribute name="OC_FARNELL" value="9472967"/>
+</part>
+<part name="GND3" library="supply1" deviceset="GND" device=""/>
+<part name="GND15" library="supply1" deviceset="GND" device=""/>
+<part name="R1" library="SteveMarple" deviceset="RESISTOR" device="" value="10k"/>
+<part name="R3" library="SteveMarple" deviceset="RESISTOR" device="" value="10k"/>
+<part name="R4" library="SteveMarple" deviceset="RESISTOR" device="" value="10k"/>
+<part name="R5" library="SteveMarple" deviceset="RESISTOR" device="" value="10k"/>
+<part name="R6" library="SteveMarple" deviceset="RESISTOR" device="" value="10k"/>
+<part name="R7" library="SteveMarple" deviceset="RESISTOR" device="" value="10k"/>
+<part name="R8" library="SteveMarple" deviceset="RESISTOR" device="" value="10k"/>
+<part name="R9" library="SteveMarple" deviceset="RESISTOR" device="" value="10k"/>
+<part name="C3" library="rcl" deviceset="C-EU" device="025-025X050" value="100nF 50V"/>
+<part name="C4" library="rcl" deviceset="C-EU" device="025-025X050" value="100nF 50V"/>
 </parts>
 <sheets>
 <sheet>
@@ -5691,12 +5711,32 @@ Source: http://www2.produktinfo.conrad.com/datenblaetter/700000-724999/705152-da
 <instance part="GND13" gate="1" x="180.34" y="35.56"/>
 <instance part="U$5" gate="G$1" x="198.12" y="45.72"/>
 <instance part="GND14" gate="1" x="193.04" y="35.56"/>
-<instance part="LED3" gate="G$1" x="91.44" y="38.1"/>
-<instance part="IC2" gate="A" x="129.54" y="55.88"/>
-<instance part="S1" gate="BEF1" x="58.42" y="40.64">
-<attribute name="OC_FARNELL" x="58.42" y="40.64" size="1.778" layer="96" display="off"/>
+<instance part="LED3" gate="G$1" x="86.36" y="43.18"/>
+<instance part="IC2" gate="A" x="48.26" y="43.18"/>
+<instance part="S1" gate="BEF1" x="233.68" y="68.58">
+<attribute name="OC_FARNELL" x="233.68" y="68.58" size="1.778" layer="96" display="off"/>
 </instance>
-<instance part="S2" gate="1" x="35.56" y="68.58" rot="R270"/>
+<instance part="S2" gate="1" x="236.22" y="48.26" rot="R270"/>
+<instance part="S3" gate="BEF1" x="233.68" y="86.36">
+<attribute name="OC_FARNELL" x="233.68" y="86.36" size="1.778" layer="96" display="off"/>
+</instance>
+<instance part="U$6" gate="G$1" x="236.22" y="160.02"/>
+<instance part="U$8" gate="G$1" x="236.22" y="142.24"/>
+<instance part="S4" gate="BEF1" x="233.68" y="104.14">
+<attribute name="OC_FARNELL" x="233.68" y="104.14" size="1.778" layer="96" display="off"/>
+</instance>
+<instance part="GND3" gate="1" x="231.14" y="152.4"/>
+<instance part="GND15" gate="1" x="231.14" y="134.62"/>
+<instance part="R1" gate="G$1" x="68.58" y="50.8"/>
+<instance part="R3" gate="G$1" x="68.58" y="48.26"/>
+<instance part="R4" gate="G$1" x="68.58" y="45.72"/>
+<instance part="R5" gate="G$1" x="68.58" y="43.18"/>
+<instance part="R6" gate="G$1" x="68.58" y="40.64"/>
+<instance part="R7" gate="G$1" x="68.58" y="38.1"/>
+<instance part="R8" gate="G$1" x="68.58" y="35.56"/>
+<instance part="R9" gate="G$1" x="101.6" y="35.56"/>
+<instance part="C3" gate="G$1" x="17.78" y="68.58"/>
+<instance part="C4" gate="G$1" x="30.48" y="68.58"/>
 </instances>
 <busses>
 </busses>
@@ -5772,6 +5812,16 @@ Source: http://www2.produktinfo.conrad.com/datenblaetter/700000-724999/705152-da
 <pinref part="U$5" gate="G$1" pin="5"/>
 <pinref part="GND14" gate="1" pin="GND"/>
 <wire x1="193.04" y1="38.1" x2="193.04" y2="43.18" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="U$6" gate="G$1" pin="5"/>
+<pinref part="GND3" gate="1" pin="GND"/>
+<wire x1="231.14" y1="154.94" x2="231.14" y2="157.48" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="U$8" gate="G$1" pin="5"/>
+<pinref part="GND15" gate="1" pin="GND"/>
+<wire x1="231.14" y1="137.16" x2="231.14" y2="139.7" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$3" class="0">
@@ -5895,6 +5945,11 @@ Source: http://www2.produktinfo.conrad.com/datenblaetter/700000-724999/705152-da
 <pinref part="IC1" gate="1" pin="PD3(INT1/OC2B/PCINT19)"/>
 <wire x1="104.14" y1="114.3" x2="111.76" y2="114.3" width="0.1524" layer="91"/>
 <label x="111.76" y="114.3" size="0.8128" layer="95" xref="yes"/>
+</segment>
+<segment>
+<pinref part="U$6" gate="G$1" pin="3"/>
+<wire x1="231.14" y1="162.56" x2="226.06" y2="162.56" width="0.1524" layer="91"/>
+<label x="226.06" y="162.56" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 <net name="4" class="0">
@@ -6069,54 +6124,138 @@ Source: http://www2.produktinfo.conrad.com/datenblaetter/700000-724999/705152-da
 <wire x1="185.42" y1="45.72" x2="193.04" y2="45.72" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="GND1" class="1">
+<net name="N$9" class="0">
 <segment>
-<pinref part="S2" gate="1" pin="S"/>
-<wire x1="40.64" y1="68.58" x2="40.64" y2="66.04" width="0.1524" layer="91"/>
-<pinref part="S2" gate="1" pin="S1"/>
-<junction x="40.64" y="66.04"/>
-<wire x1="40.64" y1="66.04" x2="40.64" y2="58.42" width="0.1524" layer="91"/>
-<junction x="40.64" y="68.58"/>
+<pinref part="U$8" gate="G$1" pin="3"/>
+<wire x1="231.14" y1="144.78" x2="226.06" y2="144.78" width="0.1524" layer="91"/>
+<label x="226.06" y="144.78" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
-<net name="14" class="0">
+<net name="N$8" class="0">
 <segment>
-<pinref part="S2" gate="1" pin="P"/>
-<pinref part="S2" gate="1" pin="P1"/>
-<wire x1="30.48" y1="68.58" x2="30.48" y2="66.04" width="0.1524" layer="91"/>
-<junction x="30.48" y="66.04"/>
-<wire x1="30.48" y1="68.58" x2="20.32" y2="68.58" width="0.1524" layer="91"/>
-<junction x="30.48" y="68.58"/>
+<pinref part="IC2" gate="A" pin="A"/>
+<pinref part="R1" gate="G$1" pin="1"/>
+<wire x1="63.5" y1="50.8" x2="60.96" y2="50.8" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$10" class="0">
+<segment>
+<pinref part="R1" gate="G$1" pin="2"/>
+<pinref part="LED3" gate="G$1" pin="A"/>
+<wire x1="73.66" y1="50.8" x2="76.2" y2="50.8" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$11" class="0">
+<segment>
+<pinref part="LED3" gate="G$1" pin="DP"/>
+<pinref part="R9" gate="G$1" pin="1"/>
+</segment>
+</net>
+<net name="N$15" class="0">
+<segment>
+<pinref part="IC2" gate="A" pin="B"/>
+<pinref part="R3" gate="G$1" pin="1"/>
+<wire x1="60.96" y1="48.26" x2="63.5" y2="48.26" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$16" class="0">
+<segment>
+<pinref part="R3" gate="G$1" pin="2"/>
+<pinref part="LED3" gate="G$1" pin="B"/>
+<wire x1="73.66" y1="48.26" x2="76.2" y2="48.26" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$17" class="0">
+<segment>
+<pinref part="IC2" gate="A" pin="C"/>
+<pinref part="R4" gate="G$1" pin="1"/>
+<wire x1="60.96" y1="45.72" x2="63.5" y2="45.72" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$18" class="0">
+<segment>
+<pinref part="R4" gate="G$1" pin="2"/>
+<wire x1="73.66" y1="45.72" x2="76.2" y2="45.72" width="0.1524" layer="91"/>
+<pinref part="LED3" gate="G$1" pin="C"/>
+</segment>
+</net>
+<net name="N$19" class="0">
+<segment>
+<pinref part="IC2" gate="A" pin="D"/>
+<pinref part="R5" gate="G$1" pin="1"/>
+<wire x1="60.96" y1="43.18" x2="63.5" y2="43.18" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$20" class="0">
+<segment>
+<pinref part="R5" gate="G$1" pin="2"/>
+<pinref part="LED3" gate="G$1" pin="D"/>
+<wire x1="73.66" y1="43.18" x2="76.2" y2="43.18" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$21" class="0">
+<segment>
+<pinref part="IC2" gate="A" pin="E"/>
+<pinref part="R6" gate="G$1" pin="1"/>
+<wire x1="60.96" y1="40.64" x2="63.5" y2="40.64" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$22" class="0">
+<segment>
+<pinref part="R6" gate="G$1" pin="2"/>
+<pinref part="LED3" gate="G$1" pin="E"/>
+<wire x1="73.66" y1="40.64" x2="76.2" y2="40.64" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$23" class="0">
+<segment>
+<pinref part="IC2" gate="A" pin="F"/>
+<wire x1="60.96" y1="38.1" x2="63.5" y2="38.1" width="0.1524" layer="91"/>
+<pinref part="R7" gate="G$1" pin="1"/>
+</segment>
+</net>
+<net name="N$24" class="0">
+<segment>
+<pinref part="R7" gate="G$1" pin="2"/>
+<pinref part="LED3" gate="G$1" pin="F"/>
+<wire x1="73.66" y1="38.1" x2="76.2" y2="38.1" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$25" class="0">
+<segment>
+<pinref part="IC2" gate="A" pin="G"/>
+<wire x1="60.96" y1="35.56" x2="63.5" y2="35.56" width="0.1524" layer="91"/>
+<pinref part="R8" gate="G$1" pin="1"/>
+</segment>
+</net>
+<net name="N$26" class="0">
+<segment>
+<pinref part="R8" gate="G$1" pin="2"/>
+<pinref part="LED3" gate="G$1" pin="G"/>
+<wire x1="73.66" y1="35.56" x2="76.2" y2="35.56" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$27" class="0">
+<segment>
+<pinref part="C3" gate="G$1" pin="1"/>
+<pinref part="C4" gate="G$1" pin="1"/>
+<wire x1="17.78" y1="71.12" x2="30.48" y2="71.12" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$28" class="0">
+<segment>
+<pinref part="C3" gate="G$1" pin="2"/>
+<pinref part="C4" gate="G$1" pin="2"/>
+<wire x1="17.78" y1="63.5" x2="30.48" y2="63.5" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
 </sheet>
 </sheets>
 <errors>
-<approved hash="101,1,193.04,106.68,K11,P,,,,"/>
-<approved hash="101,1,193.04,116.84,K11,S,,,,"/>
-<approved hash="101,1,248.92,106.68,K21,P,,,,"/>
-<approved hash="101,1,248.92,116.84,K21,S,,,,"/>
 <approved hash="104,1,43.18,116.84,IC1,VCC,+5V,,,"/>
 <approved hash="104,1,43.18,93.98,IC1,AGND,GND,,,"/>
-<approved hash="104,1,220.98,157.48,U1,VO,+5V,,,"/>
-<approved hash="110,1,104.14,35.56,A3,A0,,,,"/>
-<approved hash="110,1,104.14,33.02,A3,A1,,,,"/>
-<approved hash="110,1,104.14,30.48,A3,A2,,,,"/>
-<approved hash="110,1,149.86,35.56,A4,GND,,,,"/>
-<approved hash="110,1,25.4,53.34,N$5,GND,,,,"/>
-<approved hash="110,1,25.4,53.34,N$5,GND,,,,"/>
-<approved hash="111,1,104.14,35.56,A3,,,,,"/>
-<approved hash="111,1,104.14,33.02,A3,,,,,"/>
-<approved hash="111,1,104.14,30.48,A3,,,,,"/>
-<approved hash="111,1,149.86,35.56,A4,,,,,"/>
 <approved hash="113,1,132.611,91.971,FRAME1,,,,,"/>
-<approved hash="113,1,15.1977,155.135,FTDI,,,,,"/>
-<approved hash="113,1,33.6973,56.9553,TS,,,,,"/>
-<approved hash="113,1,54.0173,61.1547,LID,,,,,"/>
-<approved hash="113,1,107.357,29.0153,CTN,,,,,"/>
-<approved hash="113,1,153.077,25.2053,JP2,,,,,"/>
-<approved hash="113,1,23.2495,171.779,JP1,,,,,"/>
 </errors>
 </schematic>
 </drawing>

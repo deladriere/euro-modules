@@ -2,17 +2,7 @@
 // Copyright 2011 Peter Knight
 // This code is released under GPLv2 license.
 //
-//
-// A female voice with an American accent
-//
-
-// voir si on boucle dans le code ou la lib ?
-
-// migrer le hack pitch dans la lib
-// ramener la lib dans le code !
-//TODO: tester le genre dans alphabet for UK voice
-//todo: add get value
-
+// Add 5 pots to A0,A1,A2,A3,A4 and temporary switch to D5
 
 #include "talkie2.h"
 
@@ -218,7 +208,7 @@ uint8_t spS_BLEEP2[]         PROGMEM = {0x34,0xE0,0x01,0x0D,0x10,0xA0,0x09,0x97,
 
 
 //SWITCHES
-#define GENDER 4
+#define BEND 4
 #define TRIGGER 5
 #define LOOP 6
 
@@ -227,6 +217,7 @@ uint8_t spS_BLEEP2[]         PROGMEM = {0x34,0xE0,0x01,0x0D,0x10,0xA0,0x09,0x97,
 #define MODE 1
 #define PITCH 2
 #define SPEED 3
+#define BENDING 4
 
 //  4511
 #define  LedA 12
@@ -613,7 +604,7 @@ void setup()
 	pinMode(LedD, OUTPUT);
 
 
-	pinMode(GENDER, INPUT_PULLUP);
+	pinMode(BEND, INPUT_PULLUP);
 	pinMode(LOOP, INPUT_PULLUP);
 
 	pinMode(TRIGGER, INPUT);
@@ -628,14 +619,14 @@ void digits()
 void loop()
 	{
 	get_mode();
-	boolean sex=digitalRead(GENDER);
+	
 
 	if(digitalRead(LOOP)==0)
 		{
 		do
 			{
 			get_mode();
-			boolean sex=digitalRead(GENDER);
+		
 			}
 		while(digitalRead(TRIGGER)==0);
 		}

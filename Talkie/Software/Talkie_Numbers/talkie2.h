@@ -8,6 +8,17 @@
 #include <inttypes.h>
 #include <avr/io.h>
 
+//SWITCHES
+#define BEND 4
+#define TRIGGER 5
+#define LOOP 6
+
+//POTs
+#define VALUE 0
+#define MODE 1
+#define PITCH 2
+#define SPEED 3
+#define BENDING 4
 
 class Talkie
 {

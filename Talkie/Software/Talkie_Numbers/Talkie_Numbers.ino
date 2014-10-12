@@ -204,20 +204,10 @@ uint8_t spS_BLEEP2[]         PROGMEM = {0x34,0xE0,0x01,0x0D,0x10,0xA0,0x09,0x97,
 
 //dictionary
 
-//Note: definitions
+//TODO: do everything just before the say 
 
 
-//SWITCHES
-#define BEND 4
-#define TRIGGER 5
-#define LOOP 6
 
-//POTs
-#define VALUE 0
-#define MODE 1
-#define PITCH 2
-#define SPEED 3
-#define BENDING 4
 
 //  4511
 #define  LedA 12
@@ -483,7 +473,7 @@ void nato()
 
 void alphabet()
 	{
-	int letter= map(analogRead(0),0,1000,1,26);
+	int letter= map(analogRead(0),0,1023,1,26);
 	switch(letter)
 		{
 
@@ -628,6 +618,8 @@ void loop()
 			get_mode();
 		
 			}
+	//TODO:move elsehere 
+	
 		while(digitalRead(TRIGGER)==0);
 		}
 

@@ -10,6 +10,9 @@
 #endif
 #include "talkie2.h"
 
+
+
+
 #define FS 8000 // Speech engine sample rate
 
 uint8_t synthPeriod;
@@ -71,12 +74,15 @@ uint8_t Talkie::getBits(uint8_t bits)
 void Talkie::say(uint8_t *addr)
 	{
 	uint8_t energy;
-	// TRIGGER HACK
-	// loop mode
-	if(digitalRead(6)==1)
-		{
-		if(digitalRead(5)==0) return;
-		}
+	
+	// besoin de ceci ?
+	
+	//if(digitalRead(LOOP)==1)
+	//	{
+	//	if(digitalRead(TRIGGER)==0) return;
+	//
+	//	}
+	
 	if(!setup)
 		{
 		// Auto-setup.
@@ -112,7 +118,7 @@ void Talkie::say(uint8_t *addr)
 		uint8_t repeat;
 
 		// PITCH HACK
-		long val = analogRead(2);
+		long val = analogRead(PITCH);
 		val = map(val, 0, 1023, 50, 10000);
 		// se plante si on va trop vite (voir le prescaler ?) marche pas voir la vitesse du pwm  ?
 		OCR1A = F_CPU / val;
@@ -124,12 +130,12 @@ void Talkie::say(uint8_t *addr)
 		//if (digitalRead(7)==0) energy=0xf; ok comme reset
 		// TRIGGER HACK
 
-		if(digitalRead(6)==1) // check for O/S mode
+		if(digitalRead(LOOP)==1) // check for O/S mode
 			{
-			if(digitalRead(5)==0) energy=0xf; // if trigger is released in O/S mode then stop
+			if(digitalRead(TRIGGER)==0) energy=0xf; // if trigger is released in O/S mode then stop
 			}
 
-		//if(digitalRead(5)==0) energy=0xf;  // c'est plus simple on coupe dès que lon change de niveau
+		//if(digitalRead(5)==0) energy=0xf;  // c'est plus simple on coupe d?s que lon change de niveau
 		if(energy == 0)
 			{
 			// Energy = 0: rest frame
@@ -178,15 +184,15 @@ void Talkie::say(uint8_t *addr)
 					synthK10 = tmsK10[getBits(3)];
 					if (digitalRead(4)==0) /// sorry guys bending the neck here !
 						{
-						synthK5= map(analogRead(4),20,1000,0,200);
-						synthK10= map(analogRead(4),20,1000,200,0);
+						synthK5= map(analogRead(BEND),20,1000,0,200);
+						synthK10= map(analogRead(BEND),20,1000,200,0);
 						}
 					}
 				}
 			}
 
 		//SPEED HACK
-		int speed = analogRead(3);
+		int speed = analogRead(SPEED);
 		speed = map(speed, 0, 1023, 200, 0);
 		delay(speed);
 		}

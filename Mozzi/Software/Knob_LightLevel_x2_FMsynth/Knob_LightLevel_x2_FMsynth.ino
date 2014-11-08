@@ -56,9 +56,9 @@ AutoMap kMapCarrierFreq(0,1023,MIN_CARRIER_FREQ,MAX_CARRIER_FREQ);
 AutoMap kMapIntensity(0,1023,MIN_INTENSITY,MAX_INTENSITY);
 AutoMap kMapModSpeed(0,1023,MIN_MOD_SPEED,MAX_MOD_SPEED);
 
-const int KNOB_PIN = 2; // set the input for the knob to analog pin 0
-const int LDR1_PIN=1; // set the analog input for fm_intensity to pin 1
-const int LDR2_PIN=0; // set the analog input for mod rate to pin 2
+const int KNOB_PIN = 2; // set the input for CV1 
+const int LDR1_PIN=1; // set the analog input for fm_intensity to pin 1 (knob)
+const int LDR2_PIN=0; // set the analog input for mod rate to pin 2 (knob)
 
 Oscil<COS2048_NUM_CELLS, AUDIO_RATE> aCarrier(COS2048_DATA);
 Oscil<COS2048_NUM_CELLS, AUDIO_RATE> aModulator(COS2048_DATA);

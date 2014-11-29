@@ -133,6 +133,7 @@ void Talkie::say(uint8_t *addr)
 		if(digitalRead(LOOP)==1) // check for O/S mode
 			{
 			if(digitalRead(TRIGGER)==0) energy=0xf; // if trigger is released in O/S mode then stop
+			
 			}
 
 		//if(digitalRead(5)==0) energy=0xf;  // c'est plus simple on coupe d?s que lon change de niveau

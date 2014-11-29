@@ -1,18 +1,25 @@
 Arduino based Talkie Eurorack Module 
+Have your modular speak out the CV
 This arduino based module works thanks to a clever library : Talkie from https://github.com/going-digital/Talkie 
 
 Jean-Luc Deladrière, Hanabi SPRL 2006-2014. Except where otherwise noted, content on this site is licensed under a cc-by-sa 3.0 license.
 
-#Functions
-##Mode
-For the moment I have added 4 modes or sound banks :
+Numbers 
 
-numbers (from minus 9 to 9)
-voltmeter (reading the CV voltage)
-frequencemeter (fake mode just saying "Hertz" instead of "Volts")
-alphabet
-nato alphabet
-I plan to add a 5th mode with a large vocabulary and a 6th mode with weird sounds
+#Functions
+##Bank
+For the moment I have added 4 sound banks :
+0:numbers (from 0 to 9) male voice
+1:numbers (from 0 to 9) female voice
+2:big numbers (from 0 to 9999999)
+3:voltmeter (reading the CV voltage)
+4:frequencemeter (just saying "Hertz" instead of "Volts")
+5:Spell the alphabet
+6:nato alphabet
+
+I plan to add a 7th bank with a large vocabulary and a 8th bank with weird sounds
+random mode
+
 
 ##CV
 
@@ -48,7 +55,8 @@ Change the pitch
 * add picture of panel & pcb
 * merge library in main code 
 * calibrate full cv scale
-* add R in series with entries for protection
+* add R/shottky in  with entries for protection
+* add mousers ref to each part (mouser cart : link)
 
 
 more info here : http://elek101.blogspot.be/2014/10/talkie-eurorack-module-part-1-concept.html

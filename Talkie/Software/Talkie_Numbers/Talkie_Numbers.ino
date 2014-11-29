@@ -204,7 +204,7 @@ uint8_t spS_BLEEP2[]         PROGMEM = {0x34,0xE0,0x01,0x0D,0x10,0xA0,0x09,0x97,
 
 //dictionary
 
-//TODO: do everything just before the say 
+//TODO: do everything just before the say
 
 
 
@@ -216,7 +216,7 @@ uint8_t spS_BLEEP2[]         PROGMEM = {0x34,0xE0,0x01,0x0D,0x10,0xA0,0x09,0x97,
 #define  LedD 11
 
 int mode=0;
-
+boolean speaking = false;
 
 
 /* Say any number between -999,999 and 999,999 */
@@ -588,6 +588,10 @@ void display(int n)
 
 void setup()
 	{
+	
+	Serial.begin(9600);
+	
+	
 	pinMode(LedA, OUTPUT);
 	pinMode(LedB, OUTPUT);
 	pinMode(LedC, OUTPUT);
@@ -602,26 +606,46 @@ void setup()
 	}
 void digits()
 	{
-	int n = map(analogRead(0),0,1000,-9,9);
+	int n = map(analogRead(0),0,1000,0,9);
 	sayNumber(n);
 	}
 
 void loop()
 	{
 	get_mode();
-	
 
+// if phrase mode whait here to trigger the phrase (but read mode change)
 	if(digitalRead(LOOP)==0)
+
 		{
+
+
+		if(speaking == true)
+			{
+			while(digitalRead(TRIGGER)==1);
+			delay(10); // debounce 
+			speaking=false; // not sure why it work without this !
+			}
+
+
+
+
+
 		do
 			{
 			get_mode();
-		
+
 			}
-	//TODO:move elsehere 
-	
+
 		while(digitalRead(TRIGGER)==0);
+		speaking = true;
+
+
+		
 		}
+
+
+
 
 
 	switch(mode)
@@ -629,6 +653,7 @@ void loop()
 
 		case 0:
 			digits();
+
 			break;
 		case 1:
 			voltmeter();
@@ -642,6 +667,9 @@ void loop()
 		case 4:
 			nato();
 			break;
+
+
+
 
 
 		}

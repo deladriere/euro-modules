@@ -6,12 +6,12 @@
 		Tim Barrass 2012, CC by-nc-sa
 
         24-nov.-2014 Jean-Luc Deladriere remplaced event delay by gate triggering & added Attack & Decay control via Control Knob
-       Knob A0: Attack duration
+        Knob A0: Attack duration
         Knob A1: Decay duration
         CV A2: Not used
         CV 13: Not used
         Gate: Trigger sound + sustain
-        Audio : Brown pulse with enveloppe
+        Audio : Quantized notes
 
  */
 
@@ -19,21 +19,22 @@
 
 #include <MozziGuts.h>
 #include <Oscil.h> // oscillator template
-#include <tables/brownnoise8192_int8.h> // recorded audio wavetable
+#include <tables/sin2048_int8.h> // sine table for oscillator
 #include <Ead.h> // exponential attack decay
 
-#include <mozzi_rand.h>
+#include <mozzi_midi.h>
 
-
-#define CONTROL_RATE 64 // powers of 2 please
+#define CONTROL_RATE 1024 // powers of 2 please
 #define GATE 4
 #define ATTACK A0
 #define DECAY A1
 
-Oscil<BROWNNOISE8192_NUM_CELLS, AUDIO_RATE> aNoise(BROWNNOISE8192_DATA);
+// use: Oscil <table_size, update_rate> oscilName (wavetable), look in .h file of table #included above
+Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> aSin(SIN2048_DATA);
 Ead kEnvelope(CONTROL_RATE); // resolution will be CONTROL_RATE
 
 int gain;
+int note;
 unsigned int attack;
 unsigned int decay ;
 
@@ -42,41 +43,41 @@ unsigned int decay ;
 
 void setup()
 	{
-	// use float to set freq because it will be small and fractional
 
-	aNoise.setFreq((float)AUDIO_RATE/BROWNNOISE8192_SAMPLERATE);
-// 	randSeed(); // fresh random, MUST be called before startMozzi - wierd bug
 	startMozzi(CONTROL_RATE);
 	pinMode(GATE,INPUT_PULLUP);
-	
+
 	}
 
 
 void updateControl()
 	{
-	// jump around in audio noise table to disrupt obvious looping
+
 	int gate_status;
-	aNoise.setPhase(rand((unsigned int)BROWNNOISE8192_NUM_CELLS));
-	attack = map(mozziAnalogRead(A0),0,1023,1000,10);
-	decay = map(mozziAnalogRead(A1),0,1023,2000,10);
-
-	if(digitalRead(GATE)) // while gate is HIGH the enveloppe keeps starting / play with the duty cycle to have longer sustain
-		{
-
-		kEnvelope.start(attack,decay);
-		gate_status=LOW;
-
-		}
-
-
+	decay = map(mozziAnalogRead(A1),0,1023,1000,20);
+	attack = map(mozziAnalogRead(A0),0,1023,1000,20);
+	note = map(mozziAnalogRead(A2),0,1023,48,95); // mapping notes from midi note 48 to midi note 95
+	aSin.setFreq_Q16n16(Q16n16_mtof(Q8n0_to_Q16n16(note))); // accurate frequency
 	gain = (int) kEnvelope.next();
+
+		
+		if(digitalRead(GATE)) // while gate is HIGH the enveloppe keeps starting / play with the duty cycle to have longer sustain
+			{
+
+			kEnvelope.start(attack,decay);
+			gate_status=LOW;
+
+			}
+
+		
+
 	}
 
 
 
 int updateAudio()
 	{
-	return (gain*aNoise.next())>>2;
+	return (gain*aSin.next())>>2;
 	}
 
 

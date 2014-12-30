@@ -23,14 +23,13 @@ random mode
 
 ##CV
 
-CV signal change the words or phrase to be said
+CV signal change the words or phrases to be said
 
 ##Gate
 
-Pressing the button start the complete sound in trigger mode. (regardless of it's length) 
+Level high start the complete sound in trigger mode. (regardless of it's length) 
 If the trigger switch is off, the gate will start the sound and hold it as long as the gate level stays up. Very useful to create crazy rhythms.
 
-If the cable is plugged in, the gate is triggered via an external signal
 
 ##Trigger
 
@@ -49,13 +48,13 @@ Change the speed
 Change the pitch
 
 ## Todo.todo
-* publish schematic
-* publish pcb
+* publish schematic @done(2014-12-30)
+* publish pcb @done(2014-12-30)
 * add picture of panel & pcb
 * merge library in main code 
 * add R/shottky in  with entries for protection @done(2014-11-30)
 * add mousers ref to each part (mouser cart : link)
-* Add female voice
+* Add female voice @done(2014-12-30)
 
 
 more info here : http://elek101.blogspot.be/2014/10/talkie-eurorack-module-part-1-concept.html

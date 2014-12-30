@@ -363,7 +363,7 @@ void sayNumberF(long n)
 	switch(n)
 		{
 		case 0:
-			//   voice.say(spF_OH);
+			voice.say(spF_OH);
 			break;
 		case 1:
 			voice.say(spF_ONE);

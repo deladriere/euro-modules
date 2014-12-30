@@ -4,7 +4,11 @@ This arduino based module works thanks to a clever library : Talkie from https:/
 
 Jean-Luc Deladrière, Hanabi SPRL 2006-2014. Except where otherwise noted, content on this site is licensed under a cc-by-sa 3.0 license.
 
-Numbers 
+#Intro 
+realtime lpc synthesis
+no sampling 
+realiable to produce intelligible voice or ... not : your choice
+tempo aware via gate trigger
 
 #Functions
 ##Bank
@@ -17,13 +21,12 @@ For the moment I have added 4 sound banks :
 5:Spell the alphabet
 6:nato alphabet
 
-I plan to add a 7th bank with a large vocabulary and a 8th bank with weird sounds
-random mode
+I plan to add a 7th bank with a large vocabulary and a 8th bank with weird sounds or random mode
 
 
 ##CV
 
-CV signal change the words or phrases to be said
+CV signal choose the words or phrases to be said
 
 ##Gate
 
@@ -37,15 +40,15 @@ Choose between trigger mode or gated mode
 
 ##Bend
 
-If bend is on, the bend pot ... distords the sound.
+If bend is on, the bend pot ... well, distords the sound.
 
 ##Speed
 
-Change the speed
+Change the speed of the voice
 
 ##Pitch
 
-Change the pitch
+Change the pitch of the voice
 
 ## Todo.todo
 * publish schematic @done(2014-12-30)
@@ -58,6 +61,8 @@ Change the pitch
 
 
 more info here : http://elek101.blogspot.be/2014/10/talkie-eurorack-module-part-1-concept.html
+
+http://elek101.blogspot.be/2014/12/talkie-eurorack-module-part-2-schematic.html
 
 
 

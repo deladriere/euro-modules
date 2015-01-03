@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="7.1.0">
+<eagle version="7.2.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -20073,23 +20073,28 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <part name="P+1" library="supply1" deviceset="+5V" device=""/>
 <part name="BANK" library="SparkFun-Electromechanical" deviceset="POT" device="" value="10K">
 <attribute name="OC_FARNELL" value="1769829"/>
+<attribute name="OC_MOUSER" value="688-RK09L1140A2U"/>
 </part>
 <part name="P+2" library="supply1" deviceset="+5V" device=""/>
 <part name="GND4" library="supply1" deviceset="GND" device=""/>
 <part name="RV1" library="SparkFun-Electromechanical" deviceset="POT" device="" value="10K">
 <attribute name="OC_FARNELL" value="1769829"/>
+<attribute name="OC_MOUSER" value="688-RK09L1140A2U"/>
 </part>
 <part name="CV" library="thonkiconn" deviceset="THONKICONN" device="" value="J1"/>
 <part name="RV2" library="SparkFun-Electromechanical" deviceset="POT" device="" value="10K">
 <attribute name="OC_FARNELL" value="1769829"/>
+<attribute name="OC_MOUSER" value="688-RK09L1140A2U"/>
 </part>
 <part name="SPEED" library="thonkiconn" deviceset="THONKICONN" device="" value="J2"/>
 <part name="RV3" library="SparkFun-Electromechanical" deviceset="POT" device="" value="10K">
 <attribute name="OC_FARNELL" value="1769829"/>
+<attribute name="OC_MOUSER" value="688-RK09L1140A2U"/>
 </part>
 <part name="PITCH" library="thonkiconn" deviceset="THONKICONN" device="" value="J3"/>
 <part name="RV4" library="SparkFun-Electromechanical" deviceset="POT" device="" value="10K">
 <attribute name="OC_FARNELL" value="1769829"/>
+<attribute name="OC_MOUSER" value="688-RK09L1140A2U"/>
 </part>
 <part name="BEND" library="thonkiconn" deviceset="THONKICONN" device="" value="J4"/>
 <part name="GND14" library="supply1" deviceset="GND" device=""/>
@@ -20106,15 +20111,23 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <part name="Q1" library="crystal" deviceset="CRYSTAL" device="CTS406" value="16 MHz">
 <attribute name="OC_MOUSER" value="ECS-160-18-23A-EN-TR"/>
 </part>
-<part name="C5" library="rcl" deviceset="C-US" device="C0805K" value="18p"/>
-<part name="C6" library="rcl" deviceset="C-US" device="C0805K" value="18p"/>
+<part name="C5" library="rcl" deviceset="C-US" device="C0805K" value="18p">
+<attribute name="OC_MOUSER" value=""/>
+</part>
+<part name="C6" library="rcl" deviceset="C-US" device="C0805K" value="18p">
+<attribute name="OC_MOUSER" value="77-VJ0805A180GXQCBC"/>
+</part>
 <part name="GND17" library="SparkFun" deviceset="GND" device=""/>
 <part name="R2" library="resistor" deviceset="R-US_" device="M0805" value="10K"/>
-<part name="IC1" library="atmel" deviceset="MEGA8" device="-AI"/>
+<part name="IC1" library="atmel" deviceset="MEGA8" device="-AI">
+<attribute name="OC_MOUSER" value="556-ATMEGA328P-AU"/>
+</part>
 <part name="LED3" library="display-kingbright" deviceset="7-SEG_" device="SA52-11">
 <attribute name="OC_FARNELL" value="1168602"/>
 </part>
-<part name="IC2" library="45xx" deviceset="4511" device="D" value="4511D"/>
+<part name="IC2" library="45xx" deviceset="4511" device="D" value="4511D">
+<attribute name="OC_MOUSER" value="863-MC14511BDG"/>
+</part>
 <part name="R1" library="resistor" deviceset="R-US_" device="M0805" value="390R"/>
 <part name="R3" library="resistor" deviceset="R-US_" device="M0805" value="390R"/>
 <part name="R4" library="resistor" deviceset="R-US_" device="M0805" value="390R"/>
@@ -20125,6 +20138,7 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <part name="R9" library="resistor" deviceset="R-US_" device="M0805" value="390R"/>
 <part name="IC5" library="SteveMarple" deviceset="MCP2200" device="" value="MCP2200">
 <attribute name="OC_FARNELL" value="1781148"/>
+<attribute name="OC_MOUSER" value="579-MCP2200-I/SO"/>
 </part>
 <part name="GND25" library="supply1" deviceset="GND" device=""/>
 <part name="GND27" library="supply1" deviceset="GND" device=""/>
@@ -20150,7 +20164,9 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <part name="C7" library="resistor" deviceset="C-EU" device="C0805" value="10nf"/>
 <part name="C2" library="resistor" deviceset="C-EU" device="C0805" value="100nf"/>
 <part name="GND2" library="supply1" deviceset="GND" device=""/>
-<part name="C8" library="resistor" deviceset="C-EU" device="C0805" value="100nf"/>
+<part name="C8" library="resistor" deviceset="C-EU" device="C0805" value="100nf">
+<attribute name="OC_MOUSER" value="77-VJ0805V104MXBPBC"/>
+</part>
 <part name="P+9" library="supply1" deviceset="+5V" device=""/>
 <part name="GND21" library="supply1" deviceset="GND" device=""/>
 <part name="P+10" library="supply1" deviceset="+5V" device=""/>
@@ -20158,6 +20174,7 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <part name="R11" library="resistor" deviceset="R-US_" device="M0805" value="10K"/>
 <part name="C9" library="rcl" deviceset="CPOL-EU" device="R/2012-12R" value="22u">
 <attribute name="OC_FARNELL" value="1236657"/>
+<attribute name="OC_MOUSER" value="581-F981C106MSAAS1"/>
 </part>
 <part name="R10" library="resistor" deviceset="R-US_" device="M0805" value="100K"/>
 <part name="R12" library="resistor" deviceset="R-US_" device="M0805" value="1K"/>
@@ -20165,6 +20182,7 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <part name="P+7" library="supply1" deviceset="+5V" device=""/>
 <part name="C4" library="rcl" deviceset="CPOL-EU" device="R/2012-12R" value="10u">
 <attribute name="OC_FARNELL" value="1236657"/>
+<attribute name="OC_MOUSER" value="581-F981C106MSAAS1"/>
 </part>
 <part name="R14" library="resistor" deviceset="R-US_" device="M0805" value="1K"/>
 <part name="R15" library="resistor" deviceset="R-US_" device="M0805" value="1K"/>
@@ -20182,16 +20200,22 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <part name="C3" library="rcl" deviceset="CPOL-EU" device="R/2012-12R" value="10u">
 <attribute name="OC_FARNELL" value="1236657"/>
 </part>
-<part name="C10" library="resistor" deviceset="C-EU" device="C0805" value="100nf"/>
+<part name="C10" library="resistor" deviceset="C-EU" device="C0805" value="100nf">
+<attribute name="OC_MOUSER" value="77-VJ0805V104MXBPBC"/>
+</part>
 <part name="GND11" library="supply1" deviceset="GND" device=""/>
 <part name="D12" library="diode" deviceset="DIODE_2CACA-" device="SOT23" value="BAT54S"/>
-<part name="D2" library="diode" deviceset="DIODE_2CACA-" device="SOT23" value="BAT54S"/>
+<part name="D2" library="diode" deviceset="DIODE_2CACA-" device="SOT23" value="BAT54S">
+<attribute name="OC_MOUSER" value=""/>
+</part>
 <part name="D3" library="diode" deviceset="DIODE_2CACA-" device="SOT23" value="BAT54S"/>
 <part name="D4" library="diode" deviceset="DIODE_2CACA-" device="SOT23" value="BAT54S"/>
 <part name="D5" library="diode" deviceset="DIODE_2CACA-" device="SOT23" value="BAT54S"/>
-<part name="C1" library="resistor" deviceset="C-EU" device="C0805" value="100nf"/>
+<part name="C1" library="resistor" deviceset="C-EU" device="C0805" value="100nf">
+<attribute name="OC_FARNELL" value="77-VJ0805V104MXBPBC"/>
+</part>
 <part name="IC3" library="SparkFun-PowerIC" deviceset="V_REG_LM1117" device="SOT223">
-<attribute name="OC_MOUSER" value="998-MIC5205-5.0YM5TR"/>
+<attribute name="OC_MOUSER" value="621-AZ1117H-5.0TRE"/>
 </part>
 </parts>
 <sheets>
@@ -20213,23 +20237,28 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <instance part="P+1" gate="1" x="45.72" y="243.84"/>
 <instance part="BANK" gate="G$1" x="182.88" y="190.5" rot="MR0">
 <attribute name="OC_FARNELL" x="182.88" y="190.5" size="1.778" layer="96" rot="MR0" display="off"/>
+<attribute name="OC_MOUSER" x="182.88" y="190.5" size="1.778" layer="96" rot="MR0" display="off"/>
 </instance>
 <instance part="P+2" gate="1" x="190.5" y="205.74"/>
 <instance part="GND4" gate="1" x="182.88" y="177.8"/>
 <instance part="RV1" gate="G$1" x="182.88" y="160.02" rot="MR0">
 <attribute name="OC_FARNELL" x="182.88" y="160.02" size="1.778" layer="96" rot="MR0" display="off"/>
+<attribute name="OC_MOUSER" x="182.88" y="160.02" size="1.778" layer="96" rot="MR0" display="off"/>
 </instance>
 <instance part="CV" gate="G$1" x="203.2" y="165.1"/>
 <instance part="RV2" gate="G$1" x="182.88" y="127" rot="MR0">
 <attribute name="OC_FARNELL" x="182.88" y="127" size="1.778" layer="96" rot="MR0" display="off"/>
+<attribute name="OC_MOUSER" x="182.88" y="127" size="1.778" layer="96" rot="MR0" display="off"/>
 </instance>
 <instance part="SPEED" gate="G$1" x="203.2" y="132.08"/>
 <instance part="RV3" gate="G$1" x="180.34" y="91.44" rot="MR0">
 <attribute name="OC_FARNELL" x="180.34" y="91.44" size="1.778" layer="96" rot="MR0" display="off"/>
+<attribute name="OC_MOUSER" x="180.34" y="91.44" size="1.778" layer="96" rot="MR0" display="off"/>
 </instance>
 <instance part="PITCH" gate="G$1" x="203.2" y="96.52"/>
 <instance part="RV4" gate="G$1" x="182.88" y="55.88" rot="MR0">
 <attribute name="OC_FARNELL" x="182.88" y="55.88" size="1.778" layer="96" rot="MR0" display="off"/>
+<attribute name="OC_MOUSER" x="182.88" y="55.88" size="1.778" layer="96" rot="MR0" display="off"/>
 </instance>
 <instance part="BEND" gate="G$1" x="203.2" y="60.96"/>
 <instance part="GND14" gate="1" x="193.04" y="25.4"/>
@@ -20248,13 +20277,21 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <attribute name="VALUE" x="41.402" y="199.39" size="1.778" layer="96"/>
 <attribute name="OC_MOUSER" x="45.72" y="193.04" size="1.778" layer="96" rot="R90" display="off"/>
 </instance>
-<instance part="C5" gate="G$1" x="38.1" y="187.96" rot="R270"/>
-<instance part="C6" gate="G$1" x="38.1" y="198.12" rot="R270"/>
+<instance part="C5" gate="G$1" x="38.1" y="187.96" rot="R270">
+<attribute name="OC_MOUSER" x="38.1" y="187.96" size="1.778" layer="96" rot="R270" display="off"/>
+</instance>
+<instance part="C6" gate="G$1" x="38.1" y="198.12" rot="R270">
+<attribute name="OC_MOUSER" x="38.1" y="198.12" size="1.778" layer="96" rot="R270" display="off"/>
+</instance>
 <instance part="GND17" gate="1" x="25.4" y="193.04" rot="R180"/>
 <instance part="R2" gate="G$1" x="45.72" y="223.52" rot="R90"/>
-<instance part="IC1" gate="G$1" x="81.28" y="187.96"/>
+<instance part="IC1" gate="G$1" x="81.28" y="187.96">
+<attribute name="OC_MOUSER" x="81.28" y="187.96" size="1.778" layer="96" display="off"/>
+</instance>
 <instance part="LED3" gate="G$1" x="213.36" y="226.06"/>
-<instance part="IC2" gate="A" x="172.72" y="226.06"/>
+<instance part="IC2" gate="A" x="172.72" y="226.06">
+<attribute name="OC_MOUSER" x="172.72" y="226.06" size="1.778" layer="96" display="off"/>
+</instance>
 <instance part="R1" gate="G$1" x="195.58" y="233.68" rot="R180"/>
 <instance part="R3" gate="G$1" x="195.58" y="231.14" rot="R180"/>
 <instance part="R4" gate="G$1" x="195.58" y="228.6" rot="R180"/>
@@ -20265,6 +20302,7 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <instance part="R9" gate="G$1" x="228.6" y="218.44" rot="R180"/>
 <instance part="IC5" gate="G$1" x="320.04" y="119.38">
 <attribute name="OC_FARNELL" x="320.04" y="119.38" size="1.778" layer="96" display="off"/>
+<attribute name="OC_MOUSER" x="320.04" y="119.38" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="GND25" gate="1" x="274.32" y="91.44"/>
 <instance part="GND27" gate="1" x="332.74" y="101.6"/>
@@ -20291,7 +20329,9 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <instance part="C2" gate="G$1" x="33.02" y="124.46" rot="R90"/>
 <instance part="IC2" gate="P" x="284.48" y="228.6"/>
 <instance part="GND2" gate="1" x="276.86" y="218.44"/>
-<instance part="C8" gate="G$1" x="276.86" y="228.6" rot="R180"/>
+<instance part="C8" gate="G$1" x="276.86" y="228.6" rot="R180">
+<attribute name="OC_MOUSER" x="276.86" y="228.6" size="1.778" layer="96" rot="R180" display="off"/>
+</instance>
 <instance part="P+9" gate="1" x="276.86" y="241.3"/>
 <instance part="GND21" gate="1" x="157.48" y="208.28"/>
 <instance part="P+10" gate="1" x="157.48" y="246.38"/>
@@ -20299,6 +20339,7 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <instance part="R11" gate="G$1" x="289.56" y="139.7" rot="R90"/>
 <instance part="C9" gate="G$1" x="81.28" y="40.64">
 <attribute name="OC_FARNELL" x="81.28" y="40.64" size="1.778" layer="96" display="off"/>
+<attribute name="OC_MOUSER" x="81.28" y="40.64" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="R10" gate="G$1" x="304.8" y="180.34" rot="R90"/>
 <instance part="R12" gate="G$1" x="309.88" y="187.96" rot="R180"/>
@@ -20306,6 +20347,7 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <instance part="P+7" gate="1" x="317.5" y="203.2"/>
 <instance part="C4" gate="G$1" x="53.34" y="40.64">
 <attribute name="OC_FARNELL" x="53.34" y="40.64" size="1.778" layer="96" display="off"/>
+<attribute name="OC_MOUSER" x="53.34" y="40.64" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="R14" gate="G$1" x="160.02" y="160.02" rot="R180"/>
 <instance part="R15" gate="G$1" x="160.02" y="127" rot="R180"/>
@@ -20323,14 +20365,20 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <instance part="C3" gate="G$1" x="332.74" y="60.96">
 <attribute name="OC_FARNELL" x="332.74" y="60.96" size="1.778" layer="96" display="off"/>
 </instance>
-<instance part="C10" gate="G$1" x="266.7" y="228.6" rot="R180"/>
+<instance part="C10" gate="G$1" x="266.7" y="228.6" rot="R180">
+<attribute name="OC_MOUSER" x="266.7" y="228.6" size="1.778" layer="96" rot="R180" display="off"/>
+</instance>
 <instance part="GND11" gate="1" x="332.74" y="48.26"/>
 <instance part="D12" gate="-B1" x="317.5" y="187.96" rot="R270"/>
-<instance part="D2" gate="-B1" x="170.18" y="160.02" rot="R270"/>
+<instance part="D2" gate="-B1" x="170.18" y="160.02" rot="R270">
+<attribute name="OC_MOUSER" x="170.18" y="160.02" size="1.778" layer="96" rot="R270" display="off"/>
+</instance>
 <instance part="D3" gate="-B1" x="170.18" y="127" rot="R270"/>
 <instance part="D4" gate="-B1" x="170.18" y="91.44" rot="R270"/>
 <instance part="D5" gate="-B1" x="170.18" y="55.88" rot="R270"/>
-<instance part="C1" gate="G$1" x="355.6" y="119.38" rot="R180"/>
+<instance part="C1" gate="G$1" x="355.6" y="119.38" rot="R180">
+<attribute name="OC_FARNELL" x="355.6" y="119.38" size="1.778" layer="96" rot="R180" display="off"/>
+</instance>
 <instance part="IC3" gate="G$1" x="66.04" y="43.18">
 <attribute name="OC_MOUSER" x="66.04" y="43.18" size="1.778" layer="96" display="off"/>
 </instance>

@@ -43,7 +43,7 @@ void setup(){
 
 void updateControl(){
   // put changing controls in here
-  sensor_value = map(mozziAnalogRead(A2),0,1023,48,95); // value is 0-1023
+  sensor_value = map(mozziAnalogRead(A2),0,1023,48,95); // mapping notes from midi note 48 to midi note 95
 
   aSin.setFreq_Q16n16(Q16n16_mtof(Q8n0_to_Q16n16(sensor_value))); // accurate frequency
   

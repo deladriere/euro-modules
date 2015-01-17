@@ -9,7 +9,7 @@
         Knob A0: Attack duration
         Knob A1: Decay duration
         CV A2: Not used
-        CV 13: Not used
+        CV A3: Not used
         Gate: Trigger sound
 
  */

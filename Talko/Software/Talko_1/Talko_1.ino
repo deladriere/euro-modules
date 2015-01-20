@@ -4,6 +4,15 @@
 //
 // Add 5 pots to A0,A1,A2,A3,A4 and temporary switch to D5
 
+
+// Define various ADC prescaler
+const unsigned char PS_16 = (1 << ADPS2);
+const unsigned char PS_32 = (1 << ADPS2) | (1 << ADPS0);
+const unsigned char PS_64 = (1 << ADPS2) | (1 << ADPS1);
+const unsigned char PS_128 = (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);
+
+
+
 #include "talkie2.h"
 
 Talkie voice;
@@ -161,6 +170,12 @@ uint8_t spM_VOLTS[]    PROGMEM = {0xA0, 0xDA, 0xA2, 0xB2, 0x3A, 0x44, 0x55, 0x9C
 uint8_t spM_HERTZ[] PROGMEM = {0x08,0x28,0xA6,0x4B,0x00,0x55,0x56,0x23,0xA0,0x9A,0x99,0x12,0xE7,0x12,0x18,0xC3,0x5D,0x56,0x52,0xED,0x29,0xAC,0xE9,0xDF,0xD9,0xAE,0xE7,0x18,0xD6,0x5A,0x12,0xAC,0x34,0x1F,0x02,0xA7,0x28,0x55,0xA1,0x1A,0x00,0x08,0xD8,0x26,0x94,0x01,0xBF,0x95,0x71,0xC0,0x02,0x16,0xD0,0x80,0x07,0x34,0xC0,0x01,0x0E,0xFC,0x3F,0x08,0x9C,0xA2,0x54,0x85,0x6A,0xC0,0xFF,0x03};
 
 
+
+//vocabulary
+
+
+
+
 //drum
 
 uint8_t spS_BRUSH[]  PROGMEM = {0x1C,0xB0,0x80,0x05,0x34,0xE0,0x01,0x0D,0x10,0xA0,0x09,0x97,0xFF,0x07};
@@ -179,10 +194,10 @@ uint8_t spS_BLEEP2[]         PROGMEM = {0x34,0xE0,0x01,0x0D,0x10,0xA0,0x09,0x97,
 
 
 //  4511
-#define  LedA 12
-#define  LedB 8
-#define  LedC 9
-#define  LedD 11
+#define  LedA 9
+#define  LedB 10
+#define  LedC 11
+#define  LedD 12
 
 int mode=0;
 boolean speaking = false;
@@ -429,7 +444,7 @@ void sayNumberF(long n)
 
 void voltmeter()
 	{
-	int voltage = analogRead(0) * 5.000 / 1.023;
+	int voltage = analogRead(1) * 5.000 / 1.023;
 	sayNumber(voltage);
 	voice.say(spM_MILLI);
 	voice.say(spM_VOLTS);
@@ -437,7 +452,7 @@ void voltmeter()
 
 void frequencemeter()
 	{
-	int hertz = analogRead(0) * 5.000 / 1.023;
+	int hertz = analogRead(1) * 5.000 / 1.023;
 	sayNumber(hertz);
 	voice.say(spM_HERTZ);
 	}
@@ -445,7 +460,7 @@ void frequencemeter()
 
 void nato()
 	{
-	int letter= map(analogRead(0),0,1000,1,26);
+	int letter= map(analogRead(1),0,1000,1,26);
 
 
 
@@ -538,7 +553,7 @@ void nato()
 
 void alphabet()
 	{
-	int letter= map(analogRead(0),0,1023,1,26);
+	int letter= map(analogRead(1),0,1023,1,26);
 	switch(letter)
 		{
 
@@ -640,7 +655,7 @@ void get_mode()
 	7:strange sounds
 	*/
 
-	mode = map(analogRead(1),-100,1000,0,7);
+	mode = map(analogRead(0),-100,1000,0,6);
 	display(mode);
 	}
 
@@ -656,6 +671,14 @@ void setup()
 	{
 
 	Serial.begin(9600);
+	//Serial.print(F_CPU);
+
+	// set up the ADC
+	ADCSRA &= ~PS_128;  // remove bits set by Arduino library
+
+	// you can choose a prescaler from above.
+	// PS_16, PS_32, PS_64 or PS_128
+	ADCSRA |= PS_16;    // set our own prescaler to 64
 
 
 	pinMode(LedA, OUTPUT);
@@ -672,7 +695,7 @@ void setup()
 	}
 void digits()
 	{
-	int n = map(analogRead(0),0,1000,0,9);
+	int n = map(analogRead(1),0,1000,0,9);
 	sayNumber(n);
 	}
 
@@ -680,13 +703,13 @@ void digits()
 
 void digitsF()
 	{
-	int n = map(analogRead(0),0,1000,0,9);
+	int n = map(analogRead(1),0,1000,0,9);
 	sayNumberF(n);
 	}
 
 void bigNumbers()
 	{
-	long n = map(analogRead(0),0,1000,0,999999);
+	long n = map(analogRead(1),0,1000,0,999999);
 	sayNumber(n);
 	}
 
@@ -694,7 +717,7 @@ void bigNumbers()
 
 void strange()
 	{
-	int sound= map(analogRead(0),0,1023,1,4);
+	int sound= map(analogRead(1),0,1023,1,4);
 	switch(sound)
 		{
 
@@ -716,9 +739,9 @@ void strange()
 void loop()
 	{
 	get_mode();
+    Serial.println(digitalRead(LOOP));
 
-// if phrase mode whait here to trigger the phrase (but read mode change)
-	if(digitalRead(LOOP)==0)
+	if(digitalRead(LOOP)==0) // 1=loop mode - 0 = phrase mode
 
 		{
 
@@ -732,8 +755,6 @@ void loop()
 
 
 
-
-
 		do
 			{
 			get_mode();
@@ -742,8 +763,6 @@ void loop()
 
 		while(digitalRead(TRIGGER)==0);
 		speaking = true;
-
-
 
 		}
 

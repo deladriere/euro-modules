@@ -9,16 +9,18 @@
 #include <avr/io.h>
 
 //SWITCHES
-#define BEND 4
-#define TRIGGER 5
-#define LOOP 6
+#define BEND 5
+#define TRIGGER 2 // gate in
+#define LOOP 4
 
 //POTs
-#define VALUE 0
-#define MODE 1
-#define PITCH 2
-#define SPEED 3
+#define VALUE 1
+#define MODE 0
+#define PITCH 3
+#define SPEED 2
 #define BENDING 4
+
+
 
 class Talkie
 {

@@ -235,7 +235,7 @@ void Talkie::say(uint8_t *addr)
 
 		//SPEED HACK
 		int speed = analogRead(SPEED);
-		speed = map(speed, 0, 1023, 200, 0);
+		speed = map(speed, 0, 1023, 100, 0); //200
 		delay(speed);
 		}
 	while(energy != 0xf);

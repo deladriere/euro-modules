@@ -6,6 +6,7 @@ This arduino based module works thanks to a clever library : Talkie from https:/
 
 ![Early Panel](https://raw.githubusercontent.com/deladriere/euro-modules/master/Talko/Img/panel.jpg)
 
+
 ####Intro 
 Realtime lpc synthesis
 no sampling 
@@ -23,7 +24,9 @@ For the moment I have added 4 sound banks :
 5: big numbers  
 6: voltmeter (reading the CV voltage)  
 7: frequencemeter (just saying "Hertz" instead of "Volts")  
-8: counter (each gate trigger increments the counter while any pitches change resets it)
+8: counter (each gate trigger increments the counter while any cv change resets it)
+9: number radio (each gate trigger a 4 number sequence while any cv trigger a new "transmission")
+10: time since cv reset  (each gate triggers saying the time in minutes/seconds while any cv change resets the clock to zero)
 
 
 

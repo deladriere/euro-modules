@@ -9,15 +9,13 @@
         OUTPUT : LFO out
     
 */
-
+#include <AutoMap.h>
 #include <MozziGuts.h>
 #include <Oscil.h> // oscillator template
 #include <tables/square_no_alias512_int8.h>
 #include <tables/sin512_int8.h>
 #include <tables/triangle512_int8.h>
 #include <tables/saw512_int8.h>
-
-
 
 
 
@@ -40,7 +38,7 @@ void choosetable(int waveNumber)
 		{
 
 		case 0:
-			aOscil.setTable(SIN512_DATA);
+			aOscil.setTable(SAW512_DATA);
 			break;
 		case 1:
 			aOscil.setTable(SQUARE_NO_ALIAS512_DATA);
@@ -49,7 +47,8 @@ void choosetable(int waveNumber)
 			aOscil.setTable(TRIANGLE512_DATA);
 			break;
 		case 3:
-			aOscil.setTable(SAW512_DATA);
+			
+			aOscil.setTable(SIN512_DATA);
 			break;
 		}
 
@@ -59,10 +58,13 @@ void choosetable(int waveNumber)
 void updateControl()
 {
 
-	float sensor_value = map(mozziAnalogRead(0),1023,0,1,1000); // value is 0-1023
-	int sensor_wave = map(mozziAnalogRead(1),1020,0,0,3);
+	float sensor_value = map(mozziAnalogRead(0),1023,0,1,250); // value is 0-1023
+	
+	int sensor_wave = map(mozziAnalogRead(1),1023,500,1,0); // just picking the square and the saw 
+  
 	choosetable(sensor_wave);
-	aOscil.setFreq(sensor_value/10); // set the frequency straight from the sensor reading
+	
+	aOscil.setFreq(sensor_value/20); // set the frequency straight from the sensor reading
 
 }
 

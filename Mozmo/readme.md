@@ -4,6 +4,11 @@ MozMo : the brilliant arduino Mozzi synth in an eurorack hardware.
 
 Original hardware developer: Jean-Luc Deladriere 
 
+
+![Early Panel](https://raw.githubusercontent.com/deladriere/euro-modules/master/Mozmo/Img/side.jpg)
+
+
+
 #Features :
 - Arduino compatible with Usb connection
 - Powered via Doepfer 5v bus or via Usb (via jumper)
@@ -20,10 +25,10 @@ Original hardware developer: Jean-Luc Deladriere
 Hanabi 2006-2014. Except where otherwise noted, content on this site is licensed under a cc-by-sa 3.0 license.
 
 
-#corrections.todo
-- review bus power connector (from 16 pins to 10 pins)
-- add 5V regulated power 78L05
-- move C4 closer to ATmega328
-- Swap A1 & A0 on panel
-- change 470 nF cap to 5.08 package (cheaper)
-
+#Todo
+- [ ] review bus power connector (from 16 pins to 10 pins)
+- [ ] add 5V regulated power 78L05
+- [ ] move C4 closer to ATmega328
+- [ ] swap A1 & A0 on panel
+- [ ] change 470 nF cap to 5.08 package (cheaper)
+- [ ] add a DAC ?

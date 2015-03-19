@@ -5,7 +5,7 @@ MozMo : the brilliant arduino Mozzi synth in an eurorack hardware.
 Original hardware developer: Jean-Luc Deladriere 
 
 
-![Early Panel](https://raw.githubusercontent.com/deladriere/euro-modules/master/Mozmo/Img/side.jpg)
+![Early Panel](https://raw.githubusercontent.com/deladriere/euro-modules/master/Mozmo/Img/module.jpg)
 
 
 

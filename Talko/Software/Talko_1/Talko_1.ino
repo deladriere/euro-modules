@@ -205,6 +205,7 @@ uint8_t spCAUTION[]       PROGMEM = {0x02,0x48,0x69,0x4D,0x03,0x06,0xE8,0x34,0xA
 uint8_t spNUMBER[]        PROGMEM = {0x66,0xA9,0x12,0x72,0x42,0x9B,0x86,0xA5,0x1B,0x90,0x0E,0x6D,0x76,0xA6,0x26,0x2B,0xDC,0xA5,0xCF,0x6D,0x4F,0x95,0x4D,0xA5,0xBB,0x6E,0x5E,0x45,0x31,0x5E,0x65,0x92,0x66,0x14,0x45,0xAA,0xB4,0x98,0x9D,0x5A,0x84,0x2A,0x18,0xF6,0x92,0x74,0x43,0x3A,0xAD,0x5C,0x27,0xDD,0x6D,0x98,0xA3,0x09,0xF5,0x92,0xA4,0x65,0x4C,0x4D,0xA4,0x82,0x56,0x97,0x39,0x77,0xC7,0x68,0xF1,0x5D,0xD6,0xDC,0x1D,0x63,0xD4,0x4F,0xBE,0xC3,0x9D,0x53,0x81,0x4E,0xF3,0x89,0x9F,0xFF,0xDC,0x5F,0x66,0x92,0xB5,0x7A,0xFE,0x7F};
 uint8_t spMINUTES[]       PROGMEM = {0x61,0xCA,0xCC,0x38,0x5B,0x9A,0xE6,0xA9,0xB6,0xA7,0xEC,0x2A,0xC5,0xDD,0x17,0xDF,0xE2,0xE6,0x23,0x6B,0x16,0xC3,0x2D,0x92,0xCC,0x72,0xB5,0xD5,0xBA,0x86,0xD5,0xEC,0xB9,0x94,0xAD,0x98,0x90,0xF4,0x79,0x14,0xDE,0x8E,0x53,0x3C,0x63,0x23,0x02,0x45,0x28,0x77,0x11,0xD9,0x00,0x80,0x80,0xCF,0x58,0x05,0xF0,0x7B,0x99,0x04,0x38,0xC0,0x01,0x0A,0x50,0xE0,0xFF,0x01};
 uint8_t spSECONDS[]       PROGMEM = {0x04,0xF8,0xC5,0x51,0x01,0xBF,0xA6,0x6A,0x40,0x03,0x16,0xD0,0xC0,0xCA,0xAB,0x75,0x2D,0xCD,0x25,0x37,0xBB,0xD9,0xCA,0xDA,0x54,0x0F,0xEE,0xD9,0x29,0x6B,0x47,0x30,0xD8,0xE3,0x80,0x00,0x6A,0x26,0x6D,0x55,0xEB,0xCA,0x21,0xB9,0xE4,0xD4,0xDD,0x26,0xA5,0xF9,0xE3,0x3D,0xB6,0x75,0x38,0xA3,0x31,0x5B,0x9A,0xB6,0x11,0x51,0x32,0xD2,0xAA,0x3F,0xFC,0x21,0xCE,0x22,0xD1,0xD7,0x2D,0x9E,0x39,0x0B,0x37,0x4E,0xD7,0x26,0xE1,0xFA,0xC4,0x55,0x42,0xFD,0x85,0xFB,0x7B,0x77,0x13,0xA3,0x27,0x80,0x03,0xD0,0x25,0x20,0x01,0x0A,0x20,0x20,0x69,0xD6,0xFF,0x07};
+uint8_t spNEW[] PROGMEM = {0xA9,0x2F,0x12,0x27,0x44,0xDC,0xA6,0xA1,0x29,0x18,0x0F,0x4D,0x1C,0x86,0x24,0x78,0x45,0x34,0x75,0x1A,0xAA,0xC4,0x71,0xD5,0xD8,0xAD,0x2F,0x0A,0xDB,0xCD,0x62,0xAF,0xAE,0x1B,0x33,0x0A,0x7B,0xBC,0xEA,0x6E,0x4D,0x39,0xE4,0xC9,0xAA,0x9B,0x52,0x95,0x92,0xD5,0xAD,0xCD,0xDC,0xDC,0x4B,0x3E,0x95,0x21,0xCA,0x70,0x0F,0x7D,0x1D,0x16,0xA7,0x33,0xCA,0xE4,0x91,0xDB,0xBC,0x2C,0x0F,0xA7,0x2F,0xEE,0xF0,0xB2,0xDD,0x9D,0xD6,0xA8,0xCB,0xCB,0x71,0x73,0x5A,0x63,0x5E,0x2B,0x26,0x32,0xA8,0xAD,0xFA,0x9C,0x19,0x37,0x95,0xAC,0xE6,0xF7,0xBE,0xDC,0x55,0xD3,0x9A,0xDF,0xA9,0xF1,0x30,0x49,0x6A,0x7E,0xAF,0xDB,0x42,0x79,0x8D,0xF9,0x43,0x76,0x73,0x8A,0x35,0xFF,0x0F};
 
 
 
@@ -244,142 +245,142 @@ int letter;
 
 
 void sayNumber(long n)
-	{
+{
 	if(n<0)
 		{
-		voice.say(spM_MINUS);
-		sayNumber(-n);
+			voice.say(spM_MINUS);
+			sayNumber(-n);
 		}
 	else if(n==0)
 		{
-		voice.say(spM_ZERO);
+			voice.say(spM_ZERO);
 		}
 	else
 		{
-		if(n>=1000)
-			{
-			int thousands = n / 1000;
-			sayNumber(thousands);
-			voice.say(spM_THOUSAND);
-			n %= 1000;
-			if((n > 0) && (n<100)) voice.say(spM_AND);
-			}
-		if(n>=100)
-			{
-			int hundreds = n / 100;
-			sayNumber(hundreds);
-			voice.say(spM_HUNDRED);
-			n %= 100;
-			if(n > 0) voice.say(spM_AND);
-			}
-		if(n>19)
-			{
-			int tens = n / 10;
-			switch(tens)
+			if(n>=1000)
 				{
+					int thousands = n / 1000;
+					sayNumber(thousands);
+					voice.say(spM_THOUSAND);
+					n %= 1000;
+					if((n > 0) && (n<100)) voice.say(spM_AND);
+				}
+			if(n>=100)
+				{
+					int hundreds = n / 100;
+					sayNumber(hundreds);
+					voice.say(spM_HUNDRED);
+					n %= 100;
+					if(n > 0) voice.say(spM_AND);
+				}
+			if(n>19)
+				{
+					int tens = n / 10;
+					switch(tens)
+						{
+						case 2:
+							voice.say(spM_TWENTY);
+							break;
+						case 3:
+							voice.say(spM_THIR_);
+							voice.say(spM_T);
+							break;
+						case 4:
+							voice.say(spM_FOUR);
+							voice.say(spM_T);
+							break;
+						case 5:
+							voice.say(spM_FIF_);
+							voice.say(spM_T);
+							break;
+						case 6:
+							voice.say(spM_SIX);
+							voice.say(spM_T);
+							break;
+						case 7:
+							voice.say(spM_SEVEN);
+							voice.say(spM_T);
+							break;
+						case 8:
+							voice.say(spM_EIGHT);
+							voice.say(spM_T);
+							break;
+						case 9:
+							voice.say(spM_NINE);
+							voice.say(spM_T);
+							break;
+						}
+					n %= 10;
+				}
+			switch(n)
+				{
+				case 1:
+					voice.say(spM_ONE);
+					break;
 				case 2:
-					voice.say(spM_TWENTY);
+					voice.say(spM_TWO);
 					break;
 				case 3:
-					voice.say(spM_THIR_);
-					voice.say(spM_T);
+					voice.say(spM_THREE);
 					break;
 				case 4:
 					voice.say(spM_FOUR);
-					voice.say(spM_T);
 					break;
 				case 5:
-					voice.say(spM_FIF_);
-					voice.say(spM_T);
+					voice.say(spM_FIVE);
 					break;
 				case 6:
 					voice.say(spM_SIX);
-					voice.say(spM_T);
 					break;
 				case 7:
 					voice.say(spM_SEVEN);
-					voice.say(spM_T);
 					break;
 				case 8:
 					voice.say(spM_EIGHT);
-					voice.say(spM_T);
 					break;
 				case 9:
 					voice.say(spM_NINE);
-					voice.say(spM_T);
+					break;
+				case 10:
+					voice.say(spM_TEN);
+					break;
+				case 11:
+					voice.say(spM_ELEVEN);
+					break;
+				case 12:
+					voice.say(spM_TWELVE);
+					break;
+				case 13:
+					voice.say(spM_THIR_);
+					voice.say(spM__TEEN);
+					break;
+				case 14:
+					voice.say(spM_FOUR);
+					voice.say(spM__TEEN);
+					break;
+				case 15:
+					voice.say(spM_FIF_);
+					voice.say(spM__TEEN);
+					break;
+				case 16:
+					voice.say(spM_SIX);
+					voice.say(spM__TEEN);
+					break;
+				case 17:
+					voice.say(spM_SEVEN);
+					voice.say(spM__TEEN);
+					break;
+				case 18:
+					voice.say(spM_EIGHT);
+					voice.say(spM__TEEN);
+					break;
+				case 19:
+					voice.say(spM_NINE);
+					voice.say(spM__TEEN);
 					break;
 				}
-			n %= 10;
-			}
-		switch(n)
-			{
-			case 1:
-				voice.say(spM_ONE);
-				break;
-			case 2:
-				voice.say(spM_TWO);
-				break;
-			case 3:
-				voice.say(spM_THREE);
-				break;
-			case 4:
-				voice.say(spM_FOUR);
-				break;
-			case 5:
-				voice.say(spM_FIVE);
-				break;
-			case 6:
-				voice.say(spM_SIX);
-				break;
-			case 7:
-				voice.say(spM_SEVEN);
-				break;
-			case 8:
-				voice.say(spM_EIGHT);
-				break;
-			case 9:
-				voice.say(spM_NINE);
-				break;
-			case 10:
-				voice.say(spM_TEN);
-				break;
-			case 11:
-				voice.say(spM_ELEVEN);
-				break;
-			case 12:
-				voice.say(spM_TWELVE);
-				break;
-			case 13:
-				voice.say(spM_THIR_);
-				voice.say(spM__TEEN);
-				break;
-			case 14:
-				voice.say(spM_FOUR);
-				voice.say(spM__TEEN);
-				break;
-			case 15:
-				voice.say(spM_FIF_);
-				voice.say(spM__TEEN);
-				break;
-			case 16:
-				voice.say(spM_SIX);
-				voice.say(spM__TEEN);
-				break;
-			case 17:
-				voice.say(spM_SEVEN);
-				voice.say(spM__TEEN);
-				break;
-			case 18:
-				voice.say(spM_EIGHT);
-				voice.say(spM__TEEN);
-				break;
-			case 19:
-				voice.say(spM_NINE);
-				voice.say(spM__TEEN);
-				break;
-			}
 		}
-	}
+}
 
 
 
@@ -387,28 +388,28 @@ void sayNumber(long n)
 
 void sayNumberF(long n)
 
-	{
+{
 
 	if(n>19)
 		{
-		int tens = n / 10;
-		switch(tens)
-			{
-			case 2:
-				voice.say(spF_TWENTY);
-				break;
-			case 3:
-				voice.say(spF_THIRTY);
-				break;
-			case 4:
-				voice.say(spF_FOURTY);
-				break;
-			case 5:
-				voice.say(spF_FIFTY);
-				break;
+			int tens = n / 10;
+			switch(tens)
+				{
+				case 2:
+					voice.say(spF_TWENTY);
+					break;
+				case 3:
+					voice.say(spF_THIRTY);
+					break;
+				case 4:
+					voice.say(spF_FOURTY);
+					break;
+				case 5:
+					voice.say(spF_FIFTY);
+					break;
 
-			}
-		n %= 10;
+				}
+			n %= 10;
 		}
 	switch(n)
 		{
@@ -473,36 +474,36 @@ void sayNumberF(long n)
 			voice.say(spF_NINETEEN);
 			break;
 		}
-	}
+}
 
 
 
 void voltmeter()
-	{
+{
 	int voltage = analogRead(1) * 5.000 / 1.023;
 	sayNumber(voltage);
 	voice.say(spM_MILLI);
 	voice.say(spM_VOLTS);
-	}
+}
 
 void frequencemeter()
-	{
+{
 	int hertz = analogRead(1) * 5.000 / 1.023;
 	sayNumber(hertz);
 	voice.say(spM_HERTZ);
-	}
+}
 
 void frequencemeter2()
-	{
+{
 	int hertz;
 	//read frequency on A1
 	sayNumber(hertz);
 	voice.say(spM_HERTZ);
-	}
+}
 
 
 void nato(int letter)
-	{
+{
 
 	switch(letter)
 		{
@@ -587,10 +588,10 @@ void nato(int letter)
 			break;
 
 		}
-	}
+}
 
 void alphabet()
-	{
+{
 	int letter= map(analogRead(1),0,1023,1,26);
 	switch(letter)
 		{
@@ -675,13 +676,13 @@ void alphabet()
 			break;
 
 		}
-	}
+}
 
 
 
 
 void get_mode()
-	{
+{
 	/*
 	0: digits male voice
 	1: digitsfemale voice
@@ -698,26 +699,26 @@ void get_mode()
 	mode = map(analogRead(0),0,1010,0,19);
 	if(mode>=10)
 		{
-		digitalWrite(13,HIGH);
+			digitalWrite(13,HIGH);
 		}
 	else
 		{
-		digitalWrite(13,LOW);
+			digitalWrite(13,LOW);
 		}
 
 	display(mode % 10);
-	}
+}
 
 void display(int n)
-	{
+{
 	digitalWrite(LedD, ((n >> 3) & 1) ? HIGH : LOW);
 	digitalWrite(LedC, ((n >> 2) & 1) ? HIGH : LOW);
 	digitalWrite(LedB, ((n >> 1) & 1) ? HIGH : LOW);
 	digitalWrite(LedA, (n & 1) ? HIGH : LOW);
-	}
+}
 
 void setup()
-	{
+{
 
 	Serial.begin(9600);
 	//Serial.print(F_CPU);
@@ -743,23 +744,23 @@ void setup()
 
 	pinMode(TRIGGER, INPUT);
 
-	}
+}
 void digits()
-	{
+{
 	int n = map(analogRead(1),0,1000,0,9);
 	sayNumber(n);
-	}
+}
 
 void counter()
-	{
+{
 
 
 	reset = analogRead(1);// normal= A0
 
 	if((abs(reset-preset))>400)
 		{
-		count=0;
-		preset=reset;
+			count=0;
+			preset=reset;
 		}
 
 
@@ -767,52 +768,52 @@ void counter()
 	sayNumber(count);
 
 
-	}
+}
 
 void randomize()
-	{
+{
 
-	}
+}
 
 void nbradio()
 
-	{
+{
 
 	reset = analogRead(1);
 
 	if((abs(reset-preset))>400)
 		{
-		voice.say(spSEQUENCE);
-		delay(100);
-		voice.say(spNUMBER);
-		delay(500);
-		for(int i=0; i <3; i++)
-			{
-			nato(random(26));
+			voice.say(spSEQUENCE);
 			delay(100);
-			}
-		preset=reset;
-		delay(500);
+			voice.say(spNUMBER);
+			delay(500);
+			for(int i=0; i <3; i++)
+				{
+					nato(random(26));
+					delay(100);
+				}
+			preset=reset;
+			delay(500);
 		}
 
 	for(int i=0; i <= 3; i++)
 		{
-		sayNumber(random(9));
-		delay(100);
+			sayNumber(random(9));
+			delay(100);
 		}
 	delay(500);
-	}
+}
 
 void clock()
 
-	{
+{
 
 	reset = analogRead(1);// normal= A0
 
 	if((abs(reset-preset))>400)
 		{
-		setTime(0);
-		preset=reset;
+			setTime(0);
+			preset=reset;
 		}
 
 
@@ -820,27 +821,27 @@ void clock()
 	voice.say(spMINUTES);
 	sayNumber(second());
 	voice.say(spSECONDS);
-	
-	
 
-	}
+
+
+}
 
 void digitsF()
-	{
+{
 	int n = map(analogRead(1),0,1000,0,9);
 	sayNumberF(n);
-	}
+}
 
 void bigNumbers()
-	{
+{
 	long n = map(analogRead(1),0,1000,0,999999);
 	sayNumber(n);
-	}
+}
 
 
 
 void strange()
-	{
+{
 	int sound= map(analogRead(1),0,1023,1,4);
 	switch(sound)
 		{
@@ -858,11 +859,11 @@ void strange()
 			voice.say(spS_BLEEP2);
 			break;
 		}
-	}
+}
 
 
 void vocabulary()
-	{
+{
 	int sound= map(analogRead(1),0,1023,1,13);
 	switch(sound)
 		{
@@ -909,11 +910,11 @@ void vocabulary()
 
 
 		}
-	}
+}
 
 
 void loop()
-	{
+{
 	get_mode();
 	Serial.println(digitalRead(LOOP));
 
@@ -922,23 +923,23 @@ void loop()
 		{
 
 
-		if(speaking == true)
-			{
-			while(digitalRead(TRIGGER)==1);
-			delay(10); // debounce
-			speaking=false; // not sure why it work without this !
-			}
+			if(speaking == true)
+				{
+					while(digitalRead(TRIGGER)==1);
+					delay(10); // debounce
+					speaking=false; // not sure why it work without this !
+				}
 
 
 
-		do
-			{
-			get_mode();
+			do
+				{
+					get_mode();
 
-			}
+				}
 
-		while(digitalRead(TRIGGER)==0);
-		speaking = true;
+			while(digitalRead(TRIGGER)==0);
+			speaking = true;
 
 		}
 
@@ -995,7 +996,7 @@ void loop()
 
 
 		}
-	}
+}
 
 
 

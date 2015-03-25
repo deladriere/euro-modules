@@ -59,21 +59,25 @@ Change the speed of the voice
 Change the pitch of the voice
 
 ### Progress
-October 2014 
-- very early prototyping
-- breadboard version
 
 January 2015
 - first pcb version
 
+October 2014 
+- very early prototyping
+- breadboard version
+
+
+[Building the module](https://github.com/deladriere/euro-modules/wiki/Assemble-Talko)
+
+
 ### Todo
-* publish schematic @done(2014-12-30)
-* publish pcb @done(2014-12-30)
-* add picture of panel & pcb
-* merge library in main code 
-* add R/shottky in  with entries for protection @done(2014-11-30)
-* add mousers ref to each part (mouser cart : link)
-* Add female voice @done(2014-12-30)
+
+- [ ] add picture of panel & pcb
+- [ ] merge library in main code 
+- [ ] add mousers ref to each part (mouser cart : link)
+- [ ] test rotary encoder
+- [ ] update pcb to V1.1
 
 
 more info here : http://elek101.blogspot.be/2014/10/talkie-eurorack-module-part-1-concept.html
@@ -82,7 +86,7 @@ http://elek101.blogspot.be/2014/12/talkie-eurorack-module-part-2-schematic.html
 
 ####Licence
 
-Jean-Luc Deladrière, Hanabi SPRL 2006-2014.  
+Jean-Luc Deladrière, Hanabi SPRL 2006-2015.  
 Except where otherwise noted, content on this site is licensed under a cc-by-sa 3.0 license.
 
 

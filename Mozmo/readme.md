@@ -1,10 +1,14 @@
-MozMo : the brilliant arduino Mozzi synth in an eurorack hardware.
+MozMo : the brilliant arduino Mozzi synth in an eurorack hardware.  
+
+
 
 **Use Mozmo as bricks to build a complete modular synth**
 
 [Mozzi library](http://sensorium.github.io/Mozzi/) by Tim Barras
 
 Original hardware developer: Jean-Luc Deladriere 
+
+**Please use hardware version 1.0 for now.** (1.1 is under construction)  
 
 
 ![Early Panel](https://raw.githubusercontent.com/deladriere/euro-modules/master/Mozmo/Img/module.jpg)
@@ -24,8 +28,10 @@ Original hardware developer: Jean-Luc Deladriere
 
  
 
-Hanabi 2006-2015. Except where otherwise noted, content on this site is licensed under a cc-by-sa 3.0 license.
+Hanabi 2006-2015. Except where otherwise noted, content on this site is licensed under a cc-by-sa 3.0 license.  
 
+
+ 
 
 # Todo
 - [ ] review bus power connector (from 16 pins to 10 pins)

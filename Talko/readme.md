@@ -14,7 +14,7 @@ realiable to produce intelligible voice or ... not : your choice
 tempo aware via gate trigger
 
 ####Functions
-####Bank
+####Bank Pot
 For the moment I have added 4 sound banks :
 0: digits (from 0 to 9) male voice  
 1: digits (from 0 to 9) female voice  
@@ -24,37 +24,37 @@ For the moment I have added 4 sound banks :
 5: big numbers  
 6: voltmeter (reading the CV voltage)  
 7: frequencemeter (just saying "Hertz" instead of "Volts")  
-8: counter (each gate trigger increments the counter while any cv change resets it)
-9: number radio (each gate trigger a 4 number sequence while any cv trigger a new "transmission")
+8: counter (each gate trigger increments the counter while any cv change resets it)  
+9: number radio (each gate trigger a 4 number sequence while any cv trigger a new "transmission")  
 10: time since cv reset  (each gate triggers saying the time in minutes/seconds while any cv change resets the clock to zero)
 
 
 
-####CV
+####Sound jack & pot
 
 CV signal choose the words or phrases to be said
 
-####Gate
+####Gate jack
 
 Level high start the complete sound in trigger mode. (regardless of it's length)  
 If the trigger switch is off, the gate will start the sound and hold it as long as the gate level stays up. Very useful to create crazy rhythms.
 
 
-####Trigger
+####Trigger Switch
 
 Choose between trigger mode or loop mode
 In trigger mode the speech has the priority will complete before starting again on a new gate going high signal.  
 In loop mode the gate has the piority and the speech can be shopped by a low gate level or can be looped with a high gate level.  
 
-#####Bend
+#####Bend Switch
 
 If bend is on, the bend pot ... well, distords the sound.
 
-####Speed
+####Speed jack & pot
 
 Change the speed of the voice
 
-####Pitch
+####Pitch jack & pot
 
 Change the pitch of the voice
 

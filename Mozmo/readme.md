@@ -31,7 +31,7 @@ Original hardware developer: Jean-Luc Deladriere
 Hanabi 2006-2015. Except where otherwise noted, content on this site is licensed under a cc-by-sa 3.0 license.  
 
 
- 
+# Install [see this page](https://github.com/deladriere/euro-modules/wiki/install-mozmo) 
 
 # Todo
 - [ ] review bus power connector (from 16 pins to 10 pins)

@@ -25,7 +25,7 @@
 class Talkie
 {
 	public:
-		void say(uint8_t* address);
+		void say(const uint8_t* address);
 		uint8_t* ptrAddr;
 		uint8_t ptrBit;
 	private:

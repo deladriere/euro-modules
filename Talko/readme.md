@@ -60,6 +60,14 @@ Change the pitch of the voice
 
 ### Progress
 
+May 2015 : version 1.1
+
+- removed audio filter 
+- fix grounds errors
+- swap Pitch & Speed pots 
+- change switches 
+- increase LED resistors value
+
 January 2015
 - first pcb version
 

@@ -19447,22 +19447,22 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 </part>
 <part name="P+2" library="supply1" deviceset="+5V" device=""/>
 <part name="GND4" library="supply1" deviceset="GND" device=""/>
-<part name="RV1" library="SparkFun-Electromechanical" deviceset="POT" device="" value="10K">
+<part name="SOUND_POT" library="SparkFun-Electromechanical" deviceset="POT" device="" value="10K">
 <attribute name="OC_FARNELL" value="1769829"/>
 <attribute name="OC_MOUSER" value="688-RK09L1140A2U"/>
 </part>
-<part name="CV" library="thonkiconn" deviceset="THONKICONN" device="" value="J1"/>
-<part name="RV2" library="SparkFun-Electromechanical" deviceset="POT" device="" value="10K">
+<part name="SOUND" library="thonkiconn" deviceset="THONKICONN" device="" value="J1"/>
+<part name="PITCH_POT" library="SparkFun-Electromechanical" deviceset="POT" device="" value="10K">
 <attribute name="OC_FARNELL" value="1769829"/>
 <attribute name="OC_MOUSER" value="688-RK09L1140A2U"/>
 </part>
 <part name="PITCH" library="thonkiconn" deviceset="THONKICONN" device="" value="J2"/>
-<part name="RV3" library="SparkFun-Electromechanical" deviceset="POT" device="" value="10K">
+<part name="SPEED_POT" library="SparkFun-Electromechanical" deviceset="POT" device="" value="10K">
 <attribute name="OC_FARNELL" value="1769829"/>
 <attribute name="OC_MOUSER" value="688-RK09L1140A2U"/>
 </part>
 <part name="SPEED" library="thonkiconn" deviceset="THONKICONN" device="" value="J3"/>
-<part name="RV4" library="SparkFun-Electromechanical" deviceset="POT" device="" value="10K">
+<part name="BEND_POT" library="SparkFun-Electromechanical" deviceset="POT" device="" value="10K">
 <attribute name="OC_FARNELL" value="1769829"/>
 <attribute name="OC_MOUSER" value="688-RK09L1140A2U"/>
 </part>
@@ -19506,7 +19506,7 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <part name="R1" library="resistor" deviceset="R-US_" device="M0805" value="470R">
 <attribute name="OC_MOUSER" value="754-RR1220P-471D"/>
 </part>
-<part name="R3" library="resistor" deviceset="R-US_" device="M0805" value="4470R">
+<part name="R3" library="resistor" deviceset="R-US_" device="M0805" value="470R">
 <attribute name="OC_MOUSER" value="754-RR1220P-471D"/>
 </part>
 <part name="R4" library="resistor" deviceset="R-US_" device="M0805" value="470R">
@@ -19524,8 +19524,8 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <part name="R8" library="resistor" deviceset="R-US_" device="M0805" value="470R">
 <attribute name="OC_MOUSER" value="754-RR1220P-471D"/>
 </part>
-<part name="R9" library="resistor" deviceset="R-US_" device="M0805" value="390R">
-<attribute name="OC_MOUSER" value="754-RR1220P-391D"/>
+<part name="R9" library="resistor" deviceset="R-US_" device="M0805" value="470R">
+<attribute name="OC_MOUSER" value="754-RR1220P-471D"/>
 </part>
 <part name="IC5" library="SteveMarple" deviceset="MCP2200" device="" value="MCP2200">
 <attribute name="OC_FARNELL" value="1781148"/>
@@ -19662,22 +19662,22 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 </instance>
 <instance part="P+2" gate="1" x="190.5" y="205.74"/>
 <instance part="GND4" gate="1" x="182.88" y="177.8"/>
-<instance part="RV1" gate="G$1" x="182.88" y="160.02" rot="MR0">
+<instance part="SOUND_POT" gate="G$1" x="182.88" y="160.02" rot="MR0">
 <attribute name="OC_FARNELL" x="182.88" y="160.02" size="1.778" layer="96" rot="MR0" display="off"/>
 <attribute name="OC_MOUSER" x="182.88" y="160.02" size="1.778" layer="96" rot="MR0" display="off"/>
 </instance>
-<instance part="CV" gate="G$1" x="203.2" y="165.1"/>
-<instance part="RV2" gate="G$1" x="182.88" y="127" rot="MR0">
+<instance part="SOUND" gate="G$1" x="203.2" y="165.1"/>
+<instance part="PITCH_POT" gate="G$1" x="182.88" y="127" rot="MR0">
 <attribute name="OC_FARNELL" x="182.88" y="127" size="1.778" layer="96" rot="MR0" display="off"/>
 <attribute name="OC_MOUSER" x="182.88" y="127" size="1.778" layer="96" rot="MR0" display="off"/>
 </instance>
 <instance part="PITCH" gate="G$1" x="203.2" y="132.08"/>
-<instance part="RV3" gate="G$1" x="180.34" y="91.44" rot="MR0">
+<instance part="SPEED_POT" gate="G$1" x="180.34" y="91.44" rot="MR0">
 <attribute name="OC_FARNELL" x="180.34" y="91.44" size="1.778" layer="96" rot="MR0" display="off"/>
 <attribute name="OC_MOUSER" x="180.34" y="91.44" size="1.778" layer="96" rot="MR0" display="off"/>
 </instance>
 <instance part="SPEED" gate="G$1" x="203.2" y="96.52"/>
-<instance part="RV4" gate="G$1" x="182.88" y="55.88" rot="MR0">
+<instance part="BEND_POT" gate="G$1" x="182.88" y="55.88" rot="MR0">
 <attribute name="OC_FARNELL" x="182.88" y="55.88" size="1.778" layer="96" rot="MR0" display="off"/>
 <attribute name="OC_MOUSER" x="182.88" y="55.88" size="1.778" layer="96" rot="MR0" display="off"/>
 </instance>
@@ -19974,9 +19974,9 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <wire x1="193.04" y1="93.98" x2="193.04" y2="78.74" width="0.1524" layer="91"/>
 <junction x="193.04" y="93.98"/>
 <junction x="193.04" y="58.42"/>
-<pinref part="CV" gate="G$1" pin="5"/>
+<pinref part="SOUND" gate="G$1" pin="5"/>
 <junction x="198.12" y="162.56"/>
-<pinref part="RV1" gate="G$1" pin="A"/>
+<pinref part="SOUND_POT" gate="G$1" pin="A"/>
 <wire x1="193.04" y1="78.74" x2="193.04" y2="58.42" width="0.1524" layer="91"/>
 <wire x1="182.88" y1="152.4" x2="182.88" y2="147.32" width="0.1524" layer="91"/>
 <wire x1="182.88" y1="147.32" x2="193.04" y2="147.32" width="0.1524" layer="91"/>
@@ -19986,14 +19986,14 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <junction x="182.88" y="147.32"/>
 <wire x1="170.18" y1="116.84" x2="170.18" y2="114.3" width="0.1524" layer="91"/>
 <wire x1="170.18" y1="114.3" x2="182.88" y2="114.3" width="0.1524" layer="91"/>
-<pinref part="RV2" gate="G$1" pin="A"/>
+<pinref part="PITCH_POT" gate="G$1" pin="A"/>
 <wire x1="182.88" y1="119.38" x2="182.88" y2="114.3" width="0.1524" layer="91"/>
 <wire x1="182.88" y1="114.3" x2="193.04" y2="114.3" width="0.1524" layer="91"/>
 <junction x="182.88" y="114.3"/>
 <junction x="193.04" y="114.3"/>
 <wire x1="170.18" y1="81.28" x2="170.18" y2="78.74" width="0.1524" layer="91"/>
 <wire x1="170.18" y1="78.74" x2="180.34" y2="78.74" width="0.1524" layer="91"/>
-<pinref part="RV3" gate="G$1" pin="A"/>
+<pinref part="SPEED_POT" gate="G$1" pin="A"/>
 <wire x1="180.34" y1="78.74" x2="182.88" y2="78.74" width="0.1524" layer="91"/>
 <wire x1="180.34" y1="83.82" x2="180.34" y2="78.74" width="0.1524" layer="91"/>
 <junction x="180.34" y="78.74"/>
@@ -20003,7 +20003,7 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <wire x1="170.18" y1="43.18" x2="180.34" y2="43.18" width="0.1524" layer="91"/>
 <wire x1="180.34" y1="43.18" x2="182.88" y2="43.18" width="0.1524" layer="91"/>
 <junction x="193.04" y="43.18"/>
-<pinref part="RV4" gate="G$1" pin="A"/>
+<pinref part="BEND_POT" gate="G$1" pin="A"/>
 <wire x1="182.88" y1="43.18" x2="193.04" y2="43.18" width="0.1524" layer="91"/>
 <wire x1="182.88" y1="48.26" x2="182.88" y2="43.18" width="0.1524" layer="91"/>
 <junction x="182.88" y="43.18"/>
@@ -20361,7 +20361,7 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <pinref part="P+2" gate="1" pin="+5V"/>
 <wire x1="190.5" y1="198.12" x2="190.5" y2="203.2" width="0.1524" layer="91"/>
 <wire x1="190.5" y1="165.1" x2="198.12" y2="165.1" width="0.1524" layer="91"/>
-<pinref part="CV" gate="G$1" pin="4"/>
+<pinref part="SOUND" gate="G$1" pin="4"/>
 <wire x1="190.5" y1="165.1" x2="190.5" y2="172.72" width="0.1524" layer="91"/>
 <wire x1="190.5" y1="172.72" x2="190.5" y2="198.12" width="0.1524" layer="91"/>
 <wire x1="190.5" y1="132.08" x2="198.12" y2="132.08" width="0.1524" layer="91"/>
@@ -20648,29 +20648,29 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 </net>
 <net name="N$2" class="0">
 <segment>
-<pinref part="RV1" gate="G$1" pin="E"/>
-<pinref part="CV" gate="G$1" pin="3"/>
+<pinref part="SOUND_POT" gate="G$1" pin="E"/>
+<pinref part="SOUND" gate="G$1" pin="3"/>
 <wire x1="182.88" y1="167.64" x2="198.12" y2="167.64" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$5" class="0">
 <segment>
 <pinref part="PITCH" gate="G$1" pin="3"/>
-<pinref part="RV2" gate="G$1" pin="E"/>
+<pinref part="PITCH_POT" gate="G$1" pin="E"/>
 <wire x1="198.12" y1="134.62" x2="182.88" y2="134.62" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$7" class="0">
 <segment>
 <pinref part="SPEED" gate="G$1" pin="3"/>
-<pinref part="RV3" gate="G$1" pin="E"/>
+<pinref part="SPEED_POT" gate="G$1" pin="E"/>
 <wire x1="198.12" y1="99.06" x2="180.34" y2="99.06" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$36" class="0">
 <segment>
 <pinref part="BEND" gate="G$1" pin="3"/>
-<pinref part="RV4" gate="G$1" pin="E"/>
+<pinref part="BEND_POT" gate="G$1" pin="E"/>
 <wire x1="198.12" y1="63.5" x2="182.88" y2="63.5" width="0.1524" layer="91"/>
 </segment>
 </net>
@@ -20736,7 +20736,7 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 </net>
 <net name="N$9" class="0">
 <segment>
-<pinref part="RV1" gate="G$1" pin="S"/>
+<pinref part="SOUND_POT" gate="G$1" pin="S"/>
 <pinref part="D2" gate="-B1" pin="AC"/>
 <wire x1="172.72" y1="160.02" x2="177.8" y2="160.02" width="0.1524" layer="91"/>
 <wire x1="172.72" y1="160.02" x2="165.1" y2="160.02" width="0.1524" layer="91"/>
@@ -20750,7 +20750,7 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <wire x1="165.1" y1="127" x2="172.72" y2="127" width="0.1524" layer="91"/>
 <pinref part="D3" gate="-B1" pin="AC"/>
 <junction x="172.72" y="127"/>
-<pinref part="RV2" gate="G$1" pin="S"/>
+<pinref part="PITCH_POT" gate="G$1" pin="S"/>
 <pinref part="R15" gate="G$1" pin="1"/>
 </segment>
 </net>
@@ -20758,7 +20758,7 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <segment>
 <pinref part="D4" gate="-B1" pin="AC"/>
 <wire x1="172.72" y1="91.44" x2="175.26" y2="91.44" width="0.1524" layer="91"/>
-<pinref part="RV3" gate="G$1" pin="S"/>
+<pinref part="SPEED_POT" gate="G$1" pin="S"/>
 <pinref part="R16" gate="G$1" pin="1"/>
 <wire x1="165.1" y1="91.44" x2="172.72" y2="91.44" width="0.1524" layer="91"/>
 <junction x="172.72" y="91.44"/>
@@ -20774,7 +20774,7 @@ Standard adjustable voltage regulator but in SMD form. Spark Fun Electronics SKU
 <junction x="172.72" y="55.88"/>
 <wire x1="172.72" y1="55.88" x2="167.64" y2="55.88" width="0.1524" layer="91"/>
 <pinref part="R17" gate="G$1" pin="1"/>
-<pinref part="RV4" gate="G$1" pin="S"/>
+<pinref part="BEND_POT" gate="G$1" pin="S"/>
 <junction x="177.8" y="55.88"/>
 </segment>
 </net>

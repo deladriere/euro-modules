@@ -16,8 +16,8 @@
 //POTs
 #define VALUE 1
 #define MODE 0
-#define PITCH 3
-#define SPEED 2
+#define PITCH 2
+#define SPEED 3
 #define BENDING 4
 
 

@@ -2,7 +2,7 @@
 // Copyright 2011 Peter Knight
 // This code is released under GPLv2 license.
 //
-// Add 5 pots to A0,A1,A2,A3,A4 and temporary switch to D5
+// 
 // using 1.5.8 core
 
 
@@ -1143,6 +1143,3 @@ void loop()
 
 		}
 }
-
-
-

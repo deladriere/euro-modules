@@ -4,7 +4,7 @@
 This arduino based module works thanks to a clever library : Talkie from https://github.com/going-digital/Talkie 
 
 
-![Early Panel](https://raw.githubusercontent.com/deladriere/euro-modules/master/Talko/Img/panel.jpg)
+![Early Panel](https://raw.githubusercontent.com/deladriere/euro-modules/master/Talko/Img/TALKO_1_1.png)
 
 
 ####Intro 
@@ -26,8 +26,8 @@ For the moment I have added 4 sound banks :
 7: frequencemeter (just saying "Hertz" instead of "Volts")  
 8: counter (each gate trigger increments the counter while any cv change resets it)  
 9: number radio (each gate trigger a 4 number sequence while any cv trigger a new "transmission")  
-10: time since cv reset  (each gate triggers saying the time in minutes/seconds while any cv change resets the clock to zero)
-
+10: time since cv reset  (each gate triggers saying the time in minutes/seconds while any cv change resets the clock to zero)  
+11: Random vocabulary
 
 
 ####Sound jack & pot
@@ -60,6 +60,11 @@ Change the pitch of the voice
 
 ### Progress
 
+July 2015 : 
+
+- assembled pcb 1.1 with smd's
+- printed panel
+
 May 2015 : version 1.1
 
 - removed audio filter 
@@ -81,11 +86,7 @@ October 2014
 
 ### Todo
 
-- [ ] add picture of panel & pcb
-- [ ] merge library in main code 
-- [ ] add mousers ref to each part (mouser cart : link)
-- [ ] test rotary encoder
-- [ ] update pcb to V1.1
+- merge library in main code 
 
 
 more info here : http://elek101.blogspot.be/2014/10/talkie-eurorack-module-part-1-concept.html

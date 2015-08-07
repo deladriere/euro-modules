@@ -13,6 +13,13 @@ no sampling
 realiable to produce intelligible voice or ... not : your choice
 tempo aware via gate trigger
 
+#### Technical details
+
+format: eurorack
+width:	10hp
+depth: mm (“skiff friendly”)
+power: + 12V:  65 ma
+
 ####Functions
 ####Bank Pot
 For the moment I have added 4 sound banks :
@@ -81,7 +88,7 @@ October 2014
 - breadboard version
 
 
-[Building the module](https://github.com/deladriere/euro-modules/wiki/Assemble-Talko)
+### [Building the module](https://github.com/deladriere/euro-modules/wiki/Assemble-Talko)
 
 
 ### Todo

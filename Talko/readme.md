@@ -89,6 +89,7 @@ October 2014
 
 
 ### [Building the module](https://github.com/deladriere/euro-modules/wiki/Assemble-Talko)
+### [Uploading the code](https://github.com/deladriere/euro-modules/wiki/Install-Talko)
 
 
 ### Todo

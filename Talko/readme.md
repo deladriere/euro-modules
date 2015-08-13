@@ -3,6 +3,7 @@
 
 This arduino based module works thanks to a clever library : Talkie from https://github.com/going-digital/Talkie 
 
+Please note that building & coding this module requires minimum Arduino knowledge like installing a com port, installing libraries & uploading code
 
 ![Early Panel](https://raw.githubusercontent.com/deladriere/euro-modules/master/Talko/Img/TALKO_1_1.png)
 
@@ -10,7 +11,7 @@ This arduino based module works thanks to a clever library : Talkie from https:/
 ####Intro 
 Realtime lpc synthesis
 no sampling 
-realiable to produce intelligible voice or ... not : your choice
+reliable to produce intelligible voice or ... not : your choice
 tempo aware via gate trigger
 
 #### Technical details
@@ -19,6 +20,7 @@ format: eurorack
 width:	10hp
 depth: mm (“skiff friendly”)
 power: + 12V:  65 ma
+audio : un-filtered 5V PWM carrier at 62500 Hz 
 
 ####Functions
 ####Bank Pot
@@ -51,7 +53,7 @@ If the trigger switch is off, the gate will start the sound and hold it as long 
 
 Choose between trigger mode or loop mode
 In trigger mode the speech has the priority will complete before starting again on a new gate going high signal.  
-In loop mode the gate has the piority and the speech can be shopped by a low gate level or can be looped with a high gate level.  
+In loop mode the gate has the priority and the speech can be shopped by a low gate level or can be looped with a high gate level.  
 
 #####Bend Switch
 

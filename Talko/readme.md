@@ -8,21 +8,21 @@ Please note that building & coding this module requires minimum Arduino knowledg
 ![Early Panel](https://raw.githubusercontent.com/deladriere/euro-modules/master/Talko/Img/TALKO_1_1.png)
 
 
-####Intro 
+###Intro 
 Realtime lpc synthesis
 no sampling 
 reliable to produce intelligible voice or ... not : your choice
 tempo aware via gate trigger
 
-#### Technical details
+### Technical details
 
-format: eurorack
-width:	10hp
-depth: mm (“skiff friendly”)
-power: + 12V:  65 ma
-audio : un-filtered 5V PWM carrier at 62500 Hz 
+- format: eurorack
+- width:	10hp
+- depth: x mm (“skiff friendly”)
+- power: + 12V:  65 ma
+- audio : un-filtered 5V PWM carrier at 62500 Hz 
 
-####Functions
+###Functions
 ####Bank Pot
 For the moment I have added 4 sound banks :
 0: digits (from 0 to 9) male voice  
@@ -47,12 +47,14 @@ CV signal choose the words or phrases to be said
 
 Level high start the complete sound in trigger mode. (regardless of it's length)  
 If the trigger switch is off, the gate will start the sound and hold it as long as the gate level stays up. Very useful to create crazy rhythms.
+⚠️  It    needs a gate signal to produce any sound ! No gate= no sound
 
 
 ####Trigger Switch
 
-Choose between trigger mode or loop mode
-In trigger mode the speech has the priority will complete before starting again on a new gate going high signal.  
+Choose between trigger mode or loop mode.  
+In trigger mode the speech has the priority and will complete before starting again on the new signal gate going high.  
+⚠️ Changing Banks in trigger mode seems unresponsive because the change occurs only when the current speaking finishes.  
 In loop mode the gate has the priority and the speech can be shopped by a low gate level or can be looped with a high gate level.  
 
 #####Bend Switch

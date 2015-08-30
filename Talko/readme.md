@@ -5,6 +5,9 @@ This arduino based module works thanks to a clever library : Talkie from https:/
 
 Please note that building & coding this module requires minimum Arduino knowledge like installing a com port, installing libraries & uploading code
 
+Uploading the code on a Mac or in Ubuntu works fine
+Under Windows you may need to reset the board while uploading (Working on a fix)
+
 ![Early Panel](https://raw.githubusercontent.com/deladriere/euro-modules/master/Talko/Img/TALKO_1_1.png)
 
 
@@ -32,11 +35,14 @@ For the moment I have added 4 sound banks :
 4: vocabulary  
 5: big numbers  
 6: voltmeter (reading the CV voltage)  
-7: frequencemeter (just saying "Hertz" instead of "Volts")  
+7: frequency meter (just saying "Hertz" instead of "Volts")  
 8: counter (each gate trigger increments the counter while any cv change resets it)  
 9: number radio (each gate trigger a 4 number sequence while any cv trigger a new "transmission")  
 10: time since cv reset  (each gate triggers saying the time in minutes/seconds while any cv change resets the clock to zero)  
 11: Random vocabulary
+12: Sentences
+
+⚠️ Changing Banks in trigger mode seems unresponsive because the change occurs only when the current speaking finishes.  
 
 
 ####Sound jack & pot
@@ -47,14 +53,13 @@ CV signal choose the words or phrases to be said
 
 Level high start the complete sound in trigger mode. (regardless of it's length)  
 If the trigger switch is off, the gate will start the sound and hold it as long as the gate level stays up. Very useful to create crazy rhythms.
-⚠️  It    needs a gate signal to produce any sound ! No gate= no sound
+⚠️  It  needs a gate signal to produce any sound ! No gate= no sound
 
 
 ####Trigger Switch
 
 Choose between trigger mode or loop mode.  
 In trigger mode the speech has the priority and will complete before starting again on the new signal gate going high.  
-⚠️ Changing Banks in trigger mode seems unresponsive because the change occurs only when the current speaking finishes.  
 In loop mode the gate has the priority and the speech can be shopped by a low gate level or can be looped with a high gate level.  
 
 #####Bend Switch
@@ -96,9 +101,11 @@ October 2014
 ### [Uploading the code](https://github.com/deladriere/euro-modules/wiki/Install-Talko)
 
 
-### Todo
+### Todo version 1.2
 
-- merge library in main code 
+- rotate pots (Sound Pitch Speed Bend) 
+- use FTDI chip for serial
+- add reset button ?
 
 
 more info here : http://elek101.blogspot.be/2014/10/talkie-eurorack-module-part-1-concept.html

@@ -224,7 +224,7 @@ void Talkie::say(const uint8_t *addr)
 					synthK8 = tmsK8[getBits(3)];
 					synthK9 = tmsK9[getBits(3)];
 					synthK10 = tmsK10[getBits(3)];
-					if(digitalRead(BEND)==1)  /// sorry guys bending the neck here !
+					if(digitalRead(BEND)==0)  /// sorry guys bending the neck here !
 						{
 						synthK5= map(analogRead(BENDING),20,1000,0,110);
 						synthK10= map(analogRead(BENDING),20,1000,110,0);

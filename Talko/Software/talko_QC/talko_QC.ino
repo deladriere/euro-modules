@@ -173,7 +173,7 @@ void loop() {
    count = map(analogRead(0),-100,1000,0,9);
    
   Display(count);  // Displays the current count value
-  delay(200);        // delay in between reads for stability
+  delay(100);        // delay in between reads for stability
 
    int voltage = analogRead(1) * 5.000 / 1.023;
  

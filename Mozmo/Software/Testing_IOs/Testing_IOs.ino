@@ -19,6 +19,7 @@ void setup() {
   // initialize serial communication at 9600 bits per second:
   Serial.begin(9600);
   pinMode(4, INPUT_PULLUP);  
+  pinMode(5, INPUT_PULLUP);  
 
    // set up the ADC
   ADCSRA &= ~PS_128;  // remove bits set by Arduino library

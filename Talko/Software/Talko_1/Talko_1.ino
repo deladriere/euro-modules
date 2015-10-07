@@ -903,7 +903,7 @@ void digitsF()
 }
 
 void bigNumbers()
-{	long n = map(analogRead(1),0,1000,0,999999);
+{	long n = map(analogRead(1),0,1023,0,999);
 	sayNumber(n);
 }
 

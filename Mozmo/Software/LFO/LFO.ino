@@ -3,7 +3,7 @@
     
         Knob A0: Frequency
         Knob A1: Waveform
-        CV A2: VCO CVin
+        CV A2: Not used
         CV 13: Not used
         Gate: Not used
         OUTPUT : LFO out

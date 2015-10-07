@@ -2,13 +2,13 @@
 // original code by Peter Knigth
 // https://code.google.com/p/tinkerit/wiki/Cantarino
 
+// Sound = vowels
 // Pitch = pitch
-// Speed = Static frames
-// Bend =  Transition frames
+// Speed = not used yet
+
+// Bend =  Transition frames (turn left to have continuous sound)
 
 
-//todo: mode use
-//todo: sound= choose allophone
 
 
 #include <avr/io.h>
@@ -155,7 +155,7 @@ void setup() {
   pinMode(PWM_PIN,OUTPUT);
   audioOn();
   display( 15); // Blank display
-
+ Serial.begin(9600);
   
 
   
@@ -216,6 +216,8 @@ const uint8_t formantTable[] PROGMEM = {
    0x6,0x54,0x5e,0x0,0xa,0x5,0x0,/*76 KXb*/    0x6,0x54,0x5e,0x0,0x0,0x0,0x0 /*77 KXc*/
 };
 
+int vowels[19]
+{5,6,7,8,9,10,11,12,13,14,16,17,21,48,49,50,51,52,53,};
 uint16_t pitchTable[64] = {
   // Covers A1 to C7
   58,61,65,69,73,77,82,86,92,97,
@@ -234,8 +236,9 @@ const uint8_t frameList[] PROGMEM = {
 #if 1
    
  
-   _AA,20,5,20,
 
+ _OH,20,5,20,
+ _AH,20,5,20,
    
    
 
@@ -251,6 +254,7 @@ void loop() {
 
   formantScale = 54;//random(20,80);//54;
  const uint8_t *framePos = frameList;
+ 
   while(1) {
    //  digitalWrite(LED_PIN,digitalRead(2)); dot led with gate
     int n;
@@ -261,7 +265,7 @@ void loop() {
     uint8_t startForm1Amp,startForm2Amp,startForm3Amp;
     uint8_t startMod;
     const uint8_t *formantPos;
-
+   
     // Read next framelist item
     startFormant = pgm_read_byte(framePos++);
     staticFrames = pgm_read_byte(framePos++);
@@ -273,9 +277,10 @@ void loop() {
     
 
     startPitch = pitchTable[pgm_read_byte(framePos++)];
-    nextFormant = pgm_read_byte(framePos);
+    //nextFormant = pgm_read_byte(framePos);
     nextPitch = pitchTable[pgm_read_byte(framePos+3)];
-   
+   startFormant= vowels[map( analogRead(1), 0,1024,0,18 )];
+   Serial.println(startFormant);
  
    pitchPhaseInc = startPitch;
    // pitchPhaseInc = analogRead(0);

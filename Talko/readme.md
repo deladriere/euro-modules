@@ -5,9 +5,6 @@ This arduino based module works thanks to a clever library : Talkie from https:/
 
 Please note that building & coding this module requires minimum Arduino knowledge like installing a com port, installing libraries & uploading code
 
-Uploading the code on a Mac or in Ubuntu works fine
-Under Windows you may need to reset the board while uploading (Working on a fix)
-
 ![Early Panel](https://raw.githubusercontent.com/deladriere/euro-modules/master/Talko/Img/TALKO_1_1.png)
 
 

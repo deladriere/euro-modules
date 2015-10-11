@@ -1,9 +1,10 @@
 ##Arduino based Talkie Eurorack Module 
-**Have your modular speak out the CV**  
+
+**" Have your modular speak out the CV "**  
 
 This arduino based module works thanks to a clever library : Talkie from https://github.com/going-digital/Talkie 
 
-Please note that building & coding this module requires minimum Arduino knowledge like installing a com port, installing libraries & uploading code
+Please note that building & coding this module requires minimum Arduino knowledge like installing a com port, installing libraries & uploading code.
 
 ![Early Panel](https://raw.githubusercontent.com/deladriere/euro-modules/master/Talko/Img/TALKO_1_1.png)
 
@@ -18,16 +19,17 @@ tempo aware via gate trigger
 
 - format: eurorack
 - width:	10hp
-- depth: x mm (“skiff friendly”)
+- depth: 30 mm (“skiff friendly”)
 - power: + 12V:  65 ma
 - audio : un-filtered 5V PWM carrier at 62500 Hz 
 
 ###Functions
 ####Bank Pot
-For the moment I have added 4 sound banks :
-0: digits (from 0 to 9) male voice  
+For the moment I have added 12 sound banks :  
+
+0: digits (from 0 to 9) male voice   
 1: digits (from 0 to 9) female voice  
-2: Spell the alphabet  
+2: spell the alphabet  
 3: nato alphabet  
 4: vocabulary  
 5: big numbers  
@@ -36,8 +38,20 @@ For the moment I have added 4 sound banks :
 8: counter (each gate trigger increments the counter while any cv change resets it)  
 9: number radio (each gate trigger a 4 number sequence while any cv trigger a new "transmission")  
 10: time since cv reset  (each gate triggers saying the time in minutes/seconds while any cv change resets the clock to zero)  
-11: Random vocabulary
-12: Sentences
+11: Random vocabulary  
+12: Sentences :  
+
+> s0 : set the control for the start of the one   
+> S1: C time slow  
+> S2: start the fire  
+> S3: smoke the circuit  
+> S4: turn past the time  
+> S5: stop the machine  
+> S6: too_low for you  
+> S7: fire and ice  
+> S8: heavy machine  
+> S9: new ground circuit  
+> S10: repair the machine 
 
 ⚠️ Changing Banks in trigger mode seems unresponsive because the change occurs only when the current speaking finishes.  
 

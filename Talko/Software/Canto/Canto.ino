@@ -1,6 +1,15 @@
+//   ######   #######  ########  ##    ## ########  ####  ######   ##     ## ######## 
+//  ##    ## ##     ## ##     ##  ##  ##  ##     ##  ##  ##    ##  ##     ##    ##    
+//  ##       ##     ## ##     ##   ####   ##     ##  ##  ##        ##     ##    ##    
+//  ##       ##     ## ########     ##    ########   ##  ##   #### #########    ##    
+//  ##       ##     ## ##           ##    ##   ##    ##  ##    ##  ##     ##    ##    
+//  ##    ## ##     ## ##           ##    ##    ##   ##  ##    ##  ##     ##    ##    
+//   ######   #######  ##           ##    ##     ## ####  ######   ##     ##    ##    
+
 // Formant Synthesiser
 // original code by Peter Knigth
 // https://code.google.com/p/tinkerit/wiki/Cantarino
+// Modified by Jean-Luc Deladrière for the Talko modular Synth
 
 // Sound = vowels
 // Pitch = pitch
@@ -9,6 +18,20 @@
 // Bend =  Transition frames (turn left to have continuous sound)
 
 
+
+
+
+
+
+
+//   ######   ##        #######  ########     ###    ##       
+//  ##    ##  ##       ##     ## ##     ##   ## ##   ##       
+//  ##        ##       ##     ## ##     ##  ##   ##  ##       
+//  ##   #### ##       ##     ## ########  ##     ## ##       
+//  ##    ##  ##       ##     ## ##     ## ######### ##       
+//  ##    ##  ##       ##     ## ##     ## ##     ## ##       
+//   ######   ########  #######  ########  ##     ## ######## 
+  
 
 
 #include <avr/io.h>
@@ -124,22 +147,15 @@ const int8_t sqrCalc[256] PROGMEM ={
 #define PWM_INTERRUPT TIMER2_OVF_vect
 #endif
 
-void audioOn() {
-#if defined(__AVR_ATmega8__)
-  // ATmega8 has different registers
-  TCCR2 = _BV(WGM20) | _BV(COM21) | _BV(CS20);
-  TIMSK = _BV(TOIE2);
-#elif defined(__AVR_ATmega1280__)
-  TCCR3A = _BV(COM3C1) | _BV(WGM30);
-  TCCR3B = _BV(CS30);
-  TIMSK3 = _BV(TOIE3);
-#else
-  // Set up PWM to 31.25kHz, phase accurate
-  TCCR2A = _BV(COM2B1) | _BV(WGM20);
-  TCCR2B = _BV(CS20);
-  TIMSK2 = _BV(TOIE2);
-#endif
-}
+
+
+//   ######  ######## ######## ##     ## ########  
+//  ##    ## ##          ##    ##     ## ##     ## 
+//  ##       ##          ##    ##     ## ##     ## 
+//   ######  ######      ##    ##     ## ########  
+//        ## ##          ##    ##     ## ##        
+//  ##    ## ##          ##    ##     ## ##        
+//   ######  ########    ##     #######  ##        
 
 
 void setup() {
@@ -250,12 +266,22 @@ int frameTime = 15; // ms
 uint16_t basePitch;
 int formantScale;
 
+//  ##        #######   #######  ########  
+//  ##       ##     ## ##     ## ##     ## 
+//  ##       ##     ## ##     ## ##     ## 
+//  ##       ##     ## ##     ## ########  
+//  ##       ##     ## ##     ## ##        
+//  ##       ##     ## ##     ## ##        
+//  ########  #######   #######  ##        
+
+
 void loop() {
 
   formantScale = 54;//random(20,80);//54;
  const uint8_t *framePos = frameList;
  
   while(1) {
+    
    //  digitalWrite(LED_PIN,digitalRead(2)); dot led with gate
     int n;
     uint8_t startFormant,staticFrames,tweenFrames;
@@ -271,7 +297,7 @@ void loop() {
     staticFrames = pgm_read_byte(framePos++);
 
    // if (!staticFrames) break; // End of phrase
-      if (digitalRead(2)==0) break; // End of phrase
+     if (digitalRead(2)==0) break; // End of phrase
    
     tweenFrames = pgm_read_byte(framePos++);
     
@@ -279,12 +305,17 @@ void loop() {
     startPitch = pitchTable[pgm_read_byte(framePos++)];
     //nextFormant = pgm_read_byte(framePos);
     nextPitch = pitchTable[pgm_read_byte(framePos+3)];
-   startFormant= vowels[map( analogRead(1), 0,1024,0,18 )];
-   Serial.println(startFormant);
+ 
+   
+   //Serial.println(startFormant);
  
    pitchPhaseInc = startPitch;
    // pitchPhaseInc = analogRead(0);
-   pitchPhaseInc = pitchTable[ map( analogRead(2), 0,1024,0,64 ) ]; 
+     do { // deplacer si besoin
+      startFormant= vowels[map( analogRead(1), 0,1024,0,18 )];
+
+  pitchPhaseInc = pitchTable[ map( analogRead(2), 0,1024,0,64 ) ]; 
+  // pitchPhaseInc =map( analogRead(2), 0,1024,50,2200 ) ; 
     formantPos = formantTable + startFormant * FORMANT_SZ;
     form1PhaseInc = startForm1PhaseInc = pgm_read_byte(formantPos++)*formantScale;
     form2PhaseInc = startForm2PhaseInc = pgm_read_byte(formantPos++)*formantScale;
@@ -295,10 +326,15 @@ void loop() {
     noiseMod = startMod = pgm_read_byte(formantPos++);
 
     
-    for (;staticFrames--;)
-    {
+   // for (;staticFrames--;)
+   // {
+
+  }
     while(digitalRead(2));
-    }
+    
+   // }
+   tweenFrames=map( analogRead(4), 0,1024,0,10);
+   tweenFrames=10;
     if (tweenFrames) {
       const uint8_t* formantPos;
       int16_t deltaForm1PhaseInc,deltaForm2PhaseInc,deltaForm3PhaseInc;
@@ -306,7 +342,7 @@ void loop() {
       int8_t deltaMod;
       uint8_t nextMod;
       int16_t deltaPitch;
-      tweenFrames--;
+     // tweenFrames--;
       formantPos = formantTable + nextFormant * FORMANT_SZ;
       deltaForm1PhaseInc = pgm_read_byte(formantPos++)*formantScale - startForm1PhaseInc;
       deltaForm2PhaseInc = pgm_read_byte(formantPos++)*formantScale - startForm2PhaseInc;
@@ -318,7 +354,7 @@ void loop() {
       deltaPitch = nextPitch - startPitch;
  
       deltaMod = nextMod - startMod;
-    tweenFrames=map( analogRead(4), 0,1024,0,10);
+    
         
       for (int i=1; i<=tweenFrames; i++) {
         form1PhaseInc = startForm1PhaseInc + (i*deltaForm1PhaseInc)/tweenFrames;
@@ -361,6 +397,30 @@ SIGNAL(PWM_INTERRUPT)
   PWM_VALUE = value + 0x80;
 }
 
+//  ########   #######  ##     ## ######## #### ##    ## ########  ######  
+//  ##     ## ##     ## ##     ##    ##     ##  ###   ## ##       ##    ## 
+//  ##     ## ##     ## ##     ##    ##     ##  ####  ## ##       ##       
+//  ########  ##     ## ##     ##    ##     ##  ## ## ## ######    ######  
+//  ##   ##   ##     ## ##     ##    ##     ##  ##  #### ##             ## 
+//  ##    ##  ##     ## ##     ##    ##     ##  ##   ### ##       ##    ## 
+//  ##     ##  #######   #######     ##    #### ##    ## ########  ######  
+
+void audioOn() {
+#if defined(__AVR_ATmega8__)
+  // ATmega8 has different registers
+  TCCR2 = _BV(WGM20) | _BV(COM21) | _BV(CS20);
+  TIMSK = _BV(TOIE2);
+#elif defined(__AVR_ATmega1280__)
+  TCCR3A = _BV(COM3C1) | _BV(WGM30);
+  TCCR3B = _BV(CS30);
+  TIMSK3 = _BV(TOIE3);
+#else
+  // Set up PWM to 31.25kHz, phase accurate
+  TCCR2A = _BV(COM2B1) | _BV(WGM20);
+  TCCR2B = _BV(CS20);
+  TIMSK2 = _BV(TOIE2);
+#endif
+}
 
 void display(int n)
 {	digitalWrite(LedD, ((n >> 3) & 1) ? HIGH : LOW);

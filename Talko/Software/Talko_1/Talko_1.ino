@@ -699,7 +699,7 @@ void get_mode()
 	12: sentences
 	*/
 
-	mode = map(analogRead(0),0,1010,0,19);
+	mode = map(analogRead(0),0,1010,0,12);
 	if(mode>=10)
 	{	digitalWrite(13,HIGH);
 	}
@@ -744,6 +744,7 @@ void setup()
 
 	pinMode(TRIGGER, INPUT);
 
+attachInterrupt(0, get_mode, RISING);
 
 }
 void digits()

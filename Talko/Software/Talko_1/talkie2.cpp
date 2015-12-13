@@ -114,13 +114,7 @@ void Talkie::say(const uint8_t *addr)
 	{
 	uint8_t energy;
 
-	// besoin de ceci ?
 
-	//if(digitalRead(LOOP)==1)
-	//	{
-	//	if(digitalRead(TRIGGER)==0) return;
-	//
-	//	}
 
 	if(!setup)
 		{
@@ -169,7 +163,7 @@ void Talkie::say(const uint8_t *addr)
 		//if (digitalRead(7)==0) energy=0xf; ok comme reset
 		// TRIGGER HACK
 
-		if(digitalRead(LOOP)==1) // check for O/S mode
+		if(digitalRead(LOOP)==0) // check for O/S mode
 			{
 			if(digitalRead(TRIGGER)==0)
 				{
@@ -240,7 +234,7 @@ void Talkie::say(const uint8_t *addr)
 		}
 	while(energy != 0xf);
 	// better handling of silence
-	if(digitalRead(LOOP)==1)
+	if(digitalRead(LOOP)==0)
 	{
 	while(digitalRead(TRIGGER)==0);
 	}

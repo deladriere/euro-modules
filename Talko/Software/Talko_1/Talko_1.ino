@@ -1126,7 +1126,7 @@ void loop()
 
 	Serial.println(digitalRead(LOOP));
 
-	if(digitalRead(LOOP)==0) // 1=loop mode - 0 = phrase mode
+	if(digitalRead(LOOP)==1) // 0= gated "loop" mode - 1 = speech mode
 
 	{
 

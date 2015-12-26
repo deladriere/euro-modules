@@ -18,6 +18,7 @@ const int LedD = 12;
 
 int count = 0;
 
+volatile int state = LOW;
 
 
 Talkie voice;
@@ -63,17 +64,15 @@ void setup() {
   pinMode(LedD, OUTPUT);
   pinMode(13, OUTPUT);
 
+attachInterrupt(0, blink, CHANGE);
 
 
+}
 
-   // set up the ADC
-  ADCSRA &= ~PS_128;  // remove bits set by Arduino library
 
-  // you can choose a prescaler from above.
-  // PS_16, PS_32, PS_64 or PS_128
-  ADCSRA |= PS_128;    // set our own prescaler to 64 
-
-  
+void blink() {
+    state = !state;
+     digitalWrite(13, state);
 }
 
 void Display(int n)
@@ -147,7 +146,7 @@ void sayNumber(long n) {
 // the loop routine runs over and over again forever:
 void loop() {
   // read the input on analog pin 0:
-  
+ 
   // print out the value you read:
   Serial.print(analogRead(A0));
   Serial.print("  ");
@@ -169,7 +168,7 @@ void loop() {
   Serial.print(digitalRead(5));
   Serial.println("  ");
 
-  digitalWrite(13,digitalRead(2));
+ 
    count = map(analogRead(0),-100,1000,0,9);
    
   Display(count);  // Displays the current count value

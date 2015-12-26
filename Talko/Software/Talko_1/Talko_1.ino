@@ -844,7 +844,7 @@ void get_mode()
 	14: French digits
 	*/
 
-	mode = map(analogRead(0),0,1010,0,14);
+	mode = map(analogRead(0),0,1010,0,13);
 
 	if(mode>=10)
 		{

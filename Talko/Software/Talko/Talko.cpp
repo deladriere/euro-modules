@@ -9,7 +9,7 @@
 #include <avr/io.h>
 #include "WProgram.h"
 #endif
-#include "talkie2.h"
+#include "Talko.h"
 
 
 
@@ -315,4 +315,3 @@ ISR(TIMER1_COMPA_vect)
 
 	nextPwm = (u0>>2)+0x80;
 	}
-

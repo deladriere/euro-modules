@@ -882,6 +882,9 @@ void display(int n)
 void setup()
 	{
 
+	//Serial.begin(9600);
+	
+  
 	// http://www.microsmart.co.za/technical/2014/03/01/advanced-arduino-adc/
 	// set up the ADC
 	ADCSRA &= ~PS_128;  // remove bits set by Arduino library
@@ -905,6 +908,8 @@ void setup()
 	pinMode(TRIGGER, INPUT);
 
 	attachInterrupt(0, get_mode, RISING);
+
+
 
 	}
 void digits()
@@ -1346,14 +1351,18 @@ void loop()
 
 
 
-	if(digitalRead(LOOP)==1) // 0= gated "loop" mode - 1 = speech mode
+	
+
+	//if(digitalRead(LOOP)==1) // 0= gated "loop" mode - 1 = speech mode
+  if((PIND & B10000) >> 4 ) // 0= gated "loop" mode - 1 = speech mode faster then digitalRead(LOOP)==1)
 
 		{
 
 
 		if(speaking == true)
 			{
-			while(digitalRead(TRIGGER)==1);
+			//while(digitalRead(TRIGGER)==1);
+     while((PIND & B100) >> 2 ); //faster digitalRead(TRIGGER)==1
 
 			delay(10); // debounce
 			speaking=false; // not sure why it work without this !

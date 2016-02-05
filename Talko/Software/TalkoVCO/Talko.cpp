@@ -203,7 +203,7 @@ void Talkie::say(const uint8_t *addr)
 			synthEnergy = tmsEnergy[energy];
 			repeat = getBits(1);
 			synthPeriod = tmsPeriod[getBits(6)];
-		
+
 
 			if(digitalRead(LOOP)==0 && digitalRead(BEND)==0 && repeat && synthPeriod>0) // speedup gigital read
 				{
@@ -211,13 +211,16 @@ void Talkie::say(const uint8_t *addr)
 				do
 					{
 					synthPeriod= map(analogRead(BENDING),0,1023,63,0); // check value max ! (63 0x3F)
+
+					if(synthPeriod == 0) synthEnergy=map(analogRead(SPEED),0,1023,15,0);//?? whynot working for voiced
+			
+         
 					}
 
 				//while((PIND & B100) == B100 ); // While gate is high (faster than digitalRead(TRIGGER)==1)
 				while((PIND & B100) >> 2);  // While gate is high (faster than digitalRead(TRIGGER)==1)
 
 				}
-
 
 
 			// A repeat frame uses the last coefficients
@@ -253,8 +256,11 @@ void Talkie::say(const uint8_t *addr)
 
 		int speed = analogRead(SPEED);
 		speed = map(speed, 0, 1023, 100, 0); //200
-		//	if(digitalRead(LOOP)==1)delay(speed); 10 janvier
+
+		if(digitalRead(LOOP)==0 && digitalRead(BEND)==0) { speed=0; } // no delay in VCO mode
+
 		delay(speed); // was
+
 		}
 	while(energy != 0xf);
 

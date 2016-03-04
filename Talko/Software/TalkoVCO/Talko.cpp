@@ -210,8 +210,11 @@ void Talkie::say(const uint8_t *addr)
 
 				do
 					{
-					synthPeriod= map(analogRead(BENDING),0,1023,63,0); // check value max ! (63 0x3F)
+          
+					synthPeriod= map(analogRead(BENDING),0,1023,63,1); // check value max ! (63 0x3F)
 
+           if (analogRead(BENDING)==0)synthPeriod=0; // cheating to have  more fun with the knob because 0 is on the other side of the scale (pitch to high there)
+           
 					if(synthPeriod == 0) synthEnergy=map(analogRead(SPEED),0,1023,15,0);//?? whynot working for voiced
 			
          
@@ -266,9 +269,9 @@ void Talkie::say(const uint8_t *addr)
 
 	//better handling of silence
 
-	if(digitalRead(LOOP)==0)
+	if((PIND & B10000) ==0) // faster then digitalRead(LOOP)==0
 		{
-		while(digitalRead(TRIGGER)==0);
+		while((PIND & B100) == 0); // faster than  digitalRead(TRIGGER)==0
 		}
 
 	}

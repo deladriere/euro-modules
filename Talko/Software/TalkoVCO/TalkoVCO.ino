@@ -1354,7 +1354,7 @@ void loop()
 	
 
 	//if(digitalRead(LOOP)==1) // 0= gated "loop" mode - 1 = speech mode
-  if((PIND & B10000) >> 4 ) // 0= gated "loop" mode - 1 = speech mode faster then digitalRead(LOOP)==1)
+  if((PIND & B10000) >> 4 ) //  faster then digitalRead(LOOP)==1)
 
 		{
 

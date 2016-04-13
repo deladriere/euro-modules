@@ -8,7 +8,7 @@
         24-nov.-2014 Jean-Luc Deladriere remplaced event delay by gate triggering & added Attack & Decay control via Control Knob
         Knob A0: Attack duration
         Knob A1: Decay duration
-        CV A2: Not used
+        CV A2: Pitch
         CV A3: Not used
         Gate: Trigger sound
 

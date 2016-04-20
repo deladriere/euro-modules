@@ -4,7 +4,7 @@
 // Jean-Luc Deladrière
 // version 1.2
 
-#include "Talko.h"
+#include "Talko1_2.h"
 #include <Time.h>
 #include <EnableInterrupt.h>
 
@@ -274,7 +274,7 @@ const uint8_t spU_FR[] PROGMEM = {0x00,0xd0,0xcc,0x2c,0x58,0xa6,0x2b,0xf0,0x31,0
 #define  LedD 12
 
 int bank=0;
-int mode=0;
+
 boolean speaking = false;
 int count=0;
 int reset;
@@ -1390,14 +1390,14 @@ void loop()
 	{
 //mode = digitalRead(PIN_SPEECH)<<1  + digitalRead(PIN_VCO);
 
-mode =  (PIND & B100000)>>4;
-mode += (PINB & B1);
+voice.mode =  (PIND & B100000)>>4;
+voice.mode += (PINB & B1);
 
 Serial.print("mode : ");
-Serial.println(mode);
+Serial.println(voice.mode);
 
 
-  if(mode==MODE_SPEECH) // 1 = VCO  ; 2= SPEECH ; 3= REPEAT
+  if(voice.mode==MODE_SPEECH) // 1 = VCO  ; 2= SPEECH ; 3= REPEAT
 
     {
    

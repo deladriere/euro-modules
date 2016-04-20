@@ -210,14 +210,14 @@ void Talkie::say(const uint8_t *addr)
 
 				do
 					{
-          
+
 					synthPeriod= map(analogRead(BENDING),0,1023,63,1); // check value max ! (63 0x3F)
 
            if (analogRead(BENDING)==0)synthPeriod=0; // cheating to have  more fun with the knob because 0 is on the other side of the scale (pitch to high there)
-           
+
 					if(synthPeriod == 0) synthEnergy=map(analogRead(SPEED),0,1023,15,0);//?? whynot working for voiced
-			
-         
+
+
 					}
 
 				//while((PIND & B100) == B100 ); // While gate is high (faster than digitalRead(TRIGGER)==1)
@@ -340,7 +340,6 @@ ISR(TIMER1_COMPA_vect)
 
 	// Output clamp
 	if(u0 > 511) { u0 = 511; }
-
 	if(u0 < -512) { u0 = -512; }
 
 

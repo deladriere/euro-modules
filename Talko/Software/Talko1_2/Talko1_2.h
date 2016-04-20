@@ -26,12 +26,14 @@
 #define MODE_REPEAT 3
 
 
+
 class Talkie
 {
 public:
 								void say(const uint8_t* address);
 								uint8_t* ptrAddr;
 								uint8_t ptrBit;
+               int mode=0;
 private:
 								// Setup
 								uint8_t setup;

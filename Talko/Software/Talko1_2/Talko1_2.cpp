@@ -9,12 +9,14 @@
 #include <avr/io.h>
 #include "WProgram.h"
 #endif
-#include "Talko.h"
+#include "Talko1_2.h"
 
 
 
 
 #define FS 8000 // Speech engine sample rate
+
+
 
 uint8_t synthPeriod;
 uint16_t synthEnergy;
@@ -146,6 +148,7 @@ void Talkie::say(const uint8_t *addr)
 		}
 
 	setPtr((uint8_t*)addr);
+
 	do
 		{
 		uint8_t repeat;
@@ -159,19 +162,18 @@ void Talkie::say(const uint8_t *addr)
 		// Read speech data, processing the variable size frames.
 
 		energy = getBits(4);
-		// RESET HACK
-		//if (digitalRead(7)==0) energy=0xf; ok comme reset
+
 		// TRIGGER HACK
 
-		if(digitalRead(PIN_SPEECH)==1 & digitalRead(PIN_VCO)==1) // check for repeat  mode
+// if(digitalRead(PIN_SPEECH)==1 & digitalRead(PIN_VCO)==1) // check for repeat  mode
+if (mode!=MODE_SPEECH )
 			{
 			if(digitalRead(PIN_GATE)==0)
 				{
-				energy=0xf; // if trigger is released in O/S mode then stop
+				energy=0xf; // if gate is LOW in repeat mode then stop the speech
 				}
 			}
 
-		//if(digitalRead(5)==0) energy=0xf;  // c'est plus simple on coupe d?s que lon change de niveau
 		if(energy == 0)
 			{
 			// Energy = 0: rest frame
@@ -198,8 +200,27 @@ void Talkie::say(const uint8_t *addr)
 			synthEnergy = tmsEnergy[energy];
 			repeat = getBits(1);
 			synthPeriod = tmsPeriod[getBits(6)];
+/// vco
+			if(mode==1 && repeat && synthPeriod>0) //
+				{
+
+				do
+					{
+
+					synthPeriod= map(analogRead(POT_BEND),0,1023,63,1); // check value max ! (63 0x3F)
+
+					 if (analogRead(POT_BEND)==0)synthPeriod=0; // cheating to have  more fun with the knob because 0 is on the other side of the scale (pitch to high there)
+
+					if(synthPeriod == 0) synthEnergy=map(analogRead(POT_SPEED),0,1023,15,0);//?? whynot working for voiced
 
 
+					}
+
+				//while((PIND & B100) == B100 ); // While gate is high (faster than digitalRead(TRIGGER)==1)
+				while((PIND & B100) >> 2);  // While gate is high (faster than digitalRead(TRIGGER)==1)
+
+				}
+//// vco
 			// A repeat frame uses the last coefficients
 			if(!repeat)
 				{
@@ -218,9 +239,10 @@ void Talkie::say(const uint8_t *addr)
 					synthK8 = tmsK8[getBits(3)];
 					synthK9 = tmsK9[getBits(3)];
 					synthK10 = tmsK10[getBits(3)];
-					if(digitalRead(PIN_BEND)==0)  /// sorry guys bending the neck here !
+					//was if(digitalRead(PIN_BEND)==0 and mode !=1 )  /// sorry guys bending the neck here (if mode is not VCO)
+					if(digitalRead(PIN_BEND)==0)  /// sorry guys bending the neck here (if mode is not VCO) (why not ?)
 						{
-						 synthK5= map(analogRead(POT_BEND),20,1000,0,110);  // agressive
+						synthK5= map(analogRead(POT_BEND),20,1000,0,110);  // agressive
 						synthK10= map(analogRead(POT_BEND),20,1000,150,0); // ok
 						}
 					}
@@ -230,11 +252,16 @@ void Talkie::say(const uint8_t *addr)
 		//SPEED HACK
 		int speed = analogRead(POT_SPEED);
 		speed = map(speed, 0, 1023, 100, 0); //200
+
+		if(mode==1) { speed=0; } // no delay in VCO mode
+
 		delay(speed);
-		}
+
+	}
 	while(energy != 0xf);
 	// better handling of silence
-	if(digitalRead(PIN_SPEECH)==1 & digitalRead(PIN_VCO)==1)
+
+	if(mode=2) // check for repeat mode
 	{
 	while(digitalRead(PIN_GATE)==0);
 	}

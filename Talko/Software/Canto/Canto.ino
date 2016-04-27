@@ -14,13 +14,26 @@
 // Sound = vowels
 // Pitch = pitch
 // Speed = not used yet
-
-// Bend =  Transition frames (turn left to have continuous sound)
-
-
-
-
-
+// Bend =  not used yet
+/*
+ * 
+ * from Shruthi
+ * 
+ * vowel_data = [
+    27, 40,  89, 15, 13, 1, 0,
+    18, 51,  62, 13, 12, 6, 0,
+    15, 69,  93, 14, 12, 7, 0,
+    10, 84, 110, 13, 10, 8, 0,
+    23, 44,  87, 15, 12, 1, 0,
+    13, 29,  80, 13, 8,  0, 0,
+     6, 46,  81, 12, 3,  0, 0,
+     9, 51,  95, 15, 3,  0,  3,
+     6, 73,  99, 7,  3,  14, 9]
+ * 
+ * 
+ * 
+ * 
+ */
 
 
 
@@ -229,8 +242,9 @@ const uint8_t formantTable[] PROGMEM = {
    0x6,0x42,0x79,0x0,0x0,0x0,0x0,/*70 Tb*/     0x6,0x42,0x79,0x0,0x0,0x0,0x0,/*71 Tc*/
    0x6,0x6d,0x65,0x0,0x0,0x0,0x0,/*72 Ka*/     0xa,0x56,0x65,0xc,0xa,0x7,0x0,/*73 Kb*/
    0xa,0x6d,0x70,0x0,0x0,0x0,0x0,/*74 Kc*/     0x6,0x54,0x5e,0x0,0x0,0x0,0x0,/*75 KXa*/
-   0x6,0x54,0x5e,0x0,0xa,0x5,0x0,/*76 KXb*/    0x6,0x54,0x5e,0x0,0x0,0x0,0x0 /*77 KXc*/
+   0x6,0x54,0x5e,0x0,0xa,0x5,0x0,/*76 KXb*/    0x26,0x54,0x5e,0x20,0x20,0x0,0x0 /*77 KXc*/
 };
+//0x6,0x54,0x5e,0x0,0x0,0x0,0x0 /*77 KXc*/
 
 int vowels[19]
 {5,6,7,8,9,10,11,12,13,14,16,17,21,48,49,50,51,52,53,};
@@ -313,7 +327,8 @@ void loop() {
    // pitchPhaseInc = analogRead(0);
      do { // deplacer si besoin
       startFormant= vowels[map( analogRead(1), 0,1024,0,18 )];
-
+//startFormant= map( analogRead(1), 0,1020,0,77 );
+//Serial.println(startFormant);
   pitchPhaseInc = pitchTable[ map( analogRead(2), 0,1024,0,64 ) ]; 
   // pitchPhaseInc =map( analogRead(2), 0,1024,50,2200 ) ; 
     formantPos = formantTable + startFormant * FORMANT_SZ;

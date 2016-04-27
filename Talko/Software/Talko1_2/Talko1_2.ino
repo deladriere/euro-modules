@@ -2,11 +2,13 @@
 // Copyright 2011 Peter Knight
 // This code is released under GPLv2 license.
 // Jean-Luc Deladrière
-// version 1.2
+// Talko version 1.2 Hardware
 
 #include "Talko1_2.h"
 #include <Time.h>
 #include <EnableInterrupt.h>
+
+//#define DEBUG 
 
 // Define various ADC prescaler to speedup reading the potentiometers
 const unsigned char PS_16 = (1 << ADPS2);
@@ -889,7 +891,9 @@ void setup()
 
 	enableInterrupt(PIN_A, rot, CHANGE);
 
+#ifdef DEBUG
  Serial.begin(115200);
+#endif
 	}
 
 // get rotary
@@ -938,6 +942,7 @@ void rot()
 		}
 
 	display(bank % 10);
+ 
 	}
 
 
@@ -1393,9 +1398,10 @@ void loop()
 voice.mode =  (PIND & B100000)>>4;
 voice.mode += (PINB & B1);
 
+#ifdef DEBUG
 Serial.print("mode : ");
 Serial.println(voice.mode);
-
+#endif
 
   if(voice.mode==MODE_SPEECH) // 1 = VCO  ; 2= SPEECH ; 3= REPEAT
 

@@ -16,8 +16,6 @@
 
 #define FS 8000 // Speech engine sample rate
 
-
-
 uint8_t synthPeriod;
 uint16_t synthEnergy;
 int16_t synthK1,synthK2;
@@ -74,6 +72,9 @@ int8_t tmsK10[0x08]     =
 	0xCD,0xDF,0xF1,0x04,0x16,0x20,0x3B,0x4D
 	};
 
+
+
+
 void Talkie::setPtr(uint8_t *addr)
 	{
 	ptrAddr = addr;
@@ -98,18 +99,22 @@ uint8_t Talkie::getBits(uint8_t bits)
 	uint8_t value;
 	uint16_t data;
 	data = rev(pgm_read_byte(ptrAddr))<<8;
+
 	if(ptrBit+bits > 8)
 		{
 		data |= rev(pgm_read_byte(ptrAddr+1));
 		}
+
 	data <<= ptrBit;
 	value = data >> (16-bits);
 	ptrBit += bits;
+
 	if(ptrBit >= 8)
 		{
 		ptrBit -= 8;
 		ptrAddr++;
 		}
+
 	return value;
 	}
 void Talkie::say(const uint8_t *addr)
@@ -147,7 +152,7 @@ void Talkie::say(const uint8_t *addr)
 		setup = 1;
 		}
 
-	setPtr((uint8_t*)addr);
+	setPtr((uint8_t *)addr);
 
 	do
 		{
@@ -189,7 +194,6 @@ if (mode!=MODE_SPEECH )
 			synthK4 = 0;
 			synthK5 = 0;
 			synthK6 = 0;
-			synthK7 = 0;
 			synthK8 = 0;
 			synthK9 = 0;
 			synthK10 = 0;
@@ -220,7 +224,8 @@ if (mode!=MODE_SPEECH )
 				while((PIND & B100) >> 2);  // While gate is high (faster than digitalRead(TRIGGER)==1)
 
 				}
-//// vco
+
+
 			// A repeat frame uses the last coefficients
 			if(!repeat)
 				{
@@ -229,6 +234,7 @@ if (mode!=MODE_SPEECH )
 				synthK2 = tmsK2[getBits(5)];
 				synthK3 = tmsK3[getBits(4)];
 				synthK4 = tmsK4[getBits(4)];
+
 				if(synthPeriod)
 					{
 					// Voiced frames use 6 extra coefficients.
@@ -239,8 +245,8 @@ if (mode!=MODE_SPEECH )
 					synthK8 = tmsK8[getBits(3)];
 					synthK9 = tmsK9[getBits(3)];
 					synthK10 = tmsK10[getBits(3)];
-					//was if(digitalRead(PIN_BEND)==0 and mode !=1 )  /// sorry guys bending the neck here (if mode is not VCO)
-					if(digitalRead(PIN_BEND)==0)  /// sorry guys bending the neck here (if mode is not VCO) (why not ?)
+
+							if(digitalRead(PIN_BEND)==0)  /// sorry guys bending the neck here (if mode is not VCO) (why not ?)
 						{
 						synthK5= map(analogRead(POT_BEND),20,1000,0,110);  // agressive
 						synthK10= map(analogRead(POT_BEND),20,1000,150,0); // ok
@@ -250,21 +256,24 @@ if (mode!=MODE_SPEECH )
 			}
 
 		//SPEED HACK
+
 		int speed = analogRead(POT_SPEED);
 		speed = map(speed, 0, 1023, 100, 0); //200
 
-		if(mode==1) { speed=0; } // no delay in VCO mode
+		if(mode==MODE_VCO) { speed=0; } // no delay in VCO mode
 
 		delay(speed);
 
 	}
 	while(energy != 0xf);
-	// better handling of silence
 
-	if(mode=2) // check for repeat mode
+	//better handling of silence
+
+	if(mode!=MODE_SPEECH) // check for repeat mode
 	{
 	while(digitalRead(PIN_GATE)==0);
 	}
+
 	}
 
 #define CHIRP_SIZE 41
@@ -281,7 +290,11 @@ ISR(TIMER1_COMPA_vect)
 	int16_t u0,u1,u2,u3,u4,u5,u6,u7,u8,u9,u10;
 
 	OCR2B = nextPwm;
+
+
+
 	sei();
+
 	if(synthPeriod)
 		{
 		// Voiced source
@@ -294,6 +307,7 @@ ISR(TIMER1_COMPA_vect)
 			{
 			periodCounter = 0;
 			}
+
 		if(periodCounter < CHIRP_SIZE)
 			{
 			u10 = ((chirp[periodCounter]) * (uint32_t) synthEnergy) >> 8;
@@ -311,6 +325,7 @@ ISR(TIMER1_COMPA_vect)
 		synthRand = (synthRand >> 1) ^ ((synthRand & 1) ? 0xB800 : 0);
 		u10 = (synthRand & 1) ? synthEnergy : -synthEnergy;
 		}
+
 	// Lattice filter forward path
 	u9 = u10 - (((int16_t)synthK10*x9) >> 7);
 	u8 = u9 - (((int16_t)synthK9*x8) >> 7);
@@ -324,8 +339,8 @@ ISR(TIMER1_COMPA_vect)
 	u0 = u1 - (((int32_t)synthK1*x0) >> 15);
 
 	// Output clamp
-	if(u0 > 511) u0 = 511;
-	if(u0 < -512) u0 = -512;
+	if(u0 > 511) { u0 = 511; }
+	if(u0 < -512) { u0 = -512; }
 
 
 	// Lattice filter reverse path

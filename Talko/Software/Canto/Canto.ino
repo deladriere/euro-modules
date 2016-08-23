@@ -182,6 +182,7 @@ void setup() {
 
 	pinMode(TRIGGER, INPUT);
   pinMode(PWM_PIN,OUTPUT);
+  pinMode(LED_PIN,OUTPUT);
   audioOn();
   display( 15); // Blank display
  Serial.begin(9600);
@@ -296,7 +297,7 @@ void loop() {
  
   while(1) {
     
-   //  digitalWrite(LED_PIN,digitalRead(2)); dot led with gate
+   
     int n;
     uint8_t startFormant,staticFrames,tweenFrames;
     uint16_t startPitch,nextPitch;
@@ -311,7 +312,8 @@ void loop() {
     staticFrames = pgm_read_byte(framePos++);
 
    // if (!staticFrames) break; // End of phrase
-     if (digitalRead(2)==0) break; // End of phrase
+     if (digitalRead(2)==0) 
+     break; // End of phrase
    
     tweenFrames = pgm_read_byte(framePos++);
     
@@ -410,6 +412,7 @@ SIGNAL(PWM_INTERRUPT)
     form3Phase = 0;
   }
   PWM_VALUE = value + 0x80;
+  digitalWrite(LED_PIN,digitalRead(2)); //dot led with gate
 }
 
 //  ########   #######  ##     ## ######## #### ##    ## ########  ######  

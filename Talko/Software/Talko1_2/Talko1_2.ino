@@ -5,7 +5,7 @@
 // Talko version 1.2 Hardware
 
 #include "Talko1_2.h"
-#include <Time.h>
+#include <TimeLib.h>
 #include <EnableInterrupt.h>
 
 //#define DEBUG 
@@ -918,10 +918,10 @@ void setup()
 void rot()
 	{
 
-	if(digitalRead(PIN_A))
+	if(digitalRead(PIN_B))
 
-//delay(5);
-		if(digitalRead(PIN_B)) { interruptCount--; }
+
+		if(digitalRead(PIN_A)) { interruptCount--; }
 		else
 			{
 

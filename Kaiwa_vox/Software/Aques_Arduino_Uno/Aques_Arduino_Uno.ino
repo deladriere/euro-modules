@@ -33,15 +33,10 @@ void setup()
 }
 
 void loop()
-{
-	atp.SetAccent(0x00);
-  atp.SetPitch(0x40);
-	atp.SetSpeed(100);
-	atp.Synthe("konnnichiwa.");  
-  
-  atp.SetAccent(0x20);
-  atp.SetPitch(0x20);
-  atp.SetSpeed(50);
-  atp.Synthe("<ALPHA VAL=123456789>."); 
+{  
+  atp.SetAccent(random(200));
+  atp.SetPitch(random(200));
+  atp.SetSpeed(random(200));
+  atp.Synthe("<ALPHA VAL=0 1 2 3 4 5 6 7 8 9>."); 
 
 }

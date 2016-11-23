@@ -3,6 +3,11 @@
 
 #define I2C_ADDR_AQUESTALK 0x2E
 
+
+#define  AQTK_READY  0
+#define AQTK_NOACK  2
+#define AQTK_OTHER  3
+
 uint8_t getOne()
 {
   Wire.requestFrom(I2C_ADDR_AQUESTALK, 1);
@@ -61,12 +66,108 @@ void WriteP(const char *msg)
   }
 }
 
+
+void byte2hex(uint8_t val8, char *str)
+{
+  uint8_t val = val8>>4;
+  *str++ = val<10?val+'0':val-10+'A';
+  val = val8&0x0f;
+  *str++ = val<10?val+'0':val-10+'A';
+  *str = 0;
+}
+
 void Synthe(const char *msg)
 {
   while(IsBusy()) ; // ok fonctionne mais petit delais entre les Synthe ?
   Write(msg);
-  //WriteP(PSTR_CR);
- Wire.write("\r");
+//WriteP(PSTR_CR); // not working why ?
+  Wire.write("\r");
   Wire.endTransmission(); // 実際はこのタイミングで送信される
 }
+
+void getResponse(char *str)
+{
+  uint8_t cnt;
+  for(cnt=0;cnt<5;){
+    uint8_t c = getOne();
+    if(c==0){
+      str[cnt] = 0;
+      return; //ERR: NOACK または応答が無い。
+    }
+    else {
+      if(c=='>') {
+        str[cnt++] = c;
+        str[cnt]   = 0;
+        return; // Ready応答
+      }
+      else if('0'<=c && c<='z'){
+        str[cnt++] = c;
+      }
+      else {
+        delay(10);  // busy応答 '*' 0xFF
+      }
+    }
+  }
+  str[cnt] = 0;
+  return; // OTHER
+}
+
+uint8_t resp2bin(const char *str)
+{
+  if(str==0)    return AQTK_OTHER;
+  if(str[0]==0) return AQTK_NOACK;
+  if(str[0]=='>') return AQTK_READY;
+//  if(str[0]=='*') return AQTK_BUSY; // strには'*'が入ることは無い
+  if(str[0]=='E') { // "Ennn>" エラーコードをバイナリにして返す
+    if( ('0'<=str[1]&&str[1]<='9')
+     && ('0'<=str[2]&&str[2]<='9')
+     && ('0'<=str[3]&&str[3]<='9') ){
+      uint8_t iret;
+      iret = str[1]-'0';
+      iret = iret*10 + str[2]-'0';
+      iret = iret*10 + str[3]-'0';
+      return iret;
+    }
+  }
+  return AQTK_OTHER;
+}
+
+void SetRom(uint16_t adr, uint8_t val, uint8_t *pRet)
+{
+  char str[8];
+  byte2hex((uint8_t)(adr>>8), str+1);
+  str[0] = '#';
+  str[1] = 'W';
+  byte2hex((uint8_t)(adr&0xFF), str+3);
+  byte2hex(val, str+5);
+  Synthe(str);  // "#Wnnnmm"
+  if(pRet) {
+    getResponse(str); // ">" "Ennn>"
+    *pRet = resp2bin(str);
+  }
+}
+//  pitch: 0-255  default:64 0:高い 254:低い
+void SetPitch(uint8_t pitch, uint8_t *pRet=0)
+{
+  SetRom(0x03D, pitch, pRet);
+}
+
+void SetAccent(uint8_t accent, uint8_t *pRet=0)
+{
+  SetRom(0x03C, accent, pRet);
+}
+
+//  speed: 50-300  default:100 50:最遅　300:最速
+void SetSpeed(uint16_t speed, uint8_t *pRet=0)
+{
+  if(speed<50)  speed=50;
+  else if(speed>300)  speed=300;
+  SetRom(0x002, (uint8_t)(speed&0xFF), pRet);
+  if(pRet!=0 && *pRet!=0) return;
+  SetRom(0x003, (uint8_t)(speed/256), pRet);
+  if(pRet!=0 && *pRet!=0) return;
+}
+
+
+
 

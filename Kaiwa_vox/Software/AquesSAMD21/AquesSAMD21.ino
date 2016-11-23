@@ -23,21 +23,25 @@ void setup()
 	Serial.begin(9600);
  
 	pinMode(12, INPUT);   
-  Write("konichiwa."); 
- delay(1000);
+  SetSpeed(100);
+  delay(10);
+  SetPitch(64);
+  Synthe("konichiwa."); 
+ delay(10);
+ SetAccent(0255);
 }
 
 void loop()
 {
-
-delay(100);
-Synthe("jyu' nbi dekitayo.");
-delay(100);
-Synthe("yamanote."); 
-
+delay(10);
+Synthe("sayofukete.");
+delay(10);
+Synthe("nagisakogu."); 
+delay(10);
+Synthe("waaagaaataaatsuuusooomaaaniii.");
 
 }
-// todo debug by reading getone cela revient au même car on attent aussi que la réponse soit libre
+
 
 
 

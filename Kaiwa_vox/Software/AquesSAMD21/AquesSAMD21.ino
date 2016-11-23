@@ -31,12 +31,14 @@ void setup()
  SetAccent(0255);
 }
 
+// do we need delays ??
+
 void loop()
 {
 delay(10);
 Synthe("sayofukete.");
 delay(10);
-Synthe("nagisakogu."); 
+Synthe("hitomoosi."); 
 delay(10);
 Synthe("waaagaaataaatsuuusooomaaaniii.");
 

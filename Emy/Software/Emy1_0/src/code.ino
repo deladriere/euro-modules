@@ -35,8 +35,8 @@
    ██    ██  █████  ██████  ██  █████  ██████  ██      ███████ ███████
    ██    ██ ██   ██ ██   ██ ██ ██   ██ ██   ██ ██      ██      ██
    ██    ██ ███████ ██████  ██ ███████ ██████  ██      █████   ███████
-   ██  ██  ██   ██ ██   ██ ██ ██   ██ ██   ██ ██      ██           ██
-   ████   ██   ██ ██   ██ ██ ██   ██ ██████  ███████ ███████ ███████
+    ██  ██  ██   ██ ██   ██ ██ ██   ██ ██   ██ ██      ██           ██
+     ████   ██   ██ ██   ██ ██ ██   ██ ██████  ███████ ███████ ███████
  */
 
 
@@ -105,7 +105,7 @@ void setup() {
         // turn transistorized outputs low ;
         digitalWrite(BLUE_LED,HIGH);
         digitalWrite(RED_LED,HIGH);
-
+        analogReadResolution(10); //10 or 12 ?
 
         attachInterrupt(ROTA, rot, CHANGE);
 
@@ -237,7 +237,7 @@ void loop() {
                         }
 
                         myfile.close();
-                        showArray(); // too proof keep it
+                        showArray(); // to proof keep it
                         attachInterrupt(GATE, sayLine, FALLING);
                         do { /// show A1
 
@@ -245,7 +245,7 @@ void loop() {
                                 display.clearDisplay();
 
                                 display.setCursor(0,0);
-                                ligne=map(analogRead(A6),900,0,0,linePointer-1); // en attendant la modif hardware
+                                ligne=map(analogRead(A5),0,1023,linePointer-1,0); // en attendant la modif hardware
                                 display.setTextSize(2);
                                 display.print(ligne);
 
@@ -419,9 +419,15 @@ void showArray()
 void splashScreen()
 {
         display.clearDisplay();
-        display.setTextSize(3);
-        display.setTextColor(WHITE);
         display.setCursor(0,0);
+        display.setTextColor(WHITE);
+        display.setTextSize(2);
+        display.println("Polaxis");
+       display.display();
+        delay(500);
+
+        display.setTextSize(3);
+        display.setCursor(0,22);
         display.println("Emy 1.0");
         display.display();
         delay(1000);

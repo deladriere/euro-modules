@@ -58,7 +58,7 @@ int pointer=0;
 int linePointer=0;
 int ligne=0;
 
-
+bool WTF;
 
 char inputChar;
 char* myFiles[10];  // max 10 files
@@ -101,15 +101,16 @@ void setup() {
         pinMode(ROTB, INPUT_PULLUP);
         pinMode(PUSH, INPUT_PULLUP);
         pinMode(GATE, INPUT_PULLUP);
+        pinMode(BLUE_LED,OUTPUT);
+
 
         // turn transistorized outputs low ;
-      //  digitalWrite(BLUE_LED,LOW);
-      //  digitalWrite(RED_LED,LOW);
+        digitalWrite(BLUE_LED,HIGH);
+        //  digitalWrite(RED_LED,LOW);
         analogReadResolution(10); //10 or 12 ?
 
         attachInterrupt(ROTA, rot, CHANGE);
-        attachInterrupt(GATE, BLUE_ON, RISING);
-        attachInterrupt(GATE, BLUE_OFF, FALLING);
+
 
         // Open Serial communications and wait for port to open:
         Serial.begin(115200);
@@ -155,13 +156,14 @@ void setup() {
 
 void loop() {
         interruptCount=0;
-BLUE_ON();
+
         do {
-                digitalWrite(BLUE_LED,LOW);
-                digitalWrite(RED_LED,HIGH);
+
                 interruptCount=constrain(interruptCount,0,numFunctions-1);
                 function=interruptCount;
                 displayFunctionList(function);
+
+
 
         } while(digitalRead(PUSH));
 
@@ -171,8 +173,7 @@ BLUE_ON();
 
         {
                 interruptCount=0;
-                digitalWrite(BLUE_LED,HIGH);
-                digitalWrite(RED_LED,LOW);
+
                 delay(400);
 
 
@@ -240,14 +241,17 @@ BLUE_ON();
 
                         myfile.close();
                         showArray(); // to proof keep it
-                        attachInterrupt(GATE, sayLine, FALLING);
+
+                        attachInterrupt(GATE, setBLUE_ON, CHANGE);
+                        WTF=HIGH;
+
                         do { /// show A1
 
 
                                 display.clearDisplay();
 
                                 display.setCursor(0,0);
-                                ligne=map(analogRead(A5),0,1023,linePointer-1,0); // en attendant la modif hardware
+                                ligne=map(analogRead(A6),0,1023,linePointer-1,0); // en attendant la modif hardware
                                 display.setTextSize(2);
                                 display.print(ligne);
 
@@ -276,6 +280,8 @@ BLUE_ON();
 
                         while(digitalRead(PUSH));
                         detachInterrupt(GATE);
+                          WTF=LOW;
+                        digitalWrite(BLUE_LED,HIGH);
                         delay(200);
 
 
@@ -300,8 +306,7 @@ BLUE_ON();
                 break;
         case 2:
                 Serial.println("function 2");
-                digitalWrite(BLUE_LED,HIGH);
-                digitalWrite(RED_LED,LOW);
+
                 delay(400);
 
 
@@ -340,14 +345,23 @@ BLUE_ON();
    ██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████ ███████
  */
 
-void BLUE_ON()
+void setBLUE_ON()
 {
-  digitalWrite(BLUE_LED,LOW);
+if (WTF){ // sorry but I cannot find how to stop this interrupt from happening when turning the rotary
+        if (digitalRead(GATE))
+        {
+                digitalWrite(BLUE_LED,HIGH);
+        }
+        else
+        {
+                digitalWrite(BLUE_LED,LOW);
+                sayLine();
+        }
+      }
 }
-void BLUE_OFF()
-{
-  digitalWrite(BLUE_LED,HIGH);
-}
+
+
+
 
 
 void displayFunctionList(int p)
@@ -491,7 +505,7 @@ void rot()
 {
 
 
-        delayMicroseconds(1000);
+      delayMicroseconds(1000);
         if(digitalRead(ROTA))
 
                 if(digitalRead(ROTB)) { interruptCount--; }

@@ -65,6 +65,10 @@ Adafruit_SSD1306 display(0);   // modif library for 64 pxls
    ██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████ ███████
  */
 
+void setBLUE_ON() {
+  digitalWrite(BLUE_LED,digitalRead(GATE));
+}
+
 
 
 void toggleOUTPUTS()
@@ -148,6 +152,9 @@ void loop() {
         }
         while(digitalRead(PUSH));
         delay(300);
+        // turn transistorized outputs low ;
+        digitalWrite(BLUE_LED,HIGH);
+        digitalWrite(RED_LED,HIGH);
 
         do
         {
@@ -184,8 +191,30 @@ void loop() {
         }
         while(digitalRead(PUSH));
         delay(300);
+        attachInterrupt(digitalPinToInterrupt(GATE), setBLUE_ON, CHANGE);
+        do
+        {
+
+
+        }
+        while(digitalRead(PUSH));
+        delay(300);
+        detachInterrupt(GATE);
+
 
 
 
 
 }
+
+
+/*
+do
+{
+
+
+}
+while(digitalRead(PUSH));
+delay(300);
+
+*/

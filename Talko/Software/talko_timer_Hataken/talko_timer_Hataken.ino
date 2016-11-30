@@ -29,6 +29,7 @@ int target = 1;
 int left= 0;
 bool run = 0;
 int timerId;
+int percent;
 volatile int state = LOW;
 volatile int interruptCount = 0; // The rotary counter
 
@@ -113,10 +114,6 @@ void setup() {
         timerId = timer.setInterval(1000L, blink);
         timer.disable(timerId);
 
-        //attachInterrupt(0, blink, CHANGE); verifier si ok avec rotary
-
-        voice.SetSpeed(800); //entre 0 et 1023 . augmenter la valeur pour augmenter la vitesse. Valeur normal=800
-        voice.SetPitch(700);        //entre 0 et 1023 : Pitch normal=700. Augmenter pour rendre la voix plus aigue
         voice.BendingOff();
 
 }
@@ -178,7 +175,11 @@ void blink() {
                 Serial.print(left);
                 Serial.print(" ");
                 Serial.println(i%60);
-                if (i<=0) Stop();
+                if (i<=0)
+                {
+                   Stop();
+                   return 0;
+                }
 
         }
 
@@ -209,7 +210,7 @@ void blink() {
         {
                 if (i%60==0 & left>=1)
                 {
-                        sayNumber(left);
+                        sayNumber(left-1);
                         voice.say(spMINUTES);
 
                 }
@@ -351,14 +352,7 @@ void loop() {
                         digitalWrite(17,HIGH);
                         run = LOW;
                         enableInterrupt(PINA, rot, CHANGE);
-/*
-                        voice.say(spBEEP);
-                        voice.say(spBEEP);
-                        voice.say(spTONE1aa);
-                        voice.say(spBEEP);
-                        voice.say(spTONE2aa);
-                        voice.say(spBEEP);
- */
+
                         i=0;
                         target=1;
                         interruptCount = 0;

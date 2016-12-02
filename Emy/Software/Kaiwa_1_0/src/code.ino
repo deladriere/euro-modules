@@ -39,13 +39,13 @@
      ████   ██   ██ ██   ██ ██ ██   ██ ██████  ███████ ███████ ███████
  */
 
-
+#define VERSION "Ver. 1.0"
 
 
 char* mainFunctions[12]={
 
         "SD tts",
-        "SD phon",
+        "Functio1",
         "USB tts",
         "USB phon","","",""
 };
@@ -73,7 +73,7 @@ static boolean rotating=false;
 
 volatile int interruptCount=0; // The rotary counter
 
-#define VERSION "1.0"
+
 
 /*
    ██████  ██████       ██ ███████  ██████ ████████ ███████
@@ -280,7 +280,7 @@ void loop() {
 
                         while(digitalRead(PUSH));
                         detachInterrupt(GATE);
-                          WTF=LOW;
+                        WTF=LOW;
                         digitalWrite(BLUE_LED,HIGH);
                         delay(200);
 
@@ -306,26 +306,41 @@ void loop() {
                 break;
         case 2:
                 Serial.println("function 2");
+                attachInterrupt(GATE, setBLUE_ON, CHANGE);
+                WTF=HIGH;
 
                 delay(400);
-
-
+                display.clearDisplay();
+              //  display.setCursor(0,0);
+              //  display.print(" ");
+                display.setCursor(15,0);
+                display.print(mainFunctions[function]);
+                // display : connect serial terminal
+                display.display();
 
                 do {
 
                         while(Serial.available()) {
                                 display.clearDisplay();
-
+                            //  display.setCursor(0,0);
+                            //    display.print(" ");
+                                display.setCursor(15,0);
+                                display.print(mainFunctions[function]);
                                 terminal= Serial.readString();// read the incoming data as string
-
+                                display.setCursor(0,18);
                                 Serial.print(terminal);
                                 display.print(terminal);
                                 display.display();
+
 
                         }
 
 
                 } while(digitalRead(PUSH));
+                detachInterrupt(GATE);
+                digitalWrite(BLUE_LED,HIGH);
+                WTF=LOW;
+                delay(200);
 
                 break;
         case 3:
@@ -456,7 +471,7 @@ void splashScreen()
         display.println("Kaiwa");
         display.setTextSize(2);
         display.setCursor(0,50);
-        display.println("Ver. 1.0");
+        display.println(VERSION);
         display.display();
         delay(1500);
 }

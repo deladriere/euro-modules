@@ -3,6 +3,8 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <Wire.h>
+#include <Kfonts.h>
+#include "AquesTalk.h"
 
 
 // https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf
@@ -102,11 +104,12 @@ void setup() {
         pinMode(PUSH, INPUT_PULLUP);
         pinMode(GATE, INPUT_PULLUP);
         pinMode(BLUE_LED,OUTPUT);
+        pinMode(RED_LED,OUTPUT);
 
 
         // turn transistorized outputs low ;
         digitalWrite(BLUE_LED,HIGH);
-        //  digitalWrite(RED_LED,LOW);
+         digitalWrite(RED_LED,HIGH);
         analogReadResolution(10); //10 or 12 ?
 
         attachInterrupt(ROTA, rot, CHANGE);
@@ -131,6 +134,17 @@ void setup() {
 
         splashScreen();
 
+//Wire.begin();
+        SetSpeed(80);
+        delay(10);
+        SetPitch(100);
+        SetAccent(255);
+        delay(10);
+        Synthe("konichiwa.");
+
+
+
+
         display.clearDisplay();
         display.setTextSize(2);
         display.setTextColor(WHITE);
@@ -144,6 +158,7 @@ void setup() {
         Serial.println("done!");
 
         Serial.println(fileNumber);
+
 }
 
 /*
@@ -250,13 +265,18 @@ void loop() {
 
                                 display.clearDisplay();
 
-                                display.setCursor(0,0);
-                                ligne=map(analogRead(A6),0,1023,linePointer-1,0); // en attendant la modif hardware
-                                display.setTextSize(2);
-                                display.print(ligne);
 
-                                display.setCursor(0,20);
-                                display.setTextSize(3);
+                                display.setFont(&Orbitron_Light_22);
+                                display.setTextSize(1);
+                                display.setCursor(0,16);
+                                ligne=map(analogRead(A6),0,1023,linePointer-1,0); // en attendant la modif hardware
+                                display.setTextSize(1);
+                                display.print(ligne+1);
+                                display.setFont(&Orbitron_Light_24);
+                                display.setCursor(0,40);
+                                display.setTextSize(1);
+
+                                //display.setTextSize(3);
 
                                 for (int p=0; p<40; p++)
                                 {
@@ -274,6 +294,7 @@ void loop() {
                                 }
 
                                 display.display();
+                                display.setFont();
 
 
                         }
@@ -306,29 +327,30 @@ void loop() {
                 break;
         case 2:
                 Serial.println("function 2");
-                attachInterrupt(GATE, setBLUE_ON, CHANGE);
+                attachInterrupt(GATE, setRED_ON, CHANGE);
                 WTF=HIGH;
 
                 delay(400);
                 display.clearDisplay();
-              //  display.setCursor(0,0);
-              //  display.print(" ");
+                //  display.setCursor(0,0);
+                //  display.print(" ");
                 display.setCursor(15,0);
                 display.print(mainFunctions[function]);
                 // display : connect serial terminal
                 display.display();
-
+                  WTF=HIGH;
                 do {
 
                         while(Serial.available()) {
                                 display.clearDisplay();
-                            //  display.setCursor(0,0);
-                            //    display.print(" ");
+
+                                //  display.setCursor(0,0);
+                                //    display.print(" ");
                                 display.setCursor(15,0);
                                 display.print(mainFunctions[function]);
                                 terminal= Serial.readString();// read the incoming data as string
                                 display.setCursor(0,18);
-                                Serial.print(terminal);
+                                //Serial.print(terminal);
                                 display.print(terminal);
                                 display.display();
 
@@ -338,7 +360,7 @@ void loop() {
 
                 } while(digitalRead(PUSH));
                 detachInterrupt(GATE);
-                digitalWrite(BLUE_LED,HIGH);
+                digitalWrite(RED_LED,HIGH);
                 WTF=LOW;
                 delay(200);
 
@@ -362,20 +384,43 @@ void loop() {
 
 void setBLUE_ON()
 {
-if (WTF){ // sorry but I cannot find how to stop this interrupt from happening when turning the rotary
-        if (digitalRead(GATE))
-        {
-                digitalWrite(BLUE_LED,HIGH);
+        if (WTF) { // sorry but I cannot find how to stop this interrupt from happening when turning the rotary
+                if (digitalRead(GATE))
+                {
+                        digitalWrite(BLUE_LED,HIGH);
+                }
+                else
+                {
+                        digitalWrite(BLUE_LED,LOW);
+                        sayLine();
+                }
         }
-        else
-        {
-                digitalWrite(BLUE_LED,LOW);
-                sayLine();
-        }
-      }
 }
 
 
+void setRED_ON()
+{
+        if (WTF) { // sorry but I cannot find how to stop this interrupt from happening when turning the rotary
+                if (digitalRead(GATE))
+                {
+                        digitalWrite(RED_LED,HIGH);
+                }
+                else
+                {
+                        digitalWrite(RED_LED,LOW);
+
+                  char kaiwa[4];
+                  terminal.toCharArray(kaiwa,4);
+
+                  //Serial.print(sizeof(terminal));
+                  Serial.print(" ");
+                  Serial.println(kaiwa);
+
+              Synthe(kaiwa);
+
+                }
+        }
+}
 
 
 
@@ -520,7 +565,7 @@ void rot()
 {
 
 
-      delayMicroseconds(1000);
+        delayMicroseconds(1000);
         if(digitalRead(ROTA))
 
                 if(digitalRead(ROTB)) { interruptCount--; }

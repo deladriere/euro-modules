@@ -2,6 +2,9 @@
 #include <EnableInterrupt.h>
 #include "talkietz.h"
 #include <SimpleTimer.h>
+#include <VSync.h>
+
+// add pulse
 
 // library from :  https://github.com/GreyGnome/EnableInterrupt/wiki/Usage#Summary
 
@@ -30,12 +33,13 @@ int left= 0;
 bool run = 0;
 int timerId;
 int percent;
-volatile int state = LOW;
+int state = LOW;
 volatile int interruptCount = 0; // The rotary counter
 
 
 Talkie voice;
 SimpleTimer timer;
+ValueSender<2> sender;
 
 const uint8_t spZERO[]     PROGMEM = {0x69, 0xFB, 0x59, 0xDD, 0x51, 0xD5, 0xD7, 0xB5, 0x6F, 0x0A, 0x78, 0xC0, 0x52, 0x01, 0x0F, 0x50, 0xAC, 0xF6, 0xA8, 0x16, 0x15, 0xF2, 0x7B, 0xEA, 0x19, 0x47, 0xD0, 0x64, 0xEB, 0xAD, 0x76, 0xB5, 0xEB, 0xD1, 0x96, 0x24, 0x6E, 0x62, 0x6D, 0x5B, 0x1F, 0x0A, 0xA7, 0xB9, 0xC5, 0xAB, 0xFD, 0x1A, 0x62, 0xF0, 0xF0, 0xE2, 0x6C, 0x73, 0x1C, 0x73, 0x52, 0x1D, 0x19, 0x94, 0x6F, 0xCE, 0x7D, 0xED, 0x6B, 0xD9, 0x82, 0xDC, 0x48, 0xC7, 0x2E, 0x71, 0x8B, 0xBB, 0xDF, 0xFF, 0x1F};
 const uint8_t spONE[]      PROGMEM = {0x66, 0x4E, 0xA8, 0x7A, 0x8D, 0xED, 0xC4, 0xB5, 0xCD, 0x89, 0xD4, 0xBC, 0xA2, 0xDB, 0xD1, 0x27, 0xBE, 0x33, 0x4C, 0xD9, 0x4F, 0x9B, 0x4D, 0x57, 0x8A, 0x76, 0xBE, 0xF5, 0xA9, 0xAA, 0x2E, 0x4F, 0xD5, 0xCD, 0xB7, 0xD9, 0x43, 0x5B, 0x87, 0x13, 0x4C, 0x0D, 0xA7, 0x75, 0xAB, 0x7B, 0x3E, 0xE3, 0x19, 0x6F, 0x7F, 0xA7, 0xA7, 0xF9, 0xD0, 0x30, 0x5B, 0x1D, 0x9E, 0x9A, 0x34, 0x44, 0xBC, 0xB6, 0x7D, 0xFE, 0x1F};
@@ -117,6 +121,8 @@ void setup() {
         timer.disable(timerId);
 
         voice.BendingOff();
+        sender.observe(left);
+        sender.observe(state);
         
 
 }
@@ -158,10 +164,11 @@ void Stop()
            voice.say(spBEEP);
          */
         i=0;
-        target=1;
+        left=0; // to send a 0 to processing
         interruptCount = 0;
+        state=0;  // to send a 0 to processing
         digitalWrite(13, LOW);
-        display(1);
+        display(0);
         //delay(300);
         Alarm();
 
@@ -172,11 +179,13 @@ void blink() {
         {
                 i--;
                 left= i/60+1;
+              /*
                 Serial.print(i);
                 Serial.print(" ");
                 Serial.print(left);
                 Serial.print(" ");
                 Serial.println(i%60);
+                */
                 if (i<=0)
                 {
                    Stop();
@@ -308,6 +317,7 @@ void rot()
         interruptCount = constrain(interruptCount, 1, 19);
 
         target = interruptCount;
+        left=target;
 
         if (target >= 10)
         {
@@ -325,6 +335,7 @@ void rot()
 
 void loop() {
         timer.run();
+        sender.sync();
 
         voice.SetSpeed(analogRead(2)); //entre 0 et 1023 . augmenter la valeur pour augmenter la vitesse. Valeur normal=800
         voice.SetPitch(analogRead(1)); //entre 0 et 1023 : Pitch normal=700. Augmenter pour rendre la voix plus aigue
@@ -347,7 +358,7 @@ void loop() {
         }
         else
         {
-                if (digitalRead(2))
+                if (digitalRead(2)) // manual stop
                 {
                         timer.disable(timerId);
 
@@ -357,6 +368,7 @@ void loop() {
 
                         i=0;
                         target=1;
+                        left=1;
                         interruptCount = 0;
                         digitalWrite(13, LOW);
                         display(1);

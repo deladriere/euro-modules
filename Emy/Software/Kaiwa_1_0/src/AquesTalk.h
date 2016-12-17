@@ -42,7 +42,7 @@ void Write(const char *msg)
   for(;*p!=0;){
     Wire.beginTransmission(I2C_ADDR_AQUESTALK);
     // Wireの制約で、一度に送れるのは32byteまで
-    for(int i=0;i<50;i++){ //was 32 seems to be working with 50 
+    for(int i=0;i<50;i++){ //was 32 seems to be working with 50
       Wire.write(*p++);
       if(*p==0) break;
     }
@@ -76,9 +76,19 @@ void byte2hex(uint8_t val8, char *str)
   *str = 0;
 }
 
+void Break()
+{
+    Wire.beginTransmission(I2C_ADDR_AQUESTALK);
+  Wire.write("$");
+//  Wire.write("\r");
+  Wire.endTransmission();
+  delay(1);
+}
+
 void Synthe(const char *msg)
 {
-  while(IsBusy()) ; // ok fonctionne mais petit delais entre les Synthe ?
+  //while(IsBusy()) ; // working when checking => priority to speech not going to next step but doesn't reset speech - break Needed
+ Break();
   Write(msg);
 //WriteP(PSTR_CR); // not working why ?
   Wire.write("\r");

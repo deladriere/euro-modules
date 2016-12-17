@@ -18,6 +18,21 @@
  */
 
 
+/*
+
+   +-----------------+
+   |[ ]NC      OUT[ ]| Audio
+   |[ ]RST   !PLAY[ ]|
+   |[ ]NC       NC[ ]|
+   |[ ]NC       NC[ ]|
+   |[ ]NC      SCL[ ]|
+   |[ ]NC      SDA[ ]|
+     3V3 |[ ]3V3      5V[ ]| 5V
+   |[ ]GND     GND[ ]| GND
+   +________________/
+ */
+
+
  #define SW0 0
  #define SW1 1
  #define GATE 2
@@ -109,7 +124,7 @@ void setup() {
 
         // turn transistorized outputs low ;
         digitalWrite(BLUE_LED,HIGH);
-         digitalWrite(RED_LED,HIGH);
+        digitalWrite(RED_LED,HIGH);
         analogReadResolution(10); //10 or 12 ?
 
         attachInterrupt(ROTA, rot, CHANGE);
@@ -117,7 +132,7 @@ void setup() {
 
         // Open Serial communications and wait for port to open:
         Serial.begin(115200);
-        Serial.setTimeout(100);
+        //Serial.setTimeout(100); // why ?
         //while (!Serial) {
         //          ; // wait for Serial port to connect. Needed for native USB port only
         //  }
@@ -338,31 +353,75 @@ void loop() {
                 display.print(mainFunctions[function]);
                 // display : connect serial terminal
                 display.display();
-                  WTF=HIGH;
+                WTF=HIGH;
                 do {
 
-                        while(Serial.available()) {
-                                display.clearDisplay();
 
-                                //  display.setCursor(0,0);
-                                //    display.print(" ");
-                                display.setCursor(15,0);
-                                display.print(mainFunctions[function]);
-                                terminal= Serial.readString();// read the incoming data as string
-                                display.setCursor(0,18);
-                                //Serial.print(terminal);
-                                display.print(terminal);
-                                display.display();
+
+                        display.clearDisplay();
+
+                        //  display.setCursor(0,0);
+                        //    display.print(" ");
+                        display.setCursor(15,0);
+                        display.print(mainFunctions[function]);
+                        display.setCursor(0,18);
+
+                        display.print(terminal);
+                        display.display();
+
+
+
+                        while(Serial.available()) {
+                                terminal= Serial.readString();        // read the incoming data as string
+
+                        }
+
+                        do {
+                      if(!digitalRead(PUSH)) break;
+                        }
+
+
+                        while(digitalRead(GATE)==0);
+
+
+                      //End of HIGH gate
+                      // waiting at low level
+                        do {
+                         if(!digitalRead(PUSH)) break;
+                      ;
+
+
+
 
 
                         }
+
+                        while(digitalRead(GATE)==1);
+                        SetSpeed(map(analogRead(1),1023,0,50,300));
+                        delayMicroseconds(10000);
+                       SetPitch(map(analogRead(2),1023,0,254,0));
+                     delayMicroseconds(10000);
+                       SetAccent(map(analogRead(3),1023,0,0,255));
+
+                      //  Serial.println("Start speaking");
+                      //  Serial.print(terminal);
+                        char kaiwa[50];
+                        terminal.toCharArray(kaiwa,50);
+                        Synthe(kaiwa);
+
+
 
 
                 } while(digitalRead(PUSH));
                 detachInterrupt(GATE);
                 digitalWrite(RED_LED,HIGH);
                 WTF=LOW;
-                delay(200);
+                // push trap
+                display.clearDisplay();
+                display.display();
+
+                while(!digitalRead(PUSH));
+                //delay(200);
 
                 break;
         case 3:
@@ -404,19 +463,27 @@ void setRED_ON()
                 if (digitalRead(GATE))
                 {
                         digitalWrite(RED_LED,HIGH);
+
+                        //  SetSpeed(map(analogRead(1),1023,0,50,300));
+                        //    delayMicroseconds(10000);
+                        //     SetPitch(map(analogRead(2),1023,0,254,0));
+                        //     delayMicroseconds(10000);
+                        //      SetAccent(map(analogRead(3),1023,0,0,255));
+                        //      delayMicroseconds(10000);
+                        //   //  SetSpeed(100);
                 }
                 else
                 {
                         digitalWrite(RED_LED,LOW);
 
-                  char kaiwa[4];
-                  terminal.toCharArray(kaiwa,4);
-
-                  //Serial.print(sizeof(terminal));
-                  Serial.print(" ");
-                  Serial.println(kaiwa);
-
-              Synthe(kaiwa);
+                        //     char kaiwa[20];
+                        //     terminal.toCharArray(kaiwa,20);
+                        //
+                        //     //Serial.print(sizeof(terminal));
+                        //     //Serial.print(" ");
+                        //     //Serial.println(kaiwa);
+                        //
+                        // Synthe(kaiwa);
 
                 }
         }

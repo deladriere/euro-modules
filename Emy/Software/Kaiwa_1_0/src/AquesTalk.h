@@ -87,8 +87,8 @@ void Break()
 
 void Synthe(const char *msg)
 {
-  //while(IsBusy()) ; // working when checking => priority to speech not going to next step but doesn't reset speech - break Needed
- Break();
+  while(IsBusy()) ; // working when checking => priority to speech not going to next step but doesn't reset speech - break Needed
+ //Break();
   Write(msg);
 //WriteP(PSTR_CR); // not working why ?
   Wire.write("\r");

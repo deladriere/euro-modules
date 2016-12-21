@@ -20,16 +20,16 @@
 
 /*
 
-    +-----------------+
-    |[ ]NC      OUT[ ]| Audio
-    |[ ]RST   !PLAY[ ]|
-    |[ ]NC       NC[ ]|
-    |[ ]NC       NC[ ]|
-    |[ ]NC      SCL[ ]|
-    |[ ]NC      SDA[ ]|
-3V3 |[ ]3V3      5V[ ]| 5V
-    |[ ]GND     GND[ ]| GND
-    +________________/
+   +-----------------+
+   |[ ]NC      OUT[ ]| Audio
+   |[ ]RST   !PLAY[ ]|
+   |[ ]NC       NC[ ]|
+   |[ ]NC       NC[ ]|
+   |[ ]NC      SCL[ ]|
+   |[ ]NC      SDA[ ]|
+   3V3 |[ ]3V3      5V[ ]| 5V
+   |[ ]GND     GND[ ]| GND
+   +________________/
 
  */
 
@@ -115,6 +115,8 @@ Adafruit_SSD1306 display(0); // modif library for 64
  */
 
 void setup() {
+        pinMode(SW0, INPUT_PULLUP);
+        pinMode(SW1, INPUT_PULLUP);
         pinMode(ROTA, INPUT_PULLUP);
         pinMode(ROTB, INPUT_PULLUP);
         pinMode(PUSH, INPUT_PULLUP);
@@ -313,6 +315,8 @@ void loop() {
                                 display.setFont();
 
 
+
+
                         }
 
                         while(digitalRead(PUSH));
@@ -378,36 +382,33 @@ void loop() {
                         }
 
                         do {
-                      if(!digitalRead(PUSH)) break;
+                                if(!digitalRead(PUSH)) break;
                         }
 
 
                         while(digitalRead(GATE)==0);
+                        if(!digitalRead(SW1)) Break();
 
 
-                      //End of HIGH gate
-                      // waiting at low level
+                        //End of HIGH gate
+                        // waiting at low level
                         do {
-                         if(!digitalRead(PUSH)) break;
-                      ;
-
-
-
-
-
+                                if(!digitalRead(PUSH)) break;
+                                ;
                         }
 
                         while(digitalRead(GATE)==1);
                         SetSpeed(map(analogRead(1),1023,0,50,300));
                         delayMicroseconds(10000);
-                       SetPitch(map(analogRead(2),1023,0,254,0));
-                     delayMicroseconds(10000);
-                       SetAccent(map(analogRead(3),1023,0,0,255));
+                        SetPitch(map(analogRead(2),1023,0,254,0));
+                        delayMicroseconds(10000);
+                        SetAccent(map(analogRead(3),1023,0,0,255));
 
-                      //  Serial.println("Start speaking");
-                      //  Serial.print(terminal);
-                        char kaiwa[50];
-                        terminal.toCharArray(kaiwa,50);
+                        //  Serial.println("Start speaking");
+                       //Serial.print(terminal);
+                       //Serial.print(terminal.length());
+                        char kaiwa[terminal.length()];
+                        terminal.toCharArray(kaiwa,terminal.length()+1);
                         Synthe(kaiwa);
 
 

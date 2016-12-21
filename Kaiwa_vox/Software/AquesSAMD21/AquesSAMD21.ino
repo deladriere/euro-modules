@@ -11,11 +11,11 @@
 
 
 
+// add reset in setup to see it works
 
 
 
 
-byte c;
 
 void setup()
 {
@@ -23,24 +23,27 @@ void setup()
 	Serial.begin(9600);
  
 	pinMode(12, INPUT);   
-  SetSpeed(100);
+  SetSpeed(80);
   delay(10);
-  SetPitch(64);
+  SetPitch(100);
   Synthe("konichiwa."); 
  delay(10);
- SetAccent(0255);
+ SetAccent(255);
 }
 
 // do we need delays ??
 
 void loop()
 {
-delay(10);
-Synthe("sayofukete.");
-delay(10);
-Synthe("hitomoosi."); 
-delay(10);
-Synthe("waaagaaataaatsuuusooomaaaniii.");
+delay(100);
+Synthe("ko.");
+//Synthe("sayofukete.");
+//delay(10);
+//ynthe("maka hanniya haramita shingyooo.");
+//delay(10);
+//Synthe("hitomoosi."); 
+//delay(10);
+//Synthe("waaagaaataaatsuuusooomaaaniii.");
 
 }
 

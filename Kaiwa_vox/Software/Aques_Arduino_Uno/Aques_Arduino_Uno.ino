@@ -4,7 +4,7 @@
 // Arduino Uno Click Shield
 
 /*
-
+corriger corriger corriger ici mea8000
          +-----------------+
       A0 |[ ]AO      OUT[ ]| Audio
       A3 |[ ]WN     REQN[ ]| 2

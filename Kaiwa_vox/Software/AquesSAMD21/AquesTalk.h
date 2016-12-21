@@ -17,7 +17,7 @@ uint8_t getOne()
   }
   else {
     //ERR: NOACK または応答が無い。I2Cの配線をチェックすべし
-    return 0; 
+    return 0;
   }
 }
 
@@ -37,7 +37,7 @@ void Write(const char *msg)
   // Wireの制約で、一度に送れるのは32byteまで
   // AquesTalk picoへは一度に128byteまで送れるので、
   // Wire.beginTransmission()～Wire.endTransmission()を複数回に分けて呼び出す
-while(digitalRead(12)==0); //dirty fix !! must work with I2C !! 
+while(digitalRead(12)==0); //dirty fix !! must work with I2C !!
   const char *p = msg;
   for(;*p!=0;){
     Wire.beginTransmission(I2C_ADDR_AQUESTALK);
@@ -46,7 +46,7 @@ while(digitalRead(12)==0); //dirty fix !! must work with I2C !!
       Wire.write(*p++);
       if(*p==0) break;
     }
-     
+
   }
 
 }
@@ -167,7 +167,3 @@ void SetSpeed(uint16_t speed, uint8_t *pRet=0)
   SetRom(0x003, (uint8_t)(speed/256), pRet);
   if(pRet!=0 && *pRet!=0) return;
 }
-
-
-
-

@@ -29,20 +29,52 @@
 
  */
 
-  #define SW0 0
-  #define SW1 1
-  #define GATE 2
-  #define PUSH 3
+// DIGITAL INPUTS
+
+#define SW0 0
+#define SW1 1
+#define GATE 2
+#define PUSH 3
+#define ROTA 6
+#define ROTB 7
+
+
+// DIGITALS OUTPUTS
+
+#define BUSY 99
+#define BLUE_LED  12
+#define RED_LED 13
+
+
+// MIKROBUS SOCKET
+
+
+/*
+
+   +-----------------+
+   |[ ]NC      OUT[ ]|
+   |[ ]RST   !PLAY[ ]|
+   |[ ]NC       NC[ ]|
+   |[ ]NC       NC[ ]|
+   |[ ]NC      SCL[ ]|
+   |[ ]NC      SDA[ ]|
+   3V3 |[ ]3V3      5V[ ]| 5V
+   |[ ]GND     GND[ ]| GND
+   +________________/
+
+ */
+
+
   #define RST_Microbus 4
   #define CS_Microbus 5
-  #define ROTA 6
-  #define ROTB 7
+
 // A6 is also D8 on Adafruit Feather
   #define AN_Microbus 9 // A7 can be D9 on Adafruit Feather
   #define CS_SD 10
   #define INT_Microbus 11
-  #define BLUE_LED  12
-  #define RED_LED 13
+
+
+
 
 
 /*
@@ -66,7 +98,7 @@ Adafruit_SSD1306 display(0);   // modif library for 64 pxls
  */
 
 void setBLUE_ON() {
-  digitalWrite(BLUE_LED,digitalRead(GATE));
+        digitalWrite(BLUE_LED,digitalRead(GATE));
 }
 
 
@@ -201,7 +233,25 @@ void loop() {
         delay(300);
         detachInterrupt(GATE);
 
+        digitalWrite(BLUE_LED,HIGH);
+        digitalWrite(RED_LED,HIGH);
+        display.clearDisplay();
+        display.setTextSize(1);
+        display.setTextColor(WHITE);
+        display.setCursor(0,0);
+        display.println("Imputs Test");
+        display.display();
 
+        do
+        {
+                digitalWrite(BLUE_LED,digitalRead(SW0));
+                digitalWrite(RED_LED,digitalRead(SW1));
+
+        }
+        while(digitalRead(PUSH));
+        delay(300);
+        digitalWrite(BLUE_LED,HIGH);
+        digitalWrite(BLUE_LED,HIGH);
 
 
 
@@ -209,12 +259,12 @@ void loop() {
 
 
 /*
-do
-{
+   do
+   {
 
 
-}
-while(digitalRead(PUSH));
-delay(300);
+   }
+   while(digitalRead(PUSH));
+   delay(300);
 
-*/
+ */

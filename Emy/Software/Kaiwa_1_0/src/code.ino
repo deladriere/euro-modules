@@ -75,6 +75,8 @@ char song[60][120] {}; // max 80 caracter per lines // 100 lines max
 int pointer=0;
 int linePointer=0;
 int ligne=0;
+int serialPointer=0;
+char serialtext[40];
 
 bool WTF;
 
@@ -281,39 +283,23 @@ void loop() {
                         do { /// show A1
 
 
-                                display.clearDisplay();
+
+                                  // readline into array to pass to Synthe
 
 
-                                display.setFont(&Orbitron_Light_22);
-                                display.setTextSize(1);
-                                display.setCursor(0,16);
-                                ligne=map(analogRead(A6),0,1023,linePointer-1,0); // en attendant la modif hardware
-                                display.setTextSize(1);
-                                display.print(ligne+1);
-                                display.setFont(&Orbitron_Light_24);
-                                display.setCursor(0,40);
-                                display.setTextSize(1);
+                                do {
+                                        if(!digitalRead(PUSH)) break;
+                                        readLine();
 
-                                //display.setTextSize(3);
-
-                                for (int p=0; p<40; p++)
-                                {
-                                        if (song[ligne][p] !=10)
-                                        {
-                                                //  Serial.write(song[ligne][p]);
-                                                display.print(song[ligne][p]);
-                                        }
-                                        else
-                                        {
-                                                //Serial.write(10);
-                                                //  Serial.println("");
-                                                break;
-                                        }
                                 }
+                                while(digitalRead(GATE)==0);
 
-                                display.display();
-                                display.setFont();
+                                do {
+                                        if(!digitalRead(PUSH)) break;
+                                        readLine();
 
+                                }
+                                while(digitalRead(GATE)==1);
 
 
 
@@ -358,10 +344,11 @@ void loop() {
                 display.print(mainFunctions[function]);
                 // display : connect serial terminal
                 display.display();
+                  display.setCursor(0,18);
                 WTF=HIGH;
                 do {
 
-
+                  /*
 
                         display.clearDisplay();
 
@@ -379,22 +366,26 @@ void loop() {
                         while(Serial.available()) {
                                 terminal= Serial.readString();        // read the incoming data as string
 
+
                         }
+                            */
 
                         do {
                                 if(!digitalRead(PUSH)) break;
+                                readSerial();
                         }
 
 
                         while(digitalRead(GATE)==0);
-                        if(!digitalRead(SW1)) Break();
+                        if(!digitalRead(SW1)) Break(); // stop talking when gate goes low
 
 
                         //End of HIGH gate
                         // waiting at low level
+
                         do {
                                 if(!digitalRead(PUSH)) break;
-                                ;
+                                readSerial();
                         }
 
                         while(digitalRead(GATE)==1);
@@ -404,12 +395,12 @@ void loop() {
                         delayMicroseconds(10000);
                         SetAccent(map(analogRead(3),1023,0,0,255));
 
-                        //  Serial.println("Start speaking");
-                       //Serial.print(terminal);
-                       //Serial.print(terminal.length());
-                        char kaiwa[terminal.length()];
-                        terminal.toCharArray(kaiwa,terminal.length()+1);
-                        Synthe(kaiwa);
+                       Serial.println("Start speaking");
+                      Serial.print(serialtext);
+                        //Serial.print(terminal.length());
+                      //  char kaiwa[terminal.length()];
+                      //  terminal.toCharArray(kaiwa,terminal.length()+1);
+                    Synthe(serialtext);
 
 
 
@@ -453,7 +444,7 @@ void setBLUE_ON()
                 else
                 {
                         digitalWrite(BLUE_LED,LOW);
-                        sayLine();
+                        //  sayLine();
                 }
         }
 }
@@ -466,26 +457,10 @@ void setRED_ON()
                 {
                         digitalWrite(RED_LED,HIGH);
 
-                        //  SetSpeed(map(analogRead(1),1023,0,50,300));
-                        //    delayMicroseconds(10000);
-                        //     SetPitch(map(analogRead(2),1023,0,254,0));
-                        //     delayMicroseconds(10000);
-                        //      SetAccent(map(analogRead(3),1023,0,0,255));
-                        //      delayMicroseconds(10000);
-                        //   //  SetSpeed(100);
                 }
                 else
                 {
                         digitalWrite(RED_LED,LOW);
-
-                        //     char kaiwa[20];
-                        //     terminal.toCharArray(kaiwa,20);
-                        //
-                        //     //Serial.print(sizeof(terminal));
-                        //     //Serial.print(" ");
-                        //     //Serial.println(kaiwa);
-                        //
-                        // Synthe(kaiwa);
 
                 }
         }
@@ -511,6 +486,90 @@ void displayFunctionList(int p)
         }
         display.display();
         //attachInterrupt(ROTA, rot, CHANGE);
+}
+
+void readSerial()
+
+{
+
+  if (Serial.available())
+   {
+      int inByte = Serial.read();
+      switch  (inByte)
+
+      {
+        case 13:
+        {
+          serialPointer=0;
+          memset( &serialtext, 0, 40 );
+          display.clearDisplay();
+          display.setCursor(15,0);
+          display.print(mainFunctions[function]);
+          //fh
+
+          display.display();
+          display.setCursor(0,18);
+          break;
+        }
+
+        case 8:
+        s
+          break;
+
+        case 10:
+          break;
+
+
+        default:
+        {
+          serialtext[serialPointer]=char(inByte);
+          serialPointer++;
+          display.print(char(inByte));
+          display.display();
+          break;
+        }
+
+     }
+  }
+
+}
+
+void readLine()
+{
+
+        display.clearDisplay();
+        display.setFont(&Orbitron_Light_22);
+        display.setTextSize(1);
+        display.setCursor(0,16);
+        ligne=map(analogRead(A6),0,1023,linePointer-1,0);
+        display.setTextSize(1);
+        display.print(ligne+1);
+        display.setFont(&Orbitron_Light_24);
+        display.setCursor(0,40);
+        display.setTextSize(1);
+
+        //display.setTextSize(3);
+
+        for (int p=0; p<40; p++)
+        {
+                if (song[ligne][p] !=10)
+                {
+                        //  Serial.write(song[ligne][p]);
+                        display.print(song[ligne][p]);
+                }
+                else
+                {
+                        //Serial.write(10);
+                        //  Serial.println("");
+                        break;
+                }
+        }
+
+        display.display();
+        display.setFont();
+
+
+
 }
 
 void sayLine()

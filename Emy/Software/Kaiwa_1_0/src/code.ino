@@ -18,20 +18,20 @@
  */
 
 
-/*
 
-   +-----------------+
-   |[ ]NC      OUT[ ]| Audio
-   |[ ]RST   !PLAY[ ]|
-   |[ ]NC       NC[ ]|
-   |[ ]NC       NC[ ]|
-   |[ ]NC      SCL[ ]|
-   |[ ]NC      SDA[ ]|
-   3V3 |[ ]3V3      5V[ ]| 5V
-   |[ ]GND     GND[ ]| GND
-   +________________/
 
- */
+//                        +-----------------+
+//                        |[ ]NC      OUT[ ]| Audio
+//                        |[ ]RST   !PLAY[ ]|
+//                        |[ ]NC       NC[ ]|
+//                        |[ ]NC       NC[ ]|
+//                        |[ ]NC      SCL[ ]|
+//                        |[ ]NC      SDA[ ]|
+//                    3V3 |[ ]3V3      5V[ ]| 5V
+//                        |[ ]GND     GND[ ]| GND
+//                        +________________/
+
+
 
 
  #define SW0 0
@@ -284,7 +284,7 @@ void loop() {
 
 
 
-                                  // readline into array to pass to Synthe
+                                // readline into array to pass to Synthe
 
 
                                 do {
@@ -300,8 +300,11 @@ void loop() {
 
                                 }
                                 while(digitalRead(GATE)==1);
+                                Serial.println("SD speaking");
+                                Serial.print(serialtext);
+                                Synthe(serialtext);
 
-
+osaki
 
                         }
 
@@ -344,31 +347,31 @@ void loop() {
                 display.print(mainFunctions[function]);
                 // display : connect serial terminal
                 display.display();
-                  display.setCursor(0,18);
+                display.setCursor(0,18);
                 WTF=HIGH;
                 do {
 
-                  /*
+                        /*
 
-                        display.clearDisplay();
+                              display.clearDisplay();
 
-                        //  display.setCursor(0,0);
-                        //    display.print(" ");
-                        display.setCursor(15,0);
-                        display.print(mainFunctions[function]);
-                        display.setCursor(0,18);
+                              //  display.setCursor(0,0);
+                              //    display.print(" ");
+                              display.setCursor(15,0);
+                              display.print(mainFunctions[function]);
+                              display.setCursor(0,18);
 
-                        display.print(terminal);
-                        display.display();
-
-
-
-                        while(Serial.available()) {
-                                terminal= Serial.readString();        // read the incoming data as string
+                              display.print(terminal);
+                              display.display();
 
 
-                        }
-                            */
+
+                              while(Serial.available()) {
+                                      terminal= Serial.readString();        // read the incoming data as string
+
+
+                              }
+                         */
 
                         do {
                                 if(!digitalRead(PUSH)) break;
@@ -395,12 +398,12 @@ void loop() {
                         delayMicroseconds(10000);
                         SetAccent(map(analogRead(3),1023,0,0,255));
 
-                       Serial.println("Start speaking");
-                      Serial.print(serialtext);
+                        Serial.println("Start speaking");
+                        Serial.print(serialtext);
                         //Serial.print(terminal.length());
-                      //  char kaiwa[terminal.length()];
-                      //  terminal.toCharArray(kaiwa,terminal.length()+1);
-                    Synthe(serialtext);
+                        //  char kaiwa[terminal.length()];
+                        //  terminal.toCharArray(kaiwa,terminal.length()+1);
+                        Synthe(serialtext);
 
 
 
@@ -492,45 +495,45 @@ void readSerial()
 
 {
 
-  if (Serial.available())
-   {
-      int inByte = Serial.read();
-      switch  (inByte)
-
-      {
-        case 13:
+        if (Serial.available())
         {
-          serialPointer=0;
-          memset( &serialtext, 0, 40 );
-          display.clearDisplay();
-          display.setCursor(15,0);
-          display.print(mainFunctions[function]);
-          //fh
+                int inByte = Serial.read();
+                switch  (inByte)
 
-          display.display();
-          display.setCursor(0,18);
-          break;
+                {
+                case 13:
+                {
+                        serialPointer=0;
+                        memset( &serialtext, 0, 40 );
+                        display.clearDisplay();
+                        display.setCursor(15,0);
+                        display.print(mainFunctions[function]);
+                        //fh
+
+                        display.display();
+                        display.setCursor(0,18);
+                        break;
+                }
+
+                case 8:
+
+                        break;
+
+                case 10:
+                        break;
+
+
+                default:
+                {
+                        serialtext[serialPointer]=char(inByte);
+                        serialPointer++;
+                        display.print(char(inByte));
+                        display.display();
+                        break;
+                }
+
+                }
         }
-
-        case 8:
-        s
-          break;
-
-        case 10:
-          break;
-
-
-        default:
-        {
-          serialtext[serialPointer]=char(inByte);
-          serialPointer++;
-          display.print(char(inByte));
-          display.display();
-          break;
-        }
-
-     }
-  }
 
 }
 
@@ -550,12 +553,18 @@ void readLine()
 
         //display.setTextSize(3);
 
+        // erase
+        memset( &serialtext, 0, 40 );
         for (int p=0; p<40; p++)
+
         {
                 if (song[ligne][p] !=10)
                 {
                         //  Serial.write(song[ligne][p]);
                         display.print(song[ligne][p]);
+                        serialtext[p]=song[ligne][p];
+
+
                 }
                 else
                 {

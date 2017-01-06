@@ -63,7 +63,7 @@
 char* mainFunctions[12]={
 
         "SD tts",
-        "Functio1",
+        "Numbers",
         "USB tts",
         "USB phon","","",""
 };
@@ -130,26 +130,34 @@ void setup() {
         // turn transistorized outputs low ;
         digitalWrite(BLUE_LED,HIGH);
         digitalWrite(RED_LED,HIGH);
-        analogReadResolution(10); //10 or 12 ?
+        analogReadResolution(12); //10 or 12 ?
 
         attachInterrupt(ROTA, rot, CHANGE);
 
 
-        // Open Serial communications and wait for port to open:
+          // Open Serial communications and wait for port to open:
         Serial.begin(115200);
-        //Serial.setTimeout(100); // why ?
-        //while (!Serial) {
-        //          ; // wait for Serial port to connect. Needed for native USB port only
-        //  }
 
+        //while (!Serial)
+
+        display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
+        display.clearDisplay();
         Serial.print("Initializing SD card...");
 
         if (!SD.begin(10)) {
                 Serial.println("initialization failed!");
-                return;
+                display.setTextSize(2);
+                display.setTextColor(BLACK,WHITE);
+                display.println(" Error #1 ");
+                display.setTextColor(WHITE);
+                display.println("SD card");
+                display.println("failed to ");
+                display.println("initialize");
+
+                display.display();
+                while(1);
         }
         Serial.println("initialization done.");
-        display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
 
 
         splashScreen();
@@ -161,10 +169,8 @@ void setup() {
         SetAccent(255);
         delay(10);
         Synthe("konichiwa.");
-
-
-
-
+        delay(10);
+        Synthe("yo'i/te'nnkidesune?");
         display.clearDisplay();
         display.setTextSize(2);
         display.setTextColor(WHITE);
@@ -300,11 +306,15 @@ void loop() {
 
                                 }
                                 while(digitalRead(GATE)==1);
+                                SetSpeed(map(analogRead(1),4095,0,50,300));
+                                delayMicroseconds(10000);
+                                SetPitch(map(analogRead(2),4095,0,254,0));
+                                delayMicroseconds(10000);
+                                SetAccent(map(analogRead(3),4095,0,0,255));
                                 Serial.println("SD speaking");
                                 Serial.print(serialtext);
                                 Synthe(serialtext);
 
-osaki
 
                         }
 
@@ -392,11 +402,11 @@ osaki
                         }
 
                         while(digitalRead(GATE)==1);
-                        SetSpeed(map(analogRead(1),1023,0,50,300));
+                        SetSpeed(map(analogRead(1),4095,0,50,300));
                         delayMicroseconds(10000);
-                        SetPitch(map(analogRead(2),1023,0,254,0));
+                        SetPitch(map(analogRead(2),4095,0,254,0));
                         delayMicroseconds(10000);
-                        SetAccent(map(analogRead(3),1023,0,0,255));
+                        SetAccent(map(analogRead(3),4095,0,0,255));
 
                         Serial.println("Start speaking");
                         Serial.print(serialtext);
@@ -544,7 +554,7 @@ void readLine()
         display.setFont(&Orbitron_Light_22);
         display.setTextSize(1);
         display.setCursor(0,16);
-        ligne=map(analogRead(A6),0,1023,linePointer-1,0);
+        ligne=map(analogRead(A6),0,4095,linePointer-1,0);
         display.setTextSize(1);
         display.print(ligne+1);
         display.setFont(&Orbitron_Light_24);

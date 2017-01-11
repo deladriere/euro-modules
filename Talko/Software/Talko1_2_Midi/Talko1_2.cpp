@@ -173,7 +173,7 @@ void Talkie::say(const uint8_t *addr)
 // if(digitalRead(PIN_SPEECH)==1 & digitalRead(PIN_VCO)==1) // check for repeat  mode
 if (mode!=MODE_SPEECH )
 			{
-			if(digitalRead(PIN_GATE)==0 || velocityByte==0)
+			if(digitalRead(PIN_GATE)==0 || velocityByte==0) // and bank = 18
 				{
 				energy=0xf; // if gate is LOW in repeat mode then stop the speech
 				}
@@ -221,7 +221,7 @@ if (mode!=MODE_SPEECH )
 					}
 
 				//while((PIND & B100) == B100 ); // While gate is high (faster than digitalRead(TRIGGER)==1)
-				while((PIND & B100) >> 2);  // While gate is high (faster than digitalRead(TRIGGER)==1)
+				while((PIND & B100) >> 2 );  // While gate is high (faster than digitalRead(TRIGGER)==1) // || velocityByte>0 not working need to mode check midi in this loop
 
 				}
 

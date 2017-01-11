@@ -169,8 +169,8 @@ void setup() {
         SetAccent(255);
         delay(10);
         Synthe("konichiwa.");
-        delay(10);
-        Synthe("yo'i/te'nnkidesune?");
+      //  delay(10);
+      //  Synthe("yo'i/te'nnkidesune?");
         display.clearDisplay();
         display.setTextSize(2);
         display.setTextColor(WHITE);
@@ -295,17 +295,18 @@ void loop() {
 
                                 do {
                                         if(!digitalRead(PUSH)) break;
-                                        readLine();
+                                      //  readLine();
 
                                 }
                                 while(digitalRead(GATE)==0);
 
                                 do {
                                         if(!digitalRead(PUSH)) break;
-                                        readLine();
+                                      //  readLine();
 
                                 }
                                 while(digitalRead(GATE)==1);
+                                readLine();
                                 SetSpeed(map(analogRead(1),4095,0,50,300));
                                 delayMicroseconds(10000);
                                 SetPitch(map(analogRead(2),4095,0,254,0));

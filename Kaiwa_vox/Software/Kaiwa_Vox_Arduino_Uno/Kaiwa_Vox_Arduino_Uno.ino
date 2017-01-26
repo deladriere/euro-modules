@@ -1,4 +1,4 @@
-#include "AquesTalk.h"  // http://www.a-quest.com/download/package/Arduino_AquesTalk_Library.zip
+s#include "AquesTalk.h"  // http://www.a-quest.com/download/package/Arduino_AquesTalk_Library.zip
 #include <Wire.h>  
 
 // Arduino Uno Click Shield
@@ -20,7 +20,7 @@
 AquesTalk atp;  // I2C address : 0x2E
 #define RESET 17 //  A3 is digital pin 17
 #define NPLAY 2 // busy playing when LOW
-#define AUDIO 6  // dummy
+
 
 
 void setup()
@@ -28,7 +28,7 @@ void setup()
 	pinMode(RESET, OUTPUT);
 	digitalWrite(RESET, HIGH);
 	pinMode(NPLAY,INPUT_PULLUP);
-	pinMode(AUDIO,INPUT_PULLUP);
+	
   delay(100);
   atp.Synthe("konnnichiwa.");
  
@@ -36,11 +36,10 @@ void setup()
 
 void loop()
 {  
-  atp.SetAccent(random(200));
-  atp.SetPitch(random(200));
-  atp.SetSpeed(random(200));
-  atp.Synthe("<ALPHA VAL=0 1 2 3 4 5 6 7 8 9>."); 
-  
-  
+   atp.Synthe("arigato.");
+   atp.SetAccent(random(200));
+   atp.SetPitch(random(200));
+   atp.SetSpeed(random(200));
+   atp.Synthe("<ALPHA VAL=0 1 2 3 4 5 6 7 8 9>."); 
 
 }

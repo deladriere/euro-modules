@@ -7,24 +7,23 @@
 
 /*
 
-   +-----------------+
-      A0 |[ ]AO      OUT[ ]| Audio
-      A3 |[ ]WN     REQN[ ]| 2
-   |[ ]NC       NC[ ]|
-   |[ ]NC       NC[ ]|
-   |[ ]NC      SCL[ ]| A5
-   |[ ]NC      SDA[ ]| A4
-     3V3 |[ ]3V3      5V[ ]| 5V
-   |[ ]GND     GND[ ]| GND
-   +________________/
+          +-----------------+
+        4 |[ ]AO      OUT[ ]| Audio
+        3 |[ ]WN     REQN[ ]| 2
+          |[ ]NC       NC[ ]|
+          |[ ]NC       NC[ ]|
+          |[ ]NC      SCL[ ]| A5
+          |[ ]NC      SDA[ ]| A4
+     3V3  |[ ]3V3      5V[ ]| 5V
+          |[ ]GND     GND[ ]| GND
+           +________________/
  *
  */
 
 
-#define REQN 2 //
-#define AO 14 // A0 is digital pin 14 (we cannot use A0 taken by the IDE)
-#define WN 17 // A3 is digital pin 17
-#define AUDIO  6 // (to define as input to avoid short-cut if sound pot is grounded)
+#define REQN 2 
+#define AO 4 
+#define WN 3 
 
 #define MCP23008_ADDR 0x40
 
@@ -785,13 +784,12 @@ MCP23008 MyMCP(MCP23008_ADDR);
 void setup() {
         Wire.begin();
 
-        DS1077_init(18); //  22= 3.2Mhz 18 = 4Mhz 14 = 5Mhz
+        DS1077_init(18); // pitch via clock control 22= 3.2Mhz 18 = 4Mhz 14 = 5Mhz
         MyMCP.writeIODIR(0x0);
-        pinMode(REQN,INPUT);
         pinMode(REQN,INPUT);
         pinMode(AO,OUTPUT);
         pinMode (WN,OUTPUT);
-        pinMode(AUDIO,INPUT);
+      
         INIT();
         FIN();
 

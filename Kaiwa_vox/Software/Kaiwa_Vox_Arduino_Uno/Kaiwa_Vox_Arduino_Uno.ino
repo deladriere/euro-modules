@@ -1,13 +1,11 @@
-s#include "AquesTalk.h"  // http://www.a-quest.com/download/package/Arduino_AquesTalk_Library.zip
+#include "AquesTalk.h"  // http://www.a-quest.com/download/package/Arduino_AquesTalk_Library.zip
 #include <Wire.h>  
-
-// Arduino Uno Click Shield
 
 /*
 
          +-----------------+
          |[ ]NC      OUT[ ]| Audio
-      A3 |[ ]RST   !PLAY[ ]| 2
+       3 |[ ]RST   !PLAY[ ]| 2
          |[ ]NC       NC[ ]|
          |[ ]NC       NC[ ]|
          |[ ]NC      SCL[ ]| A5
@@ -18,7 +16,7 @@ s#include "AquesTalk.h"  // http://www.a-quest.com/download/package/Arduino_Aque
 */
 
 AquesTalk atp;  // I2C address : 0x2E
-#define RESET 17 //  A3 is digital pin 17
+#define RESET 3 
 #define NPLAY 2 // busy playing when LOW
 
 

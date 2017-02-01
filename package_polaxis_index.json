@@ -1,0 +1,61 @@
+{
+  "packages":
+  [
+    {
+      "name": "falcon",
+      "maintainer": "Martin Lindupp",
+      "websiteURL": "http://www.arduino.cc/en/Reference/HomePage",
+      "help":
+      {
+        "online": "http://www.arduino.cc/en/Reference/HomePage"
+      },
+      "platforms":
+      [
+        {
+          "name": "Falcon Flight Controller Boards",
+          "architecture": "samd",
+          "version": "1.0.0",
+          "category": "Contributed",
+          "url": "file://C:/Users/Computer/Documents/FalconBoards/Falcon-1.0.0.zip",
+          "archiveFileName": "Falcon-1.0.0.zip",
+          "checksum": "SHA-256:01303f3e0c0416ec53dd514ed5cd558f11cd20c8ab33d07b3b1f1cdac6ec18e7",
+          "size": "1270658",
+          "boards": [
+    {
+      "name": "Falcon 1"
+    },
+            {
+              "name": "Falcon 2"
+            }
+          ],
+          "toolsDependencies":
+          [
+            {
+              "packager": "arduino",
+              "name": "arm-none-eabi-gcc",
+              "version": "4.8.3-2014q1"
+            },
+            {
+              "packager": "arduino",
+              "name": "bossac",
+              "version": "1.6.1-arduino"
+            },
+            {
+              "packager": "arduino",
+              "name": "openocd",
+              "version": "0.9.0-arduino"
+            },
+            {
+              "packager": "arduino",
+              "name": "CMSIS",
+              "version": "4.0.0-atmel"
+            }
+          ]
+        }
+      ],
+      "tools":
+      [
+      ]
+    }
+  ]
+}

@@ -27,7 +27,6 @@
 
 #define MCP23008_ADDR 0x40
 
-
 const uint8_t spZERO[]     PROGMEM =
 {0x34,
  0x65, 0xD4, 0x58, 0x00,

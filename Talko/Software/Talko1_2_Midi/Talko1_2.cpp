@@ -11,7 +11,15 @@
 #endif
 #include "Talko1_2.h"
 
+#include <MIDI.h>
 
+MIDI_CREATE_DEFAULT_INSTANCE();
+
+MIDI.setHandleNoteOn(handleNoteOn);
+
+byte velocityByte=0;
+								byte commandByte=0;
+								byte noteByte=0;
 
 
 #define FS 8000 // Speech engine sample rate
@@ -22,6 +30,9 @@ int16_t synthK1,synthK2;
 int8_t synthK3,synthK4,synthK5,synthK6,synthK7,synthK8,synthK9,synthK10;
 
 //int silenced = 0;
+
+
+
 
 uint8_t tmsEnergy[0x10] =
 	{
@@ -170,10 +181,13 @@ void Talkie::say(const uint8_t *addr)
 
 		// TRIGGER HACK
 
+
+
 // if(digitalRead(PIN_SPEECH)==1 & digitalRead(PIN_VCO)==1) // check for repeat  mode
 if (mode!=MODE_SPEECH )
 			{
-			if(digitalRead(PIN_GATE)==0 || velocityByte==0) // and bank = 18
+
+			if(velocityByte==0 ) // and bank = 18
 				{
 				energy=0xf; // if gate is LOW in repeat mode then stop the speech
 				}
@@ -211,17 +225,18 @@ if (mode!=MODE_SPEECH )
 				do
 					{
 
-					synthPeriod= map(analogRead(POT_BEND),0,1023,63,1); // check value max ! (63 0x3F)
-
+			synthPeriod= map(analogRead(POT_BEND),0,1023,63,1); // check value max ! (63 0x3F)
+				//	synthPeriod=map(noteByte,0,71,63,1); // check value max ! (63 0x3F)
 					 if (analogRead(POT_BEND)==0)synthPeriod=0; // cheating to have  more fun with the knob because 0 is on the other side of the scale (pitch to high there)
 
 					if(synthPeriod == 0) synthEnergy=map(analogRead(POT_SPEED),0,1023,15,0);//?? whynot working for voiced
 
+			MIDI.read();
 
 					}
 
-				//while((PIND & B100) == B100 ); // While gate is high (faster than digitalRead(TRIGGER)==1)
-				while((PIND & B100) >> 2 );  // While gate is high (faster than digitalRead(TRIGGER)==1) // || velocityByte>0 not working need to mode check midi in this loop
+				while(velocityByte>0);
+//	while((PIND & B100) >> 2 || velocityByte>0);  // While gate is high (faster than digitalRead(TRIGGER)==1) // || velocityByte>0 not working need to mode check midi in this loop
 
 				}
 
@@ -246,7 +261,7 @@ if (mode!=MODE_SPEECH )
 					synthK9 = tmsK9[getBits(3)];
 					synthK10 = tmsK10[getBits(3)];
 
-							if(digitalRead(PIN_BEND)==0)  /// sorry guys bending the neck here (if mode is not VCO) (why not ?)
+							if(digitalRead(PIN_BEND)==0 )  /// sorry guys bending the neck here (if mode is not VCO) (why not ?)
 						{
 						synthK5= map(analogRead(POT_BEND),20,1000,0,110);  // agressive
 						synthK10= map(analogRead(POT_BEND),20,1000,150,0); // ok
@@ -271,7 +286,10 @@ if (mode!=MODE_SPEECH )
 
 	if(mode!=MODE_SPEECH) // check for repeat mode
 	{
-	while(digitalRead(PIN_GATE)==0);
+		do {
+MIDI.read();
+		}
+	while(velocityByte==0); // was while(digitalRead(PIN_GATE)==0);
 	}
 
 	}
@@ -358,5 +376,3 @@ ISR(TIMER1_COMPA_vect)
 	nextPwm = (u0>>2)+0x80;
 
 	}
-
-

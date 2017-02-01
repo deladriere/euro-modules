@@ -8,6 +8,8 @@
 #include <inttypes.h>
 #include <avr/io.h>
 
+
+
 //SWITCHES
 #define PIN_BEND 4
 #define PIN_GATE 2 // gate in
@@ -26,15 +28,18 @@
 #define MODE_REPEAT 3
 
 
-
 class Talkie
 {
 public:
 								void say(const uint8_t* address);
+
 								uint8_t* ptrAddr;
 								uint8_t ptrBit;
-               int mode=0;
-               byte velocityByte;
+                int mode=0;
+
+
+
+
 private:
 								// Setup
 								uint8_t setup;
@@ -43,9 +48,9 @@ private:
 								void setPtr(uint8_t* addr);
 								uint8_t rev(uint8_t a);
 								uint8_t getBits(uint8_t bits);
+
+
 };
 
 
 #endif
-
-

@@ -3,7 +3,7 @@
   [
     {
       "name": "falcon",
-      "maintainer": "Jean-Luc Deladrière",
+      "maintainer": "Jean-Luc Deladriere",
       "websiteURL": "http://www.arduino.cc/en/Reference/HomePage",
       "help":
       {
@@ -16,7 +16,7 @@
           "architecture": "samd",
           "version": "1.0.0",
           "category": "Contributed",
-          "url": "file://C:/Users/Computer/Documents/FalconBoards/Falcon-1.0.0.zip",
+          "url": "file://C:/mac/Computer/Documents/FalconBoards/Falcon-1.0.0.zip",
           "archiveFileName": "Falcon-1.0.0.zip",
           "checksum": "SHA-256:01303f3e0c0416ec53dd514ed5cd558f11cd20c8ab33d07b3b1f1cdac6ec18e7",
           "size": "1270658",

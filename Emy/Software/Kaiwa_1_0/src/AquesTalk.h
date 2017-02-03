@@ -51,6 +51,39 @@ void Write(const char *msg)
 
 }
 
+void WriteS(const char *msg)
+{
+  // Wireの制約で、一度に送れるのは32byteまで
+  // AquesTalk picoへは一度に128byteまで送れるので、
+  // Wire.beginTransmission()～Wire.endTransmission()を複数回に分けて呼び出す
+//while(digitalRead(12)==0); //dirty fix !! must work with I2C !!
+  const char *p = msg;
+  for(;*p!=0;){
+    Wire.beginTransmission(I2C_ADDR_AQUESTALK);
+    // Wireの制約で、一度に送れるのは32byteまで
+    for(int i=0;i<50;i++){ //was 32 seems to be working with 50
+      Wire.write(*p++);
+      if (*(p-1)==97||*(p-1)==101||*(p-1)==105||*(p-1)==111||*(p-1)==117)
+      {
+              for (int i=0;i<map(analogRead(A4),0,4095,6,0);i++)
+              {
+
+                      Wire.write("-");
+              }
+      }
+
+
+
+
+      if(*p==0) break;
+    }
+
+  }
+
+}
+
+
+
 void WriteP(const char *msg)
 {
   const char *p = msg;
@@ -87,13 +120,34 @@ void Break()
 
 void Synthe(const char *msg)
 {
-  while(IsBusy()) ; // working when checking => priority to speech not going to next step but doesn't reset speech - break Needed
+if (IsBusy()==0) // to allow reading line when busy
+{
+//  while(IsBusy()) ; // working when checking => priority to speech not going to next step but doesn't reset speech - break Needed
  //Break();
+
   Write(msg);
 //WriteP(PSTR_CR); // not working why ?
   Wire.write("\r");
   Wire.endTransmission(); // 実際はこのタイミングで送信される
 }
+
+}
+
+void Sing(const char *msg)
+{
+if (IsBusy()==0) // to allow reading line when busy
+{
+//  while(IsBusy()) ; // working when checking => priority to speech not going to next step but doesn't reset speech - break Needed
+ //Break();
+
+  WriteS(msg);
+//WriteP(PSTR_CR); // not working why ?
+  Wire.write("\r");
+  Wire.endTransmission(); // 実際はこのタイミングで送信される
+}
+
+}
+
 
 void getResponse(char *str)
 {

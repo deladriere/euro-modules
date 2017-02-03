@@ -4,17 +4,17 @@
     {
       "name": "falcon",
       "maintainer": "Jean-Luc Deladriere",
-      "websiteURL": "http://www.arduino.cc/en/Reference/HomePage",
+      "websiteURL": "http://www.polaxis.be",
       "help":
       {
-        "online": "http://www.arduino.cc/en/Reference/HomePage"
+        "online": "http://www.polaxis.be"
       },
       "platforms":
       [
         {
           "name": "Falcon Flight Controller Boards",
           "architecture": "samd",
-          "version": "1.0.0",
+          "version": "1.0.1",
           "category": "Contributed",
           "url": "file://C:/mac/Computer/Documents/FalconBoards/Falcon-1.0.0.zip",
           "archiveFileName": "Falcon-1.0.0.zip",

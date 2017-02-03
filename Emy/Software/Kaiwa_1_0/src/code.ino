@@ -31,6 +31,9 @@
 //                        |[ ]GND     GND[ ]| GND
 //                        +________________/
 
+//#define PIN_A6 (8ul)
+
+//static const uint8_t A6 = PIN_A6 ;
 
 
 
@@ -58,6 +61,8 @@
  */
 
 #define VERSION "Ver. 1.0"
+#define ON 0
+#define OFF 1
 
 
 char* mainFunctions[12]={
@@ -81,7 +86,7 @@ char serialtext[40];
 bool WTF;
 
 char inputChar;
-char* myFiles[10];  // max 10 files
+char* myFiles[20];  // max 20 files
 int fileCounter=0; // file index
 int fileNumber=0; // file number
 int filePointer=0;
@@ -135,7 +140,7 @@ void setup() {
         attachInterrupt(ROTA, rot, CHANGE);
 
 
-          // Open Serial communications and wait for port to open:
+        // Open Serial communications and wait for port to open:
         Serial.begin(115200);
 
         //while (!Serial)
@@ -169,8 +174,8 @@ void setup() {
         SetAccent(255);
         delay(10);
         Synthe("konichiwa.");
-      //  delay(10);
-      //  Synthe("yo'i/te'nnkidesune?");
+        //  delay(10);
+        //  Synthe("yo'i/te'nnkidesune?");
         display.clearDisplay();
         display.setTextSize(2);
         display.setTextColor(WHITE);
@@ -295,26 +300,28 @@ void loop() {
 
                                 do {
                                         if(!digitalRead(PUSH)) break;
-                                      //  readLine();
+                                    //    readLine();
 
                                 }
-                                while(digitalRead(GATE)==0);
+                                while(digitalRead(GATE)==ON);
 
                                 do {
                                         if(!digitalRead(PUSH)) break;
-                                      //  readLine();
+                                        readLine();
 
                                 }
-                                while(digitalRead(GATE)==1);
+                                while(digitalRead(GATE)==OFF);
                                 readLine();
                                 SetSpeed(map(analogRead(1),4095,0,50,300));
-                                delayMicroseconds(10000);
+                                delayMicroseconds(2000);
                                 SetPitch(map(analogRead(2),4095,0,254,0));
-                                delayMicroseconds(10000);
+                                delayMicroseconds(2000);
                                 SetAccent(map(analogRead(3),4095,0,0,255));
-                                Serial.println("SD speaking");
-                                Serial.print(serialtext);
-                                Synthe(serialtext);
+                                delayMicroseconds(2000);
+                                //  Serial.println("SD speaking");
+                                //  Serial.print(serialtext);
+                              //longVowels(serialtext); was for debug
+                                Sing(serialtext);
 
 
                         }
@@ -447,6 +454,32 @@ void loop() {
    ██      ██    ██ ██  ██ ██ ██         ██    ██ ██    ██ ██  ██ ██      ██
    ██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████ ███████
  */
+
+
+void longVowels(const char *msg)
+{
+        const char *p = msg;
+        for(; *p!=0; )
+        {
+
+                // Wireの制約で、一度に送れるのは32byteまで
+                for(int i=0; i<50; i++) { //was 32 seems to be working with 50
+
+                        Serial.print(*p++);
+                        if (*(p-1)==97||*(p-1)==101||*(p-1)==105||*(p-1)==111||*(p-1)==117)
+                        {
+                                for (int i=0;i<map(analogRead(A4),0,4095,6,0);i++)
+                                {
+
+                                        Serial.print("-");
+                                }
+                        }
+
+                        if(*p==0) break;
+                }
+
+        }
+}
 
 void setBLUE_ON()
 {

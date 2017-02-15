@@ -41,7 +41,7 @@
  #define SW1 1
  #define GATE 2
  #define PUSH 3
- #define RST_Microbus 4
+ #define RST 4
  #define CS_Microbus 5
  #define ROTA 6
  #define ROTB 7
@@ -99,6 +99,11 @@ static boolean rotating=false;
 volatile int interruptCount=0; // The rotary counter
 
 
+// clock setting
+int reset;
+int preset;
+
+
 
 /*
    ██████  ██████       ██ ███████  ██████ ████████ ███████
@@ -130,6 +135,8 @@ void setup() {
         pinMode(GATE, INPUT_PULLUP);
         pinMode(BLUE_LED,OUTPUT);
         pinMode(RED_LED,OUTPUT);
+        pinMode(RST,OUTPUT);
+        digitalWrite(RST,HIGH);
 
 
         // turn transistorized outputs low ;
@@ -170,9 +177,16 @@ void setup() {
 //Wire.begin();
         SetSpeed(80);
         delay(10);
-        SetPitch(100);
-        SetAccent(255);
+        //  SetPitch(100);
+        //  SetAccent(255);
+        //SetClock(254);
+        SetClock(map(analogRead(5),4095,0,1,254));
+        //  Synthe("#W03EFE"); // factory=  0x03E: 0xFF 0x03F: 0xFF
         delay(10);
+        //  Synthe("#W03F01");
+        delay(10);
+        Reset();
+        delay(50);   //seems to be the minimal
         Synthe("konichiwa.");
         //  delay(10);
         //  Synthe("yo'i/te'nnkidesune?");
@@ -300,7 +314,7 @@ void loop() {
 
                                 do {
                                         if(!digitalRead(PUSH)) break;
-                                    //    readLine();
+                                        //    readLine();
 
                                 }
                                 while(digitalRead(GATE)==ON);
@@ -313,14 +327,32 @@ void loop() {
                                 while(digitalRead(GATE)==OFF);
                                 readLine();
                                 SetSpeed(map(analogRead(1),4095,0,50,300));
-                                delayMicroseconds(2000);
+                                delayMicroseconds(10000); // 2000 wih 8Mhz but not lower search for minimal value at low clock
                                 SetPitch(map(analogRead(2),4095,0,254,0));
-                                delayMicroseconds(2000);
+                                delayMicroseconds(10000);
                                 SetAccent(map(analogRead(3),4095,0,0,255));
-                                delayMicroseconds(2000);
+
+
+                                reset = analogRead(5);
+                                if((abs(reset-preset))>100)
+                                {
+                                        digitalWrite(RED_LED,LOW);
+                                        delay(20);
+
+                                        preset=reset;
+                                        SetClock(map(reset,4095,0,1,254));
+                                        delay(20);
+                                        Reset();
+                                        delay(50);
+                                        Synthe("#J");
+                                        digitalWrite(RED_LED,HIGH);
+                                }
+
+
+                                delayMicroseconds(10000);
                                 //  Serial.println("SD speaking");
                                 //  Serial.print(serialtext);
-                              //longVowels(serialtext); was for debug
+                                //longVowels(serialtext); was for debug
                                 Sing(serialtext);
 
 
@@ -410,6 +442,7 @@ void loop() {
                         }
 
                         while(digitalRead(GATE)==1);
+                        delayMicroseconds(10000);
                         SetSpeed(map(analogRead(1),4095,0,50,300));
                         delayMicroseconds(10000);
                         SetPitch(map(analogRead(2),4095,0,254,0));
@@ -456,6 +489,14 @@ void loop() {
  */
 
 
+void Reset()
+{
+        digitalWrite(RST,LOW);
+        delay(20);
+        digitalWrite(RST,HIGH);
+
+}
+
 void longVowels(const char *msg)
 {
         const char *p = msg;
@@ -468,7 +509,7 @@ void longVowels(const char *msg)
                         Serial.print(*p++);
                         if (*(p-1)==97||*(p-1)==101||*(p-1)==105||*(p-1)==111||*(p-1)==117)
                         {
-                                for (int i=0;i<map(analogRead(A4),0,4095,6,0);i++)
+                                for (int i=0; i<map(analogRead(A4),0,4095,6,0); i++)
                                 {
 
                                         Serial.print("-");

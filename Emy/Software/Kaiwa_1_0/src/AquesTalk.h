@@ -231,3 +231,11 @@ void SetSpeed(uint16_t speed, uint8_t *pRet=0)
   SetRom(0x003, (uint8_t)(speed/256), pRet);
   if(pRet!=0 && *pRet!=0) return;
 }
+
+void SetClock(uint16_t clock,uint8_t *pRet=0)
+{
+
+SetRom(0x03E, clock, pRet);
+if (clock==0xFF) clock=0;
+SetRom(0x03F, 0xFF-clock, pRet);
+}

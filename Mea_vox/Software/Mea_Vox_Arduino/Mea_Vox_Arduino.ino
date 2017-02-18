@@ -21,9 +21,9 @@
  */
 
 
-#define REQN 2 
-#define AO 4 
-#define WN 3 
+#define REQN 2
+#define AO 4
+#define WN 3
 
 #define MCP23008_ADDR 0x40
 
@@ -788,7 +788,7 @@ void setup() {
         pinMode(REQN,INPUT);
         pinMode(AO,OUTPUT);
         pinMode (WN,OUTPUT);
-      
+
         INIT();
         FIN();
 
@@ -1068,6 +1068,3 @@ void loop() {
                 delay(300);
         }
 }
-
-
-

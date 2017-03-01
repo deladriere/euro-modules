@@ -70,7 +70,7 @@ char* mainFunctions[12]={
         "SD tts",
         "Numbers",
         "USB tts",
-        "USB phon","","",""
+        "Voice","","",""
 };
 
 #define numFunctions 4
@@ -103,6 +103,18 @@ volatile int interruptCount=0; // The rotary counter
 int reset;
 int preset;
 
+/* ajouter quelque part
+  display.drawBitmap(35,0, myBitmap, 16, 16, WHITE);
+   display.drawBitmap(75,0, myBitmap, 16, 16, WHITE);
+   const unsigned char myBitmap [] PROGMEM = {
+     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xe0, 0x18, 0x38, 0x39, 0x9c, 0x49, 0x92,
+     0x49, 0x92, 0x38, 0x1c, 0x1c, 0x78, 0x07, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+   };
+
+
+
+
+*/
 
 
 /*
@@ -332,7 +344,8 @@ void loop() {
                                 delayMicroseconds(10000);
                                 SetAccent(map(analogRead(3),4095,0,0,255));
 
-
+// moved as a function
+/*
                                 reset = analogRead(5);
                                 if((abs(reset-preset))>100)
                                 {
@@ -348,7 +361,7 @@ void loop() {
                                         digitalWrite(RED_LED,HIGH);
                                 }
 
-
+*/
                                 delayMicroseconds(10000);
                                 //  Serial.println("SD speaking");
                                 //  Serial.print(serialtext);
@@ -473,6 +486,27 @@ void loop() {
                 break;
         case 3:
                 Serial.println("function 3");
+                while(!digitalRead(PUSH));
+
+                do {
+                  reset = analogRead(5);
+                                  if((abs(reset-preset))>100)
+
+                                  {
+                                          delay(200); // ralentir la boucle
+                                          digitalWrite(RED_LED,LOW);
+                                          delay(20);
+
+                                          preset=reset;
+                                          SetClock(map(reset,4095,0,1,254));
+                                          delay(20);
+                                          Reset();
+                                          delay(50);
+                                          Synthe("konichiwa.");
+                                          digitalWrite(RED_LED,HIGH);
+                                  }
+                } while(digitalRead(PUSH));
+
                 break;
         }
 
@@ -782,7 +816,8 @@ void GetFilesList(File dir) {
 }
 
 
-// get rotary
+// get
+ary
 void rot()
 {
 

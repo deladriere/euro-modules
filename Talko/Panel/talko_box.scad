@@ -1,11 +1,11 @@
 // http://www.doepfer.de/a100_man/a100m_e.htm
 $fn=50;
-hauteur = 5;
+hauteur = 35;
 diaFeet=6;
 diaVis=2.8;
 longueur= 128.7;
 epaisseur = 1.5;
-panelT=1.9;
+panelT=2.2;
 largeur = 51.4; 
 
 /* TODO
@@ -18,8 +18,8 @@ module Minitel ()
 {
     
     cylinder (h=10,d=16.5);
-    translate ([0,11.1,0]) cylinder (h=10,d=3.2);
-    translate ([0,-11.1,0]) cylinder (h=10,d=3.2);
+    translate ([0,11.4,0]) cylinder (h=10,d=3.2);
+    translate ([0,-11.4,0]) cylinder (h=10,d=3.2);
 
 }
 

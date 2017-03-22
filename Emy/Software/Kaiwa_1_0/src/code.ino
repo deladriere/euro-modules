@@ -102,9 +102,11 @@ volatile int interruptCount=0; // The rotary counter
 // clock setting
 int reset;
 int preset;
+int fin =0; /// pour pression longue
+boolean pressed; // press detection
 
 /* ajouter quelque part
-  display.drawBitmap(35,0, myBitmap, 16, 16, WHITE);
+   display.drawBitmap(35,0, myBitmap, 16, 16, WHITE);
    display.drawBitmap(75,0, myBitmap, 16, 16, WHITE);
    const unsigned char myBitmap [] PROGMEM = {
      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xe0, 0x18, 0x38, 0x39, 0x9c, 0x49, 0x92,
@@ -114,15 +116,15 @@ int preset;
 
 
 
-*/
+ */
 
 
 /*
-   ██████  ██████       ██ ███████  ██████ ████████ ███████
+    ██████  ██████       ██ ███████  ██████ ████████ ███████
    ██    ██ ██   ██      ██ ██      ██         ██    ██
    ██    ██ ██████       ██ █████   ██         ██    ███████
    ██    ██ ██   ██ ██   ██ ██      ██         ██         ██
-   ██████  ██████   █████  ███████  ██████    ██    ███████
+    ██████  ██████   █████  ███████  ██████    ██    ███████
  */
 
 File root;
@@ -192,6 +194,7 @@ void setup() {
         //  SetPitch(100);
         //  SetAccent(255);
         //SetClock(254);
+        //  Wire.setClock(100000L);
         SetClock(map(analogRead(5),4095,0,1,254));
         //  Synthe("#W03EFE"); // factory=  0x03E: 0xFF 0x03F: 0xFF
         delay(10);
@@ -361,7 +364,7 @@ void loop() {
                                         digitalWrite(RED_LED,HIGH);
                                 }
 
-*/
+ */
                                 delayMicroseconds(10000);
                                 //  Serial.println("SD speaking");
                                 //  Serial.print(serialtext);
@@ -485,27 +488,54 @@ void loop() {
 
                 break;
         case 3:
+
                 Serial.println("function 3");
-                while(!digitalRead(PUSH));
+              //  while(!digitalRead(PUSH));
+
+            fin=0;
 
                 do {
-                  reset = analogRead(5);
-                                  if((abs(reset-preset))>100)
 
-                                  {
-                                          delay(200); // ralentir la boucle
-                                          digitalWrite(RED_LED,LOW);
-                                          delay(20);
+                        reset = map(analogRead(5),4095,70,1,254);
+                        display.clearDisplay();
+                        display.setTextSize(1);
+                        display.setCursor(0,16);
+                        display.print("Voice");
+                        display.setFont(&Orbitron_Light_24);
+                        display.setCursor(0,40);
+                        display.setTextSize(1);
+                        display.print(reset);
+                        display.display();
 
-                                          preset=reset;
-                                          SetClock(map(reset,4095,0,1,254));
-                                          delay(20);
-                                          Reset();
-                                          delay(50);
-                                          Synthe("konichiwa.");
-                                          digitalWrite(RED_LED,HIGH);
-                                  }
-                } while(digitalRead(PUSH));
+                      if (fin>1000)
+                      {
+                              // ralentir la boucle
+                        digitalWrite(RED_LED,LOW);
+                        SetClock(reset);
+                        delay(20);
+                        Reset();
+                        delay(50);
+                        Synthe("konichiwa.");
+                        digitalWrite(RED_LED,HIGH);
+                        fin=0;
+                      }
+                      else
+                      {
+                        fin=0;
+                      }
+
+
+                        do {
+                          fin++;
+
+                        //  Serial.println(fin);
+                        } while(digitalRead(PUSH)==0);
+
+                }
+
+                while(fin<100000L); // long presss
+
+              //  Serial.print(fin);
 
                 break;
         }
@@ -816,8 +846,7 @@ void GetFilesList(File dir) {
 }
 
 
-// get
-ary
+// get rotary
 void rot()
 {
 

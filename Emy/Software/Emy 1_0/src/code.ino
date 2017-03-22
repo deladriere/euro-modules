@@ -1,30 +1,48 @@
-// Talkie library by Adafruit : https://github.com/adafruit/Talkie
+// Talkie library by Adafruit : https://github.com/adafruit/Talkie version february 10, 2017
 
 #include "talkie.h"
 #include "5220_alphon.h"
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <Kfonts.h>
+#include <Wire.h>
 
-
-
-/*
-
-██   ██  █████  ██████  ██████  ██     ██  █████  ██████  ███████
-██   ██ ██   ██ ██   ██ ██   ██ ██     ██ ██   ██ ██   ██ ██
-███████ ███████ ██████  ██   ██ ██  █  ██ ███████ ██████  █████
-██   ██ ██   ██ ██   ██ ██   ██ ██ ███ ██ ██   ██ ██   ██ ██
-██   ██ ██   ██ ██   ██ ██████   ███ ███  ██   ██ ██   ██ ███████
-
-*/
+const unsigned char Eye [] PROGMEM = {
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xe0, 0x18, 0x38, 0x39, 0x9c, 0x49, 0x92,
+  0x49, 0x92, 0x38, 0x1c, 0x1c, 0x78, 0x07, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
 
 
 /*
 
-██    ██  █████  ██████  ██  █████  ██████  ██      ███████ ███████
-██    ██ ██   ██ ██   ██ ██ ██   ██ ██   ██ ██      ██      ██
-██    ██ ███████ ██████  ██ ███████ ██████  ██      █████   ███████
- ██  ██  ██   ██ ██   ██ ██ ██   ██ ██   ██ ██      ██           ██
-  ████   ██   ██ ██   ██ ██ ██   ██ ██████  ███████ ███████ ███████
+   ██   ██  █████  ██████  ██████  ██     ██  █████  ██████  ███████
+   ██   ██ ██   ██ ██   ██ ██   ██ ██     ██ ██   ██ ██   ██ ██
+   ███████ ███████ ██████  ██   ██ ██  █  ██ ███████ ██████  █████
+   ██   ██ ██   ██ ██   ██ ██   ██ ██ ███ ██ ██   ██ ██   ██ ██
+   ██   ██ ██   ██ ██   ██ ██████   ███ ███  ██   ██ ██   ██ ███████
 
-*/
+ */
+
+#define SW0 0
+#define SW1 1
+#define GATE 2
+#define PUSH 3
+#define ROTA 6
+#define ROTB 7
+#define BLUE_LED  12
+#define RED_LED 13
+
+/*
+
+   ██    ██  █████  ██████  ██  █████  ██████  ██      ███████ ███████
+   ██    ██ ██   ██ ██   ██ ██ ██   ██ ██   ██ ██      ██      ██
+   ██    ██ ███████ ██████  ██ ███████ ██████  ██      █████   ███████
+   ██  ██  ██   ██ ██   ██ ██ ██   ██ ██   ██ ██      ██           ██
+   ████   ██   ██ ██   ██ ██ ██   ██ ██████  ███████ ███████ ███████
+
+ */
+
+#define VERSION "Ver. 1.0"
 
 //const uint8_t *alphons[72]  = {sp_alphon1,sp_alphon2,sp_alphon3,sp_alphon4,sp_alphon5,sp_alphon6,sp_alphon7,sp_alphon8,sp_alphon9,sp_alphon10,sp_alphon11,sp_alphon12,sp_alphon13,sp_alphon14,sp_alphon15,sp_alphon16,sp_alphon17,sp_alphon18,sp_alphon19,sp_alphon20,sp_alphon21,sp_alphon22,sp_alphon23,sp_alphon24,sp_alphon25,sp_alphon26,sp_alphon27,sp_alphon28,sp_alphon29,sp_alphon30,sp_alphon31,sp_alphon32,sp_alphon33,sp_alphon34,sp_alphon35,sp_alphon36,sp_alphon37,sp_alphon38,sp_alphon39,sp_alphon40,sp_alphon41,sp_alphon42,sp_alphon43,sp_alphon44,sp_alphon45,sp_alphon46,sp_alphon47,sp_alphon48,sp_alphon49,sp_alphon50,sp_alphon51,sp_alphon52,sp_alphon53,sp_alphon54,sp_alphon55,sp_alphon56,sp_alphon57,sp_alphon58,sp_alphon59,sp_alphon60,sp_alphon61,sp_alphon62,sp_alphon63,sp_alphon64,sp_alphon65,sp_alphon66,sp_alphon67,sp_alphon68,sp_alphon69,sp_alphon70,sp_alphon71,sp_alphon7};
 
@@ -35,58 +53,59 @@ const char *alloL[]  ={"AE1","AE1N","AH1","AH1N","AW1","AW1N","E1","E1N","EH1","
 
 /*
 
- ██████  ██████       ██ ███████  ██████ ████████ ███████
-██    ██ ██   ██      ██ ██      ██         ██    ██
-██    ██ ██████       ██ █████   ██         ██    ███████
-██    ██ ██   ██ ██   ██ ██      ██         ██         ██
- ██████  ██████   █████  ███████  ██████    ██    ███████
+   ██████  ██████       ██ ███████  ██████ ████████ ███████
+   ██    ██ ██   ██      ██ ██      ██         ██    ██
+   ██    ██ ██████       ██ █████   ██         ██    ███████
+   ██    ██ ██   ██ ██   ██ ██      ██         ██         ██
+   ██████  ██████   █████  ███████  ██████    ██    ███████
 
-*/
-
-
-
-
-
-/*
-
-███████ ██    ██ ███    ██  ██████ ████████ ██  ██████  ███    ██ ███████
-██      ██    ██ ████   ██ ██         ██    ██ ██    ██ ████   ██ ██
-█████   ██    ██ ██ ██  ██ ██         ██    ██ ██    ██ ██ ██  ██ ███████
-██      ██    ██ ██  ██ ██ ██         ██    ██ ██    ██ ██  ██ ██      ██
-██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████ ███████
-
-*/
-
-
-
-/*
-
-███████ ███████ ████████ ██    ██ ██████
-██      ██         ██    ██    ██ ██   ██
-███████ █████      ██    ██    ██ ██████
-     ██ ██         ██    ██    ██ ██
-███████ ███████    ██     ██████  ██
-
-*/
-
-
-
-/*
-
-██       ██████   ██████  ██████
-██      ██    ██ ██    ██ ██   ██
-██      ██    ██ ██    ██ ██████
-██      ██    ██ ██    ██ ██
-███████  ██████   ██████  ██
-
-*/
-
-
-
-
-
-
+ */
+Adafruit_SSD1306 display(0); // modif library for 64
 Talkie voice;
+
+
+
+/*
+
+   ███████ ██    ██ ███    ██  ██████ ████████ ██  ██████  ███    ██ ███████
+   ██      ██    ██ ████   ██ ██         ██    ██ ██    ██ ████   ██ ██
+   █████   ██    ██ ██ ██  ██ ██         ██    ██ ██    ██ ██ ██  ██ ███████
+   ██      ██    ██ ██  ██ ██ ██         ██    ██ ██    ██ ██  ██ ██      ██
+   ██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████ ███████
+
+ */
+
+
+
+ void splashScreen()
+ {
+         display.clearDisplay();
+         display.setCursor(0,0);
+         display.setTextColor(WHITE);
+         display.setTextSize(2);
+         display.println("Polaxis");
+         display.display();
+         delay(500);
+
+         display.setTextSize(3);
+         display.setCursor(0,22);
+         display.println("Emy");
+         display.setTextSize(2);
+         display.setCursor(0,50);
+         display.println(VERSION);
+         display.display();
+         delay(1500);
+ }
+
+
+
+
+
+
+
+
+
+
 
 const uint8_t spZERO[]     PROGMEM = {0x69, 0xFB, 0x59, 0xDD, 0x51, 0xD5, 0xD7, 0xB5, 0x6F, 0x0A, 0x78, 0xC0, 0x52, 0x01, 0x0F, 0x50, 0xAC, 0xF6, 0xA8, 0x16, 0x15, 0xF2, 0x7B, 0xEA, 0x19, 0x47, 0xD0, 0x64, 0xEB, 0xAD, 0x76, 0xB5, 0xEB, 0xD1, 0x96, 0x24, 0x6E, 0x62, 0x6D, 0x5B, 0x1F, 0x0A, 0xA7, 0xB9, 0xC5, 0xAB, 0xFD, 0x1A, 0x62, 0xF0, 0xF0, 0xE2, 0x6C, 0x73, 0x1C, 0x73, 0x52, 0x1D, 0x19, 0x94, 0x6F, 0xCE, 0x7D, 0xED, 0x6B, 0xD9, 0x82, 0xDC, 0x48, 0xC7, 0x2E, 0x71, 0x8B, 0xBB, 0xDF, 0xFF, 0x1F};
 const uint8_t spONE[]      PROGMEM = {0x66, 0x4E, 0xA8, 0x7A, 0x8D, 0xED, 0xC4, 0xB5, 0xCD, 0x89, 0xD4, 0xBC, 0xA2, 0xDB, 0xD1, 0x27, 0xBE, 0x33, 0x4C, 0xD9, 0x4F, 0x9B, 0x4D, 0x57, 0x8A, 0x76, 0xBE, 0xF5, 0xA9, 0xAA, 0x2E, 0x4F, 0xD5, 0xCD, 0xB7, 0xD9, 0x43, 0x5B, 0x87, 0x13, 0x4C, 0x0D, 0xA7, 0x75, 0xAB, 0x7B, 0x3E, 0xE3, 0x19, 0x6F, 0x7F, 0xA7, 0xA7, 0xF9, 0xD0, 0x30, 0x5B, 0x1D, 0x9E, 0x9A, 0x34, 0x44, 0xBC, 0xB6, 0x7D, 0xFE, 0x1F};
@@ -115,66 +134,120 @@ const uint8_t spVOLTS[]    PROGMEM = {0xA0, 0xDA, 0xA2, 0xB2, 0x3A, 0x44, 0x55, 
 
 /* Say any number between -999,999 and 999,999 */
 void sayNumber(long n) {
-  if (n<0) {
-    voice.say(spMINUS);
-    sayNumber(-n);
-  } else if (n==0) {
-    voice.say(spZERO);
-  } else {
-    if (n>=1000) {
-      int thousands = n / 1000;
-      sayNumber(thousands);
-      voice.say(spTHOUSAND);
-      n %= 1000;
-      if ((n > 0) && (n<100)) voice.say(spAND);
-    }
-    if (n>=100) {
-      int hundreds = n / 100;
-      sayNumber(hundreds);
-      voice.say(spHUNDRED);
-      n %= 100;
-      if (n > 0) voice.say(spAND);
-    }
-    if (n>19) {
-      int tens = n / 10;
-      switch (tens) {
-        case 2: voice.say(spTWENTY); break;
-        case 3: voice.say(spTHIR_); voice.say(spT); break;
-        case 4: voice.say(spFOUR); voice.say(spT);  break;
-        case 5: voice.say(spFIF_);  voice.say(spT); break;
-        case 6: voice.say(spSIX);  voice.say(spT); break;
-        case 7: voice.say(spSEVEN);  voice.say(spT); break;
-        case 8: voice.say(spEIGHT);  voice.say(spT); break;
-        case 9: voice.say(spNINE);  voice.say(spT); break;
-      }
-      n %= 10;
-    }
-    switch(n) {
-      case 1: voice.say(spONE); break;
-      case 2: voice.say(spTWO); break;
-      case 3: voice.say(spTHREE); break;
-      case 4: voice.say(spFOUR); break;
-      case 5: voice.say(spFIVE); break;
-      case 6: voice.say(spSIX); break;
-      case 7: voice.say(spSEVEN); break;
-      case 8: voice.say(spEIGHT); break;
-      case 9: voice.say(spNINE); break;
-      case 10: voice.say(spTEN); break;
-      case 11: voice.say(spELEVEN); break;
-      case 12: voice.say(spTWELVE); break;
-      case 13: voice.say(spTHIR_); voice.say(sp_TEEN); break;
-      case 14: voice.say(spFOUR); voice.say(sp_TEEN);break;
-      case 15: voice.say(spFIF_); voice.say(sp_TEEN); break;
-      case 16: voice.say(spSIX); voice.say(sp_TEEN); break;
-      case 17: voice.say(spSEVEN); voice.say(sp_TEEN); break;
-      case 18: voice.say(spEIGHT); voice.say(sp_TEEN); break;
-      case 19: voice.say(spNINE); voice.say(sp_TEEN); break;
-    }
-  }
+        if (n<0) {
+                voice.say(spMINUS);
+                sayNumber(-n);
+        } else if (n==0) {
+                voice.say(spZERO);
+        } else {
+                if (n>=1000) {
+                        int thousands = n / 1000;
+                        sayNumber(thousands);
+                        voice.say(spTHOUSAND);
+                        n %= 1000;
+                        if ((n > 0) && (n<100)) voice.say(spAND);
+                }
+                if (n>=100) {
+                        int hundreds = n / 100;
+                        sayNumber(hundreds);
+                        voice.say(spHUNDRED);
+                        n %= 100;
+                        if (n > 0) voice.say(spAND);
+                }
+                if (n>19) {
+                        int tens = n / 10;
+                        switch (tens) {
+                        case 2: voice.say(spTWENTY); break;
+                        case 3: voice.say(spTHIR_); voice.say(spT); break;
+                        case 4: voice.say(spFOUR); voice.say(spT);  break;
+                        case 5: voice.say(spFIF_);  voice.say(spT); break;
+                        case 6: voice.say(spSIX);  voice.say(spT); break;
+                        case 7: voice.say(spSEVEN);  voice.say(spT); break;
+                        case 8: voice.say(spEIGHT);  voice.say(spT); break;
+                        case 9: voice.say(spNINE);  voice.say(spT); break;
+                        }
+                        n %= 10;
+                }
+                switch(n) {
+                case 1: voice.say(spONE); break;
+                case 2: voice.say(spTWO); break;
+                case 3: voice.say(spTHREE); break;
+                case 4: voice.say(spFOUR); break;
+                case 5: voice.say(spFIVE); break;
+                case 6: voice.say(spSIX); break;
+                case 7: voice.say(spSEVEN); break;
+                case 8: voice.say(spEIGHT); break;
+                case 9: voice.say(spNINE); break;
+                case 10: voice.say(spTEN); break;
+                case 11: voice.say(spELEVEN); break;
+                case 12: voice.say(spTWELVE); break;
+                case 13: voice.say(spTHIR_); voice.say(sp_TEEN); break;
+                case 14: voice.say(spFOUR); voice.say(sp_TEEN); break;
+                case 15: voice.say(spFIF_); voice.say(sp_TEEN); break;
+                case 16: voice.say(spSIX); voice.say(sp_TEEN); break;
+                case 17: voice.say(spSEVEN); voice.say(sp_TEEN); break;
+                case 18: voice.say(spEIGHT); voice.say(sp_TEEN); break;
+                case 19: voice.say(spNINE); voice.say(sp_TEEN); break;
+                }
+        }
 }
+
+
+/*
+
+   ███████ ███████ ████████ ██    ██ ██████
+   ██      ██         ██    ██    ██ ██   ██
+   ███████ █████      ██    ██    ██ ██████
+        ██ ██         ██    ██    ██ ██
+   ███████ ███████    ██     ██████  ██
+
+ */
 void setup() {
-  Serial.begin(9600);
+
+       voice.say(spZERO);
+   pinMode(SW0, INPUT_PULLUP);
+        pinMode(SW1, INPUT_PULLUP);
+        pinMode(ROTA, INPUT_PULLUP);
+        pinMode(ROTB, INPUT_PULLUP);
+        pinMode(PUSH, INPUT_PULLUP);
+        pinMode(GATE, INPUT_PULLUP);
+        pinMode(BLUE_LED,OUTPUT);
+        pinMode(RED_LED,OUTPUT);
+        // turn transistorized outputs low ;
+        digitalWrite(BLUE_LED,HIGH);
+        digitalWrite(RED_LED,HIGH);
+
+        analogReadResolution(12);
+
+        display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
+        display.clearDisplay();
+
+        display.drawBitmap(35,0, Eye, 16, 16, WHITE);
+        display.drawBitmap(75,0, Eye, 16, 16, WHITE);
+        display.display();
+        splashScreen();
+
+        Serial.begin(115200);
+
+        display.clearDisplay();
+        display.setTextSize(2);
+        display.setTextColor(WHITE);
+        display.display();
+        Wire.setClock(3000000L); //magnifique !
+
+
 }
+
+/*
+
+   ██       ██████   ██████  ██████
+   ██      ██    ██ ██    ██ ██   ██
+   ██      ██    ██ ██    ██ ██████
+   ██      ██    ██ ██    ██ ██
+   ███████  ██████   ██████  ██
+
+ */
+
 void loop() {
 //  int voltage = analogRead(1) * 5.000 / 1.023;
 //  Serial.println(voltage);
@@ -182,10 +255,27 @@ void loop() {
 //  voice.say(spMILLI);
 //  voice.say(spVOLTS,false);
 //  delay(100);
- int allo = map(analogRead(2),1023,20,0,124);
- Serial.print(allo+1);
- Serial.print(" ");
-  Serial.println(alloL[allo]);
-  voice.say(alphons[allo]);
+
+
+        //display.clearDisplay();
+        //display.setCursor(15,0);
+        int allo = map(analogRead(6),4096,20,0,124);
+        //Serial.print(allo+1);
+        //Serial.print(" ");
+        //Serial.println(alloL[allo]);
+        voice.say(alphons[allo]);
+        display.clearDisplay();
+        display.setFont(&Orbitron_Light_22);
+        display.setTextSize(1);
+        display.setCursor(0,16);
+        display.print(allo+1);
+        display.setFont(&Orbitron_Light_24);
+        display.setCursor(0,40);
+        display.setTextSize(1);
+        display.print(alloL[allo]);
+
+        display.display();  // slowing down !
+
+
 
 }

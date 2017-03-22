@@ -43,13 +43,15 @@ const unsigned char Eye [] PROGMEM = {
  */
 
 #define VERSION "Ver. 1.0"
+#define ON 0
+#define OFF 1
 
 //const uint8_t *alphons[72]  = {sp_alphon1,sp_alphon2,sp_alphon3,sp_alphon4,sp_alphon5,sp_alphon6,sp_alphon7,sp_alphon8,sp_alphon9,sp_alphon10,sp_alphon11,sp_alphon12,sp_alphon13,sp_alphon14,sp_alphon15,sp_alphon16,sp_alphon17,sp_alphon18,sp_alphon19,sp_alphon20,sp_alphon21,sp_alphon22,sp_alphon23,sp_alphon24,sp_alphon25,sp_alphon26,sp_alphon27,sp_alphon28,sp_alphon29,sp_alphon30,sp_alphon31,sp_alphon32,sp_alphon33,sp_alphon34,sp_alphon35,sp_alphon36,sp_alphon37,sp_alphon38,sp_alphon39,sp_alphon40,sp_alphon41,sp_alphon42,sp_alphon43,sp_alphon44,sp_alphon45,sp_alphon46,sp_alphon47,sp_alphon48,sp_alphon49,sp_alphon50,sp_alphon51,sp_alphon52,sp_alphon53,sp_alphon54,sp_alphon55,sp_alphon56,sp_alphon57,sp_alphon58,sp_alphon59,sp_alphon60,sp_alphon61,sp_alphon62,sp_alphon63,sp_alphon64,sp_alphon65,sp_alphon66,sp_alphon67,sp_alphon68,sp_alphon69,sp_alphon70,sp_alphon71,sp_alphon7};
 
 const uint8_t *alphons[125]={sp_alphon1,sp_alphon2,sp_alphon3,sp_alphon4,sp_alphon5,sp_alphon6,sp_alphon7,sp_alphon8,sp_alphon9,sp_alphon10,sp_alphon11,sp_alphon12,sp_alphon13,sp_alphon14,sp_alphon15,sp_alphon16,sp_alphon17,sp_alphon18,sp_alphon19,sp_alphon20,sp_alphon21,sp_alphon22,sp_alphon23,sp_alphon24,sp_alphon25,sp_alphon26,sp_alphon27,sp_alphon28,sp_alphon29,sp_alphon30,sp_alphon31,sp_alphon32,sp_alphon33,sp_alphon34,sp_alphon35,sp_alphon36,sp_alphon37,sp_alphon38,sp_alphon39,sp_alphon40,sp_alphon41,sp_alphon42,sp_alphon43,sp_alphon44,sp_alphon45,sp_alphon46,sp_alphon47,sp_alphon48,sp_alphon49,sp_alphon50,sp_alphon51,sp_alphon52,sp_alphon53,sp_alphon54,sp_alphon55,sp_alphon56,sp_alphon57,sp_alphon58,sp_alphon59,sp_alphon60,sp_alphon61,sp_alphon62,sp_alphon63,sp_alphon64,sp_alphon65,sp_alphon66,sp_alphon67,sp_alphon68,sp_alphon69,sp_alphon70,sp_alphon71,sp_alphon72,sp_alphon73,sp_alphon74,sp_alphon75,sp_alphon76,sp_alphon77,sp_alphon78,sp_alphon79,sp_alphon80,sp_alphon81,sp_alphon82,sp_alphon83,sp_alphon84,sp_alphon85,sp_alphon86,sp_alphon87,sp_alphon88,sp_alphon89,sp_alphon90,sp_alphon91,sp_alphon92,sp_alphon93,sp_alphon94,sp_alphon95,sp_alphon96,sp_alphon97,sp_alphon98,sp_alphon99,sp_alphon100,sp_alphon101,sp_alphon102,sp_alphon103,sp_alphon104,sp_alphon105,sp_alphon106,sp_alphon107,sp_alphon108,sp_alphon109,sp_alphon110,sp_alphon111,sp_alphon112,sp_alphon113,sp_alphon114,sp_alphon115,sp_alphon116,sp_alphon117,sp_alphon118,sp_alphon119,sp_alphon120,sp_alphon121,sp_alphon122,sp_alphon123,sp_alphon124,sp_alphon125};
 const char *alloL[]  ={"AE1","AE1N","AH1","AH1N","AW1","AW1N","E1","E1N","EH1","EH1N","ER1N","I1","I1N","OO1","OW1N","U1","U1N","UH1","UH1M","UH1N","Y1","Y1N","ER1","OW1","Y2","AE2","AH2","AI2","AR2","AU2","AW2","E2","EER2","EH2","EHR2","EI2","ER2","I2","OI2","OO2","OOR2","OR2","OW2","U2","UH2","UU2","AE3","AH3","AI3","AR3","AU3","AW3","E3","EELL","EER3","EH3","EHR3","EI3","ER3","I3","ILL","ING2","OI3","OO3","OOR3","OR3","OW3","U3","UH3","ULL","UHL","UU3","L","L-","LL","M","MM","N","NN","NG1","NG2","R","W","WH","Y","B","BB","D","DD","G1","G2","GG","J","JJ","THV","THV-","V","VV","Z","ZZ","ZH","ZH-","K2","KH","KH-","KH1","KH2","P","PH","PH-","T","TH","TH-","CH","F","FF","HI","HO","HUH","S","SS","SH","SH-","THF","THF-","Pause1","Pause2"};
 
-
+int allo;
 
 /*
 
@@ -132,6 +134,10 @@ const uint8_t spMINUS[]    PROGMEM = {0xE6, 0x28, 0xC4, 0xF8, 0x44, 0x9A, 0xFB, 
 const uint8_t spMILLI[]    PROGMEM = {0x6E, 0xF0, 0x8A, 0xB3, 0x4B, 0xEB, 0xC6, 0xAE, 0x36, 0xA7, 0x1A, 0x3A, 0x54, 0x53, 0xD6, 0xDC, 0xEC, 0x66, 0x23, 0xDF, 0x58, 0x26, 0x43, 0xB4, 0xCD, 0xEA, 0x74, 0x5D, 0x94, 0x46, 0xF0, 0x96, 0x3B, 0x9D, 0x79, 0x98, 0x26, 0x75, 0xDB, 0xB3, 0xD7, 0xB6, 0xF5, 0x90, 0xA8, 0x91, 0x9F, 0xEA, 0x9E, 0xEE, 0xE9, 0x9B, 0x20, 0x7D, 0xCB, 0xFF, 0x03};
 const uint8_t spVOLTS[]    PROGMEM = {0xA0, 0xDA, 0xA2, 0xB2, 0x3A, 0x44, 0x55, 0x9C, 0xFA, 0xB0, 0xBA, 0x46, 0x72, 0xDA, 0xD1, 0xDB, 0xAE, 0x47, 0x59, 0x61, 0xED, 0x28, 0x79, 0xED, 0x45, 0xAF, 0x5A, 0xDF, 0x60, 0xF4, 0x39, 0x69, 0xAB, 0x63, 0xD9, 0x3B, 0xD2, 0xBC, 0x24, 0xA5, 0xF5, 0xB6, 0x0F, 0x80, 0x01, 0x3E, 0x63, 0x65, 0xC0, 0x5F, 0x63, 0x12, 0x90, 0x80, 0x06, 0x24, 0x20, 0x01, 0x0E, 0xFC, 0x3F};
 
+const uint8_t spYOU_ARE_FIRED[]    PROGMEM =
+
+{0xe8,0xa8,0x52,0xcc,0x52,0xa2,0x8a,0xbc,0x70,0x96,0x38,0x0f,0xa3,0xb2,0x22,0x49,0xe2,0xa2,0x8c,0x8b,0x6b,0x00,0xcf,0x8e,0xab,0x25,0x6a,0x81,0x45,0x5b,0xae,0x8c,0xa0,0x66,0x35,0x0d,0x79,0x33,0x82,0x92,0xc5,0x2d,0x65,0x6b,0x0b,0x72,0x36,0x97,0xa6,0xb7,0x25,0xca,0x21,0x83,0x5a,0xbd,0x86,0x62,0xe8,0x72,0x73,0x71,0x6a,0xe2,0x6e,0xd2,0xcd,0xcc,0x29,0x89,0xab,0x0a,0x33,0xf7,0xa4,0x24,0xca,0xca,0xbd,0x2a,0x92,0x90,0xa7,0x48,0x0f,0xaf,0x4c,0xab,0xcc,0xe9,0x23,0xdc,0xd4,0x4e,0xf1,0xb2,0xa9,0x36,0xe7,0x27,0xc3,0xcf,0xb6,0x5b,0x5d,0x9f,0x2e,0xbf,0xd8,0x1e,0x73,0x7d,0xba,0xfc,0xa6,0x63,0x22,0x65,0xe9,0xf1,0x9b,0x8b,0x8e,0xd0,0xa7,0xc7,0x6f,0x3e,0xca,0x53,0x9f,0x9e,0xa0,0x87,0x08,0x2b,0x7d,0xb2,0xc2,0x1e,0xc3,0xb4,0x6d,0xc9,0x88,0x5a,0x75,0xe5,0xf6,0x39,0x2d,0xee,0x35,0x85,0xca,0xe6,0xb4,0xa4,0x97,0x32,0x6c,0x59,0x52,0xb2,0x96,0x5d,0xb8,0x6d,0x69,0xc9,0x5b,0x56,0xb1,0xb1,0xd7,0xa1,0xac,0x85,0x2d,0xd2,0x67,0xbb,0xba,0x04,0xf6,0x6c,0x5f,0xa4,0x86,0x64,0x25,0x7a,0x22,0x91,0x18,0x8b,0x67,0xf5,0xf3,0x46,0x6c,0xa9,0x41,0x84,0xce,0x63,0xa1,0xa8,0x15,0x32,0x9d,0x88,0x85,0xe2,0x64,0xc4,0x2a,0xcd,0x32,0x00,0x0,0x0,0x0,0xf0,0xff,0xff};
+
 /* Say any number between -999,999 and 999,999 */
 void sayNumber(long n) {
         if (n<0) {
@@ -204,7 +210,8 @@ void sayNumber(long n) {
  */
 void setup() {
 
-       voice.say(spZERO);
+
+
    pinMode(SW0, INPUT_PULLUP);
         pinMode(SW1, INPUT_PULLUP);
         pinMode(ROTA, INPUT_PULLUP);
@@ -233,7 +240,9 @@ void setup() {
         display.setTextSize(2);
         display.setTextColor(WHITE);
         display.display();
-        Wire.setClock(3000000L); //magnifique !
+        voice.say(spYOU_ARE_FIRED);
+
+          Wire.setClock(3000000L); //magnifique !
 
 
 }
@@ -259,11 +268,16 @@ void loop() {
 
         //display.clearDisplay();
         //display.setCursor(15,0);
-        int allo = map(analogRead(6),4096,20,0,124);
+      //  int allo = map(analogRead(6),4096,20,0,124);
         //Serial.print(allo+1);
         //Serial.print(" ");
         //Serial.println(alloL[allo]);
-        voice.say(alphons[allo]);
+
+
+
+
+      do {
+        allo = map(analogRead(6),4096,20,0,124);
         display.clearDisplay();
         display.setFont(&Orbitron_Light_22);
         display.setTextSize(1);
@@ -274,8 +288,29 @@ void loop() {
         display.setTextSize(1);
         display.print(alloL[allo]);
 
-        display.display();  // slowing down !
+        display.display();  // slowing down ! (have a menu to enable/disable dispplay refresh)
 
+      }
+
+        while(digitalRead(GATE)==OFF);
+          voice.say(alphons[allo]);
+
+          do {
+            allo = map(analogRead(6),4096,20,0,124);
+            display.clearDisplay();
+            display.setFont(&Orbitron_Light_22);
+            display.setTextSize(1);
+            display.setCursor(0,16);
+            display.print(allo+1);
+            display.setFont(&Orbitron_Light_24);
+            display.setCursor(0,40);
+            display.setTextSize(1);
+            display.print(alloL[allo]);
+
+            display.display();  // slowing down ! (have a menu to enable/disable dispplay refresh)
+
+          }
+        while(digitalRead(GATE)==ON);
 
 
 }

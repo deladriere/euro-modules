@@ -100,7 +100,7 @@ volatile int interruptCount=0; // The rotary counter
 
 
 // clock setting
-int reset;
+int reset=64;
 int preset;
 int fin =0; /// pour pression longue
 boolean pressed; // press detection
@@ -487,16 +487,21 @@ void loop() {
                 //delay(200);
 
                 break;
-        case 3:
+        case 3: // #tune
 
                 Serial.println("function 3");
               //  while(!digitalRead(PUSH));
 
             fin=0;
+            interruptCount=reset/4;
+            // set vitesse=
 
                 do {
 
-                        reset = map(analogRead(5),4095,70,1,254);
+                        //reset = map(analogRead(5),4095,70,1,254);
+                        interruptCount=constrain(interruptCount, 0, 64);
+                        reset=interruptCount*4;
+                        reset=constrain(reset, 1, 254);
                         display.clearDisplay();
                         display.setTextSize(1);
                         display.setCursor(0,16);

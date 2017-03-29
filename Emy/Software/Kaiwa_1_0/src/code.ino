@@ -247,6 +247,7 @@ void loop() {
         switch (function) {
         case 0:
 
+
         {
                 interruptCount=0;
 
@@ -540,6 +541,7 @@ void loop() {
                 }
 
                 while(fin<100000L); // long presss
+                  display.setFont();
 
               //  Serial.print(fin);
 

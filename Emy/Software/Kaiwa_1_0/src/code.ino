@@ -96,7 +96,7 @@ String terminal;
 
 static boolean rotating=false;
 
-volatile int interruptCount=0; // The rotary counter
+volatile float interruptCount=0; // The rotary counter
 
 
 // clock setting
@@ -235,6 +235,7 @@ void loop() {
         do {
 
                 interruptCount=constrain(interruptCount,0,numFunctions-1);
+
                 function=interruptCount;
                 displayFunctionList(function);
 
@@ -859,11 +860,11 @@ void rot()
         delayMicroseconds(1000);
         if(digitalRead(ROTA))
 
-                if(digitalRead(ROTB)) { interruptCount--; }
+                if(digitalRead(ROTB)) { interruptCount=interruptCount-0.5; }
                 else
                 {
 
-                        interruptCount++;
+                        interruptCount=interruptCount+0.5;
                 }
 
 }

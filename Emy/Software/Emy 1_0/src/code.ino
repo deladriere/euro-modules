@@ -1,4 +1,14 @@
 // Talkie library by Adafruit : https://github.com/adafruit/Talkie version february 10, 2017
+// ResponsiveAnalogRead library https://github.com/dxinteractive/ResponsiveAnalogRead version Mar 16, 2017
+/*
+   led on gate
+   // include the ResponsiveAnalogRead library https://github.com/dxinteractive/ResponsiveAnalogRead
+
+
+
+
+
+ */
 
 #include "talkie.h"
 #include "5220_alphon.h"
@@ -6,10 +16,13 @@
 #include <Adafruit_SSD1306.h>
 #include <Kfonts.h>
 #include <Wire.h>
+#include <Encoder.h>
+
+#include <ResponsiveAnalogRead.h> // attention modif ligne 64     int analogResolution = 1024;
 
 const unsigned char Eye [] PROGMEM = {
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xe0, 0x18, 0x38, 0x39, 0x9c, 0x49, 0x92,
-  0x49, 0x92, 0x38, 0x1c, 0x1c, 0x78, 0x07, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xe0, 0x18, 0x38, 0x39, 0x9c, 0x49, 0x92,
+        0x49, 0x92, 0x38, 0x1c, 0x1c, 0x78, 0x07, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 
@@ -46,12 +59,21 @@ const unsigned char Eye [] PROGMEM = {
 #define ON 0
 #define OFF 1
 
+#define MODE_VCO 1
+#define MODE_SPEECH 2
+#define MODE_REPEAT 3
+
+#define GATE_HIGH !digitalRead(GATE)
+
 //const uint8_t *alphons[72]  = {sp_alphon1,sp_alphon2,sp_alphon3,sp_alphon4,sp_alphon5,sp_alphon6,sp_alphon7,sp_alphon8,sp_alphon9,sp_alphon10,sp_alphon11,sp_alphon12,sp_alphon13,sp_alphon14,sp_alphon15,sp_alphon16,sp_alphon17,sp_alphon18,sp_alphon19,sp_alphon20,sp_alphon21,sp_alphon22,sp_alphon23,sp_alphon24,sp_alphon25,sp_alphon26,sp_alphon27,sp_alphon28,sp_alphon29,sp_alphon30,sp_alphon31,sp_alphon32,sp_alphon33,sp_alphon34,sp_alphon35,sp_alphon36,sp_alphon37,sp_alphon38,sp_alphon39,sp_alphon40,sp_alphon41,sp_alphon42,sp_alphon43,sp_alphon44,sp_alphon45,sp_alphon46,sp_alphon47,sp_alphon48,sp_alphon49,sp_alphon50,sp_alphon51,sp_alphon52,sp_alphon53,sp_alphon54,sp_alphon55,sp_alphon56,sp_alphon57,sp_alphon58,sp_alphon59,sp_alphon60,sp_alphon61,sp_alphon62,sp_alphon63,sp_alphon64,sp_alphon65,sp_alphon66,sp_alphon67,sp_alphon68,sp_alphon69,sp_alphon70,sp_alphon71,sp_alphon7};
 
 const uint8_t *alphons[125]={sp_alphon1,sp_alphon2,sp_alphon3,sp_alphon4,sp_alphon5,sp_alphon6,sp_alphon7,sp_alphon8,sp_alphon9,sp_alphon10,sp_alphon11,sp_alphon12,sp_alphon13,sp_alphon14,sp_alphon15,sp_alphon16,sp_alphon17,sp_alphon18,sp_alphon19,sp_alphon20,sp_alphon21,sp_alphon22,sp_alphon23,sp_alphon24,sp_alphon25,sp_alphon26,sp_alphon27,sp_alphon28,sp_alphon29,sp_alphon30,sp_alphon31,sp_alphon32,sp_alphon33,sp_alphon34,sp_alphon35,sp_alphon36,sp_alphon37,sp_alphon38,sp_alphon39,sp_alphon40,sp_alphon41,sp_alphon42,sp_alphon43,sp_alphon44,sp_alphon45,sp_alphon46,sp_alphon47,sp_alphon48,sp_alphon49,sp_alphon50,sp_alphon51,sp_alphon52,sp_alphon53,sp_alphon54,sp_alphon55,sp_alphon56,sp_alphon57,sp_alphon58,sp_alphon59,sp_alphon60,sp_alphon61,sp_alphon62,sp_alphon63,sp_alphon64,sp_alphon65,sp_alphon66,sp_alphon67,sp_alphon68,sp_alphon69,sp_alphon70,sp_alphon71,sp_alphon72,sp_alphon73,sp_alphon74,sp_alphon75,sp_alphon76,sp_alphon77,sp_alphon78,sp_alphon79,sp_alphon80,sp_alphon81,sp_alphon82,sp_alphon83,sp_alphon84,sp_alphon85,sp_alphon86,sp_alphon87,sp_alphon88,sp_alphon89,sp_alphon90,sp_alphon91,sp_alphon92,sp_alphon93,sp_alphon94,sp_alphon95,sp_alphon96,sp_alphon97,sp_alphon98,sp_alphon99,sp_alphon100,sp_alphon101,sp_alphon102,sp_alphon103,sp_alphon104,sp_alphon105,sp_alphon106,sp_alphon107,sp_alphon108,sp_alphon109,sp_alphon110,sp_alphon111,sp_alphon112,sp_alphon113,sp_alphon114,sp_alphon115,sp_alphon116,sp_alphon117,sp_alphon118,sp_alphon119,sp_alphon120,sp_alphon121,sp_alphon122,sp_alphon123,sp_alphon124,sp_alphon125};
 const char *alloL[]  ={"AE1","AE1N","AH1","AH1N","AW1","AW1N","E1","E1N","EH1","EH1N","ER1N","I1","I1N","OO1","OW1N","U1","U1N","UH1","UH1M","UH1N","Y1","Y1N","ER1","OW1","Y2","AE2","AH2","AI2","AR2","AU2","AW2","E2","EER2","EH2","EHR2","EI2","ER2","I2","OI2","OO2","OOR2","OR2","OW2","U2","UH2","UU2","AE3","AH3","AI3","AR3","AU3","AW3","E3","EELL","EER3","EH3","EHR3","EI3","ER3","I3","ILL","ING2","OI3","OO3","OOR3","OR3","OW3","U3","UH3","ULL","UHL","UU3","L","L-","LL","M","MM","N","NN","NG1","NG2","R","W","WH","Y","B","BB","D","DD","G1","G2","GG","J","JJ","THV","THV-","V","VV","Z","ZZ","ZH","ZH-","K2","KH","KH-","KH1","KH2","P","PH","PH-","T","TH","TH-","CH","F","FF","HI","HO","HUH","S","SS","SH","SH-","THF","THF-","Pause1","Pause2"};
 
 int allo;
+int prevAllo;
+int mode;
+bool busy=0;
 
 /*
 
@@ -64,6 +86,8 @@ int allo;
  */
 Adafruit_SSD1306 display(0); // modif library for 64
 Talkie voice;
+Encoder myEnc(6, 7);
+ResponsiveAnalogRead analogSound(A6, true,0.001);
 
 
 
@@ -79,25 +103,39 @@ Talkie voice;
 
 
 
- void splashScreen()
- {
-         display.clearDisplay();
-         display.setCursor(0,0);
-         display.setTextColor(WHITE);
-         display.setTextSize(2);
-         display.println("Polaxis");
-         display.display();
-         delay(500);
+void setBLUE_ON()
+{
+        if (digitalRead(GATE))
+        {
+                digitalWrite(BLUE_LED,HIGH);
+        }
+        else
+        {
+                digitalWrite(BLUE_LED,LOW);
+        }
 
-         display.setTextSize(3);
-         display.setCursor(0,22);
-         display.println("Emy");
-         display.setTextSize(2);
-         display.setCursor(0,50);
-         display.println(VERSION);
-         display.display();
-         delay(1500);
- }
+}
+
+
+void splashScreen()
+{
+        display.clearDisplay();
+        display.setCursor(0,0);
+        display.setTextColor(WHITE);
+        display.setTextSize(2);
+        display.println("Polaxis");
+        display.display();
+        delay(500);
+
+        display.setTextSize(3);
+        display.setCursor(0,22);
+        display.println("Emy");
+        display.setTextSize(2);
+        display.setCursor(0,50);
+        display.println(VERSION);
+        display.display();
+        delay(1500);
+}
 
 
 
@@ -212,7 +250,7 @@ void setup() {
 
 
 
-   pinMode(SW0, INPUT_PULLUP);
+        pinMode(SW0, INPUT_PULLUP);
         pinMode(SW1, INPUT_PULLUP);
         pinMode(ROTA, INPUT_PULLUP);
         pinMode(ROTB, INPUT_PULLUP);
@@ -225,6 +263,7 @@ void setup() {
         digitalWrite(RED_LED,HIGH);
 
         analogReadResolution(12);
+        analogSound.setAnalogResolution(4096);
 
         display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
         display.clearDisplay();
@@ -242,7 +281,8 @@ void setup() {
         display.display();
         voice.say(spYOU_ARE_FIRED);
 
-          Wire.setClock(3000000L); //magnifique !
+        Wire.setClock(1000000L);  //magnifique ! ? plante à 3mhz
+        attachInterrupt(GATE, setBLUE_ON, CHANGE);
 
 
 }
@@ -268,12 +308,12 @@ void loop() {
 
         //display.clearDisplay();
         //display.setCursor(15,0);
-      //  int allo = map(analogRead(6),4096,20,0,124);
+        //  int allo = map(analogRead(6),4096,20,0,124);
         //Serial.print(allo+1);
         //Serial.print(" ");
         //Serial.println(alloL[allo]);
 
-
+/*
 
 
       do {
@@ -282,13 +322,15 @@ void loop() {
         display.setFont(&Orbitron_Light_22);
         display.setTextSize(1);
         display.setCursor(0,16);
-        display.print(allo+1);
+      display.print(allo+1);
+      //  display.print(myEnc.read()); // testing rotary
+
         display.setFont(&Orbitron_Light_24);
         display.setCursor(0,40);
         display.setTextSize(1);
         display.print(alloL[allo]);
 
-        display.display();  // slowing down ! (have a menu to enable/disable dispplay refresh)
+      //  display.display();  // slowing down ! (have a menu to enable/disable dispplay refresh)
 
       }
 
@@ -297,20 +339,74 @@ void loop() {
 
           do {
             allo = map(analogRead(6),4096,20,0,124);
-            display.clearDisplay();
+           display.clearDisplay();
             display.setFont(&Orbitron_Light_22);
             display.setTextSize(1);
             display.setCursor(0,16);
-            display.print(allo+1);
+           display.print(allo+1);
+            //  display.print(myEnc.read()); // testing rotary
             display.setFont(&Orbitron_Light_24);
             display.setCursor(0,40);
             display.setTextSize(1);
             display.print(alloL[allo]);
 
-            display.display();  // slowing down ! (have a menu to enable/disable dispplay refresh)
+      //      display.display();  // slowing down ! (have a menu to enable/disable dispplay refresh)
 
           }
         while(digitalRead(GATE)==ON);
 
 
+ */
+        mode=digitalRead(SW0)+digitalRead(SW1)*2;
+      //  Serial.println(mode);
+//delay(100);
+
+        analogSound.update();
+        allo=map(analogSound.getValue(),4096,40,0,124);
+        if (allo!=prevAllo)
+        {
+                //  Serial.println(allo);
+                prevAllo=allo;
+
+                display.clearDisplay();
+                display.setFont(&Orbitron_Light_22);
+                display.setTextSize(1);
+                display.setCursor(0,16);
+                display.print(allo+1);
+                display.setFont(&Orbitron_Light_24);
+                display.setCursor(0,40);
+                display.setTextSize(1);
+                display.print(alloL[allo]);
+                display.display();
+        }
+
+        if (GATE_HIGH)
+        {
+                switch (mode)
+                {
+                case MODE_SPEECH:
+
+                        {
+                        if (!voice.talking() && busy==0)
+                        {
+                                if(!busy) voice.say(alphons[allo]);
+                                busy=1;
+                        }
+
+                        break;
+                      }
+
+                case MODE_REPEAT:
+                        voice.say(alphons[allo]);
+                        break;
+
+
+                }
+
+        }
+        else
+        {
+                busy=0; // si mode speech
+                if (MODE_REPEAT) voice.say(sp_alphon127);// si mode 3 stop sound
+        }
 }

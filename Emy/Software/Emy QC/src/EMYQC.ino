@@ -3,7 +3,7 @@
 #include <SPI.h>
 #include <SD.h>
 #include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#include <Adafruit_SSD1306.h> // 128x64  version still needs to modify Adafruit_SSD1306.h for 64 lines
 #include <Wire.h>
 #include "SAMD_AnalogCorrection.h"
 
@@ -41,7 +41,7 @@
 
 // DIGITALS OUTPUTS
 
-#define BUSY 99
+#define BUSY 38
 #define BLUE_LED  12
 #define RED_LED 13
 
@@ -49,29 +49,32 @@
 // MIKROBUS SOCKET
 
 
-/*
-
-   +-----------------+
-   |[ ]NC      OUT[ ]|
-   |[ ]RST   !PLAY[ ]|
-   |[ ]NC       NC[ ]|
-   |[ ]NC       NC[ ]|
-   |[ ]NC      SCL[ ]|
-   |[ ]NC      SDA[ ]|
-   3V3 |[ ]3V3      5V[ ]| 5V
-   |[ ]GND     GND[ ]| GND
-   +________________/
-
- */
 
 
-  #define RST_Microbus 4
-  #define CS_Microbus 5
+//      +-----------------+
+//      |[ ]AN      PWM[ ]|
+//      |[ ]RST     INT[ ]|
+//      |[ ]CS       RX[ ]|
+//      |[ ]SCK      TX[ ]|
+//      |[ ]MISO    SCL[ ]|
+//      |[ ]MOSI    SDA[ ]|
+//  3V3 |[ ]3V3      5V[ ]| 5V
+//      |[ ]GND     GND[ ]| GND
+//      +________________/
 
-// A6 is also D8 on Adafruit Feather
-  #define AN_Microbus 9 // A7 can be D9 on Adafruit Feather
+
+  #define AN 9
+  #define RST 4
+  #define CS 5
+
+  #define INT 11
+  #define RX 31
+  #define TX 30
+
+
+
   #define CS_SD 10
-  #define INT_Microbus 11
+
 
 
 
@@ -114,9 +117,10 @@ void toggleOUTPUTS()
         delay(100);
         digitalWrite(RED_LED,toggle);
         delay(100);
-        digitalWrite(RST_Microbus,toggle);
-        digitalWrite(CS_Microbus,toggle);
-        digitalWrite(CS_SD,toggle);
+        digitalWrite(RST,toggle);
+        digitalWrite(AN,toggle);
+        digitalWrite(CS,toggle);
+        digitalWrite(BUSY,toggle);
 
 
 
@@ -133,25 +137,31 @@ void toggleOUTPUTS()
 
 
 void setup() {
-
+        analogReadResolution(12);
+        analogReadCorrection(14, 2831);
         Serial.begin(19200);
         display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
         display.clearDisplay();
-        analogReadCorrection(9, 2067);
 
+
+
+        pinMode(RST, OUTPUT);
+        pinMode(CS, OUTPUT);
+        pinMode(CS, OUTPUT);
+        pinMode(BLUE_LED,OUTPUT);
+        pinMode(RED_LED,OUTPUT);
+        pinMode(BUSY,OUTPUT);
 
         pinMode(SW0, INPUT_PULLUP);
         pinMode(SW1, INPUT_PULLUP);
         pinMode(GATE, INPUT_PULLUP);
         pinMode(PUSH, INPUT_PULLUP);
-        pinMode(RST_Microbus, OUTPUT);
-        pinMode(CS_Microbus, OUTPUT);
+
         pinMode(ROTA, INPUT_PULLUP);
         pinMode(ROTB, INPUT_PULLUP);
-        pinMode(CS_SD, OUTPUT);
-        pinMode(INT_Microbus,INPUT_PULLUP);
-        pinMode(BLUE_LED,OUTPUT);
-        pinMode(RED_LED,OUTPUT);
+
+        pinMode(INT,INPUT_PULLUP);
+
 
         // turn transistorized outputs low ;
         digitalWrite(BLUE_LED,HIGH);
@@ -160,7 +170,7 @@ void setup() {
         display.setTextSize(2);
         display.setTextColor(WHITE);
         display.setCursor(0,0);
-        display.println("Emy QC Test");
+        display.println("Emy QC");
         display.display();
 
 }

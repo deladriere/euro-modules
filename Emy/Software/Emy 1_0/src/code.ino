@@ -1,10 +1,8 @@
 // Talkie library by Adafruit : https://github.com/adafruit/Talkie version february 10, 2017
 // ResponsiveAnalogRead library https://github.com/dxinteractive/ResponsiveAnalogRead version Mar 16, 2017
 /*
-   led on gate
-   // include the ResponsiveAnalogRead library https://github.com/dxinteractive/ResponsiveAnalogRead
-
-
+   repeat mode in library (cfr Talko)
+define mode in library like in Talko
 
 
 
@@ -17,8 +15,10 @@
 #include <Kfonts.h>
 #include <Wire.h>
 #include <Encoder.h>
+#include "SAMD_AnalogCorrection.h"
+//#include <Average.h>
 
-#include <ResponsiveAnalogRead.h> // attention modif ligne 64     int analogResolution = 1024;
+//#include <ResponsiveAnalogRead.h> // attention modif ligne 64     int analogResolution = 1024;
 
 const unsigned char Eye [] PROGMEM = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xe0, 0x18, 0x38, 0x39, 0x9c, 0x49, 0x92,
@@ -59,9 +59,6 @@ const unsigned char Eye [] PROGMEM = {
 #define ON 0
 #define OFF 1
 
-#define MODE_VCO 1
-#define MODE_SPEECH 2
-#define MODE_REPEAT 3
 
 #define GATE_HIGH !digitalRead(GATE)
 
@@ -72,8 +69,9 @@ const char *alloL[]  ={"AE1","AE1N","AH1","AH1N","AW1","AW1N","E1","E1N","EH1","
 
 int allo;
 int prevAllo;
-int mode;
+
 bool busy=0;
+int moy;
 
 /*
 
@@ -87,7 +85,7 @@ bool busy=0;
 Adafruit_SSD1306 display(0); // modif library for 64
 Talkie voice;
 Encoder myEnc(6, 7);
-ResponsiveAnalogRead analogSound(A6, true,0.001);
+//ResponsiveAnalogRead analogSound(A6, true,0.01);
 
 
 
@@ -102,6 +100,29 @@ ResponsiveAnalogRead analogSound(A6, true,0.001);
  */
 
 
+void readSound()
+
+{
+  moy=0;
+  for (int i = 0; i < 5; i++) {
+    moy=moy +analogRead(A6);
+  }
+allo=map(moy/5,4095,0,0,124);
+if (allo!=prevAllo)
+   {
+           prevAllo=allo;
+           display.clearDisplay();
+           display.setFont(&Orbitron_Light_22);
+           display.setTextSize(1);
+           display.setCursor(0,16);
+           display.print(allo+1);
+           display.setFont(&Orbitron_Light_24);
+           display.setCursor(0,40);
+           display.setTextSize(1);
+           display.print(alloL[allo]);
+           display.display();
+   }
+}
 
 void setBLUE_ON()
 {
@@ -263,7 +284,8 @@ void setup() {
         digitalWrite(RED_LED,HIGH);
 
         analogReadResolution(12);
-        analogSound.setAnalogResolution(4096);
+        analogReadCorrection(14, 2831);
+      //  analogSound.setAnalogResolution(4096);
 
         display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
         display.clearDisplay();
@@ -281,7 +303,7 @@ void setup() {
         display.display();
         voice.say(spYOU_ARE_FIRED);
 
-        Wire.setClock(1000000L);  //magnifique ! ? plante à 3mhz
+        Wire.setClock(2000000L);  //magnifique ! ? plante à 3mhz
         attachInterrupt(GATE, setBLUE_ON, CHANGE);
 
 
@@ -357,13 +379,14 @@ void loop() {
 
 
  */
-        mode=digitalRead(SW0)+digitalRead(SW1)*2;
+        voice.mode=digitalRead(SW0)+digitalRead(SW1)*2;
       //  Serial.println(mode);
 //delay(100);
 
-        analogSound.update();
-        allo=map(analogSound.getValue(),4096,40,0,124);
-        if (allo!=prevAllo)
+    //    analogSound.update();
+    //   allo=map(analogSound.getValue(),4094,0,0,71); // normal = 124
+    // allo=map(analogRead(A6),1023,0,0,71); // normal = 124
+    /*    if (allo!=prevAllo)
         {
                 //  Serial.println(allo);
                 prevAllo=allo;
@@ -377,12 +400,40 @@ void loop() {
                 display.setCursor(0,40);
                 display.setTextSize(1);
                 display.print(alloL[allo]);
-                display.display();
+            //   display.display();
         }
+*/
 
-        if (GATE_HIGH)
-        {
-                switch (mode)
+// while(digitalRead(GATE)==0) ; //to avoid repeat in speech mode)
+do{
+  readSound(); // to display while gate is low helps to set sequence
+}
+  while(digitalRead(GATE)==1) ;
+  moy=0;
+  for (int i = 0; i < 5; i++) {
+    moy=moy +analogRead(A6);
+  }
+  allo=map(moy/5,4095,0,0,124);
+ voice.say(alphons[allo]);
+if (allo!=prevAllo)
+   {
+           prevAllo=allo;
+           display.clearDisplay();
+           display.setFont(&Orbitron_Light_22);
+           display.setTextSize(1);
+           display.setCursor(0,16);
+           display.print(allo+1);
+           display.setFont(&Orbitron_Light_24);
+           display.setCursor(0,40);
+           display.setTextSize(1);
+           display.print(alloL[allo]);
+           display.display();
+   }
+
+/*
+      //  if (GATE_HIGH)
+      //  {
+                switch (voice.mode)
                 {
                 case MODE_SPEECH:
 
@@ -397,16 +448,16 @@ void loop() {
                       }
 
                 case MODE_REPEAT:
-                        voice.say(alphons[allo]);
+                        voice.say(alphons[allo],false);
                         break;
 
 
                 }
-
-        }
-        else
-        {
-                busy=0; // si mode speech
-                if (MODE_REPEAT) voice.say(sp_alphon127);// si mode 3 stop sound
-        }
+*/
+      //}
+      //  else
+     //{
+      //        busy=0; // si mode speech
+      //        //  if (MODE_REPEAT) voice.say(sp_alphon127);// si mode 3 stop sound
+      //  }
 }

@@ -20,17 +20,18 @@
 #endif
 
 #define FS    8000      // Speech engine sample rate
-#define TICKS (FS / 40) // Speech data rate
-
+//#define TICKS (FS / 40) // Speech data rate
+#define TICKS 20 // Speech data rate
 // Some of these variables could go in the Talkie object, but the hardware
 // specificity (reliance on certain timers and/or PWM pins) kills any point
 // in multiple instances; there can be only one.  So they're declared as
 // static here to keep the header simple and self-documenting.
-#if TICKS < 255
-static volatile uint8_t   interruptCount;
-#else
+//#if TICKS < 255
+//static volatile uint8_t   interruptCount;
+//#else
 static volatile uint16_t  interruptCount;
-#endif
+static volatile uint16_t slower;
+//#endif
 static volatile PORTTYPE *csPort, *clkPort, *datPort;
 static volatile uint16_t  synthEnergy;
 static volatile int16_t   synthK1, synthK2;
@@ -190,7 +191,7 @@ void Talkie::say(const uint8_t *addr, boolean block) {
 	while(TIMER->COUNT16.STATUS.bit.SYNCBUSY);
 
 	if(block) while(!(TIMER->COUNT16.STATUS.reg & TC_STATUS_STOP));
-
+ slower= map(analogRead(1),0,4095,0,800);
 #else // AVR
 
 	// Set up Timer1 to trigger periodic synth calc at 'FS' Hz
@@ -288,10 +289,21 @@ ISR(TIMER1_COMPA_vect) {
 #endif // endif Uno
 	}
 
-	if(++interruptCount >= TICKS) {
+	if(++interruptCount >= TICKS + slower) {
 		// Read speech data, processing the variable size frames
 		uint8_t energy;
-		if((energy = getBits(4)) == 0) {  // Rest frame
+   energy=getBits(4);
+
+  // TRIGGER HACK
+
+// need to add MODE_REPEAT
+  			if(digitalRead(PIN_GATE)==1)
+  				{
+  				energy=0xf; // if gate is LOW in repeat mode then stop the speech
+  				}
+
+
+		if(energy == 0) {  // Rest frame
 			synthEnergy = 0;
 		} else if(energy == 0xF) {        // Stop frame; silence
 #ifdef __SAMD__

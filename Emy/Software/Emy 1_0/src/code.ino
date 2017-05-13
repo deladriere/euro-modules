@@ -406,7 +406,8 @@ void loop() {
 
 // while(digitalRead(GATE)==0) ; //to avoid repeat in speech mode)
 do{
-  readSound(); // to display while gate is low helps to set sequence
+//voice.say(sp_alphon127);
+readSound(); // to display while gate is low helps to set sequence
 }
   while(digitalRead(GATE)==1) ;
   moy=0;
@@ -415,6 +416,7 @@ do{
   }
   allo=map(moy/5,4095,0,0,124);
  voice.say(alphons[allo]);
+// sayNumber(map(analogRead(A6),4095,0,0,9));
 if (allo!=prevAllo)
    {
            prevAllo=allo;

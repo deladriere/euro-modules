@@ -19,9 +19,10 @@
 //#define PIEZO      // If set, connect piezo on pins 3 & 11, is louder
 #endif
 
-#define FS    8000      // Speech engine sample rate
+//#define FS    8000      // Speech engine sample rate
+static volatile int16_t  FS=8000;
 //#define TICKS (FS / 40) // Speech data rate
-#define TICKS 20 // Speech data rate
+#define TICKS 0 // Strech hack
 // Some of these variables could go in the Talkie object, but the hardware
 // specificity (reliance on certain timers and/or PWM pins) kills any point
 // in multiple instances; there can be only one.  So they're declared as
@@ -124,6 +125,7 @@ void Talkie::say(const uint8_t *addr, boolean block) {
 
 	// Enable the speech system whenever say() is called.
 
+
 	if(!csBitMask) {
 #if defined(__AVR_ATmega32U4__)
 		// Set up Timer4 for fast PWM on !OC4A
@@ -191,7 +193,8 @@ void Talkie::say(const uint8_t *addr, boolean block) {
 	while(TIMER->COUNT16.STATUS.bit.SYNCBUSY);
 
 	if(block) while(!(TIMER->COUNT16.STATUS.reg & TC_STATUS_STOP));
- slower= map(analogRead(1),0,4095,0,800);
+ slower= map(analogRead(2),4095,0,300,10);
+ FS=map(analogRead(1),4095,0,2000,20000); // Rate HACK
 #else // AVR
 
 	// Set up Timer1 to trigger periodic synth calc at 'FS' Hz

@@ -2,7 +2,7 @@
 // ResponsiveAnalogRead library https://github.com/dxinteractive/ResponsiveAnalogRead version Mar 16, 2017
 /*
    repeat mode in library (cfr Talko)
-define mode in library like in Talko
+   define mode in library like in Talko
 
 
 
@@ -73,6 +73,20 @@ int prevAllo;
 bool busy=0;
 int moy;
 
+volatile float interruptCount=0; // The rotary counter
+char* mainFunctions[12]={
+
+        "Phoneme",
+        "Numbers",
+        "SD LPC",
+        "Set Time","","",""
+};
+
+#define numFunctions 4
+int function;
+
+bool WTF;
+
 /*
 
    ██████  ██████       ██ ███████  ██████ ████████ ███████
@@ -85,7 +99,6 @@ int moy;
 Adafruit_SSD1306 display(0); // modif library for 64
 Talkie voice;
 Encoder myEnc(6, 7);
-//ResponsiveAnalogRead analogSound(A6, true,0.01);
 
 
 
@@ -100,32 +113,72 @@ Encoder myEnc(6, 7);
  */
 
 
+void displayFunctionList(int p)
+{
+
+        display.clearDisplay();
+
+        display.setCursor(0,12);
+        display.print(">");
+        for (int i = 0; i<4; i++) {  // nbr of lines to display
+
+                display.setCursor(12,i*16+12); //
+                String str2=mainFunctions[i+p];
+                display.print(str2);
+
+
+        }
+        display.display();
+
+}
+
+
+void rot()
+{
+
+
+        // delayMicroseconds(1000);
+        if(digitalRead(ROTA))
+
+                if(digitalRead(ROTB)) { interruptCount=interruptCount-0.5; }
+                else
+                {
+
+                        interruptCount=interruptCount+0.5;
+                }
+
+}
+
+
+
 void readSound()
 
 {
-  moy=0;
-  for (int i = 0; i < 5; i++) {
-    moy=moy +analogRead(A6);
-  }
-allo=map(moy/5,4095,0,0,124);
-if (allo!=prevAllo)
-   {
-           prevAllo=allo;
-           display.clearDisplay();
-           display.setFont(&Orbitron_Light_22);
-           display.setTextSize(1);
-           display.setCursor(0,16);
-           display.print(allo+1);
-           display.setFont(&Orbitron_Light_24);
-           display.setCursor(0,40);
-           display.setTextSize(1);
-           display.print(alloL[allo]);
-           display.display();
-   }
+        moy=0;
+        for (int i = 0; i < 5; i++) {
+                moy=moy +analogRead(A6);
+        }
+        allo=map(moy/5,4095,0,0,124);
+        if (allo!=prevAllo)
+        {
+                prevAllo=allo;
+                display.clearDisplay();
+                display.setFont(&Orbitron_Light_22);
+                display.setTextSize(1);
+                display.setCursor(0,16);
+                display.print(allo+1);
+                display.setFont(&Orbitron_Light_24);
+                display.setCursor(0,40);
+                display.setTextSize(1);
+                display.print(alloL[allo]);
+                display.display();
+        }
 }
 
 void setBLUE_ON()
 {
+  if (WTF) { // sorry but I cannot find how to stop this interrupt from happening when turning the rotary
+
         if (digitalRead(GATE))
         {
                 digitalWrite(BLUE_LED,HIGH);
@@ -134,24 +187,25 @@ void setBLUE_ON()
         {
                 digitalWrite(BLUE_LED,LOW);
         }
-
+}
 }
 
 
 void splashScreen()
 {
         display.clearDisplay();
+        display.setFont(&Orbitron_Bold_14);
         display.setCursor(0,0);
         display.setTextColor(WHITE);
-        display.setTextSize(2);
+        // display.setTextSize(2);
         display.println("Polaxis");
         display.display();
         delay(500);
 
-        display.setTextSize(3);
+        //  display.setTextSize(3);
         display.setCursor(0,22);
         display.println("Emy");
-        display.setTextSize(2);
+//display.setTextSize(2);
         display.setCursor(0,50);
         display.println(VERSION);
         display.display();
@@ -285,7 +339,7 @@ void setup() {
 
         analogReadResolution(12);
         analogReadCorrection(14, 2831);
-      //  analogSound.setAnalogResolution(4096);
+        //  analogSound.setAnalogResolution(4096);
 
         display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
         display.clearDisplay();
@@ -293,7 +347,8 @@ void setup() {
         display.drawBitmap(35,0, Eye, 16, 16, WHITE);
         display.drawBitmap(75,0, Eye, 16, 16, WHITE);
         display.display();
-        splashScreen();
+        delay(500);
+        //splashScreen();
 
         Serial.begin(115200);
 
@@ -301,10 +356,14 @@ void setup() {
         display.setTextSize(2);
         display.setTextColor(WHITE);
         display.display();
+
+
+
         voice.say(spYOU_ARE_FIRED);
 
         Wire.setClock(2000000L);  //magnifique ! ? plante à 3mhz
         attachInterrupt(GATE, setBLUE_ON, CHANGE);
+        attachInterrupt(ROTA, rot, CHANGE);
 
 
 }
@@ -320,117 +379,82 @@ void setup() {
  */
 
 void loop() {
-//  int voltage = analogRead(1) * 5.000 / 1.023;
-//  Serial.println(voltage);
-//  sayNumber(voltage);
-//  voice.say(spMILLI);
-//  voice.say(spVOLTS,false);
-//  delay(100);
+
+        // get ready to grab new function
+
+        digitalWrite(BLUE_LED,HIGH);
+        detachInterrupt(GATE);
+        WTF=LOW;
+        delay(400);
+        interruptCount=0;
+        display.setFont(&Orbitron_Light_16);
+        display.setTextSize(1);
+
+        // grab function
+
+        do {
+
+                interruptCount=constrain(interruptCount,0,numFunctions-1);
+
+                function=interruptCount;
+                displayFunctionList(function);
 
 
-        //display.clearDisplay();
-        //display.setCursor(15,0);
-        //  int allo = map(analogRead(6),4096,20,0,124);
-        //Serial.print(allo+1);
-        //Serial.print(" ");
-        //Serial.println(alloL[allo]);
+
+        } while(digitalRead(PUSH));
+        delay(400);
+        attachInterrupt(GATE, setBLUE_ON, CHANGE);
+        WTF=HIGH;
+
+// process functions
+
+        do {
+                /* code */
+
+
+                voice.mode=digitalRead(SW0)+digitalRead(SW1)*2;
+                // while(digitalRead(GATE)==0) ; //to avoid repeat in speech mode)
+                do {
+
+//readSound(); // to display while gate is low helps to set sequence
+                }
+                while(digitalRead(GATE)==1);
+                moy=0;
+                for (int i = 0; i < 5; i++) {
+                        moy=moy +analogRead(A6);
+                }
+                allo=map(moy/5,4095,0,0,124);
+                voice.say(alphons[allo]);
+                //sayNumber(map(analogRead(A6),4095,0,0,9));
+                if (allo!=prevAllo)
+                {
+                        prevAllo=allo;
+                        display.clearDisplay();
+                        display.setFont(&Orbitron_Light_22);
+                        display.setTextSize(1);
+                        display.setCursor(0,16);
+                        display.print(allo+1);
+                        display.setFont(&Orbitron_Light_24);
+                        display.setCursor(0,40);
+                        display.setTextSize(1);
+                        display.print(alloL[allo]);
+                        display.display();
+                }
+
+        } while(digitalRead(PUSH));
+
+
+}
+
+
 
 /*
-
-
-      do {
-        allo = map(analogRead(6),4096,20,0,124);
-        display.clearDisplay();
-        display.setFont(&Orbitron_Light_22);
-        display.setTextSize(1);
-        display.setCursor(0,16);
-      display.print(allo+1);
-      //  display.print(myEnc.read()); // testing rotary
-
-        display.setFont(&Orbitron_Light_24);
-        display.setCursor(0,40);
-        display.setTextSize(1);
-        display.print(alloL[allo]);
-
-      //  display.display();  // slowing down ! (have a menu to enable/disable dispplay refresh)
-
-      }
-
-        while(digitalRead(GATE)==OFF);
-          voice.say(alphons[allo]);
-
-          do {
-            allo = map(analogRead(6),4096,20,0,124);
-           display.clearDisplay();
-            display.setFont(&Orbitron_Light_22);
-            display.setTextSize(1);
-            display.setCursor(0,16);
-           display.print(allo+1);
-            //  display.print(myEnc.read()); // testing rotary
-            display.setFont(&Orbitron_Light_24);
-            display.setCursor(0,40);
-            display.setTextSize(1);
-            display.print(alloL[allo]);
-
-      //      display.display();  // slowing down ! (have a menu to enable/disable dispplay refresh)
-
-          }
-        while(digitalRead(GATE)==ON);
-
-
+   ██████  ██████   ██████  ██
+   ██   ██ ██   ██ ██    ██ ██
+   ██████  ██████  ██    ██ ██
+   ██   ██ ██   ██ ██    ██ ██
+   ██████  ██   ██  ██████  ███████
  */
-        voice.mode=digitalRead(SW0)+digitalRead(SW1)*2;
-      //  Serial.println(mode);
-//delay(100);
-
-    //    analogSound.update();
-    //   allo=map(analogSound.getValue(),4094,0,0,71); // normal = 124
-    // allo=map(analogRead(A6),1023,0,0,71); // normal = 124
-    /*    if (allo!=prevAllo)
-        {
-                //  Serial.println(allo);
-                prevAllo=allo;
-
-                display.clearDisplay();
-                display.setFont(&Orbitron_Light_22);
-                display.setTextSize(1);
-                display.setCursor(0,16);
-                display.print(allo+1);
-                display.setFont(&Orbitron_Light_24);
-                display.setCursor(0,40);
-                display.setTextSize(1);
-                display.print(alloL[allo]);
-            //   display.display();
-        }
-*/
-
-// while(digitalRead(GATE)==0) ; //to avoid repeat in speech mode)
-do{
-//voice.say(sp_alphon127);
-readSound(); // to display while gate is low helps to set sequence
-}
-  while(digitalRead(GATE)==1) ;
-  moy=0;
-  for (int i = 0; i < 5; i++) {
-    moy=moy +analogRead(A6);
-  }
-  allo=map(moy/5,4095,0,0,124);
- voice.say(alphons[allo]);
-// sayNumber(map(analogRead(A6),4095,0,0,9));
-if (allo!=prevAllo)
-   {
-           prevAllo=allo;
-           display.clearDisplay();
-           display.setFont(&Orbitron_Light_22);
-           display.setTextSize(1);
-           display.setCursor(0,16);
-           display.print(allo+1);
-           display.setFont(&Orbitron_Light_24);
-           display.setCursor(0,40);
-           display.setTextSize(1);
-           display.print(alloL[allo]);
-           display.display();
-   }
 
 /*
       //  if (GATE_HIGH)
@@ -455,11 +479,10 @@ if (allo!=prevAllo)
 
 
                 }
-*/
-      //}
-      //  else
-     //{
-      //        busy=0; // si mode speech
-      //        //  if (MODE_REPEAT) voice.say(sp_alphon127);// si mode 3 stop sound
-      //  }
-}
+ */
+//}
+//  else
+//{
+//        busy=0; // si mode speech
+//        //  if (MODE_REPEAT) voice.say(sp_alphon127);// si mode 3 stop sound
+//  }

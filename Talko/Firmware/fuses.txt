@@ -1,0 +1,3 @@
+FF DE 05
+(avoid problems if usb is connected while switching on & off)
+lfuse:v:0xff:m -U efuse:v:0x05:m -U hfuse:v:0xde:m

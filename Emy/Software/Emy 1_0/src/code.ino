@@ -422,26 +422,15 @@ void loop() {
         {
         case 0: // Allophones
         {
-                fin=0; // reset long presss counter
+
                 prevAllo=9999; //to force display at startup
 
                 do {
-
-
+                        fin=0; // reset long presss counter
 
                         voice.mode=digitalRead(SW0)+digitalRead(SW1)*2;
-                        // while(digitalRead(GATE)==0) ; //to avoid repeat in speech mode)
-                        do {
+                        allo=map(potRead(6),4095,10,0,124);
 
-                                //     readSound(); // to display while gate is low helps to set sequence
-                        }
-                        while(digitalRead(GATE)==1 && digitalRead(PUSH)==1 );
-                        moy=0;
-                        for (int i = 0; i < 10; i++) {
-                                moy=moy +analogRead(A6);
-                        }
-                        allo=map(moy/10,4095,0,0,124);
-                        voice.say(alphons[allo]);
 
                         if (allo!=prevAllo)
                         {
@@ -457,54 +446,27 @@ void loop() {
                                 display.print(alloL[allo]);
                                 display.display();
                         }
-                        fin=0;
-                        do {
-                                fin++;
-                                if (fin>100000L) break;
-                        } while(digitalRead(PUSH)==0);
-
-                } while(fin<100000L); // long presss
-                display.clearDisplay();
-                display.display();
-
-        }
-        break;
-
-        case 1: // Numbers
-        {
-                fin=0; // reset long presss counter
-                prevAllo=9999; //to force display at startup
-
-                do {
 
 
+                        //  if (digitalRead(GATE)==ON || digitalRead(PUSH)==ON)
 
-                        voice.mode=digitalRead(SW0)+digitalRead(SW1)*2;
-                        //  if (mode==2) while(digitalRead(GATE)==0) ; //to avoid repeat in speech mode)
+                        if (voice.mode==MODE_SPEECH)
 
-                        do {
-                                //  Serial.println(digitalRead(SW0)+digitalRead(SW1)*2);
-                                readSound(); // to display while gate is low helps to set sequence
+                      {
+                                if (digitalRead(GATE)==ON || digitalRead(PUSH)==ON)
+                                {
+
+                                        digitalWrite(RED_LED,ON);
+                                        voice.say(alphons[allo]);
+                                        digitalWrite(RED_LED,OFF);
+                                }
                         }
-                        while(digitalRead(GATE)==1);
-
-                        allo=map(potRead(6),4095,0,0,9);
-
-                        sayNumber(allo);
-                        if (allo!=prevAllo)
+                        else
                         {
-                                prevAllo=allo;
-                                display.clearDisplay();
-                                display.setFont(&Orbitron_Light_22);
-                                display.setTextSize(1);
-                                display.setCursor(0,16);
-                                display.print(allo);
-                                display.setFont(&Orbitron_Light_24);
-                                display.setCursor(0,40);
-                                display.setTextSize(1);
-                                display.print(allo);
-                                display.display();
+                                voice.say(alphons[allo]);
                         }
+
+
 
                         do {
                                 fin++;
@@ -516,6 +478,12 @@ void loop() {
                 } while(fin<100000L); // long presss
                 display.clearDisplay();
                 display.display();
+
+        }
+        break;
+
+        case 1: // New function
+        {
 
         }
         break;
@@ -623,6 +591,17 @@ void loop() {
 
 
                 }
+
+
+
+                case 1: // New function
+                {
+
+                }
+                break;
+
+
+
  */
 //}
 //  else

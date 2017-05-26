@@ -56,8 +56,7 @@ const unsigned char Eye [] PROGMEM = {
  */
 
 #define VERSION "Ver. 1.0"
-#define ON 0
-#define OFF 1
+
 
 
 #define GATE_HIGH !digitalRead(GATE)
@@ -73,19 +72,22 @@ int prevAllo;
 bool busy=0;
 int moy;
 
+
 volatile float interruptCount=0; // The rotary counter
 char* mainFunctions[12]={
 
         "Phoneme",
         "Numbers",
-        "SD LPC",
+        "Numbers 2",
         "Set Time","","",""
 };
 
 #define numFunctions 4
 int function;
 
-bool WTF;
+bool WTF; // to avoid led interrupt trigger by rotary !
+
+int fin =0; /// pour pression longue
 
 /*
 
@@ -112,6 +114,18 @@ Encoder myEnc(6, 7);
 
  */
 
+
+
+int potRead(int pot)
+{
+        moy=0;
+        for (int i = 0; i < 10; i++) {
+                moy=moy +analogRead(pot);
+              //  moy=moy +analogReadFast(pot,2);
+        }
+        return moy/10;
+
+}
 
 void displayFunctionList(int p)
 {
@@ -154,11 +168,7 @@ void rot()
 void readSound()
 
 {
-        moy=0;
-        for (int i = 0; i < 5; i++) {
-                moy=moy +analogRead(A6);
-        }
-        allo=map(moy/5,4095,0,0,124);
+        allo=map(potRead(6),4095,0,0,9);
         if (allo!=prevAllo)
         {
                 prevAllo=allo;
@@ -177,17 +187,17 @@ void readSound()
 
 void setBLUE_ON()
 {
-  if (WTF) { // sorry but I cannot find how to stop this interrupt from happening when turning the rotary
+        if (WTF) { // sorry but I cannot find how to stop this interrupt from happening when turning the rotary
 
-        if (digitalRead(GATE))
-        {
-                digitalWrite(BLUE_LED,HIGH);
+                if (digitalRead(GATE))
+                {
+                        digitalWrite(BLUE_LED,HIGH);
+                }
+                else
+                {
+                        digitalWrite(BLUE_LED,LOW);
+                }
         }
-        else
-        {
-                digitalWrite(BLUE_LED,LOW);
-        }
-}
 }
 
 
@@ -338,7 +348,7 @@ void setup() {
         digitalWrite(RED_LED,HIGH);
 
         analogReadResolution(12);
-        analogReadCorrection(14, 2831);
+        analogReadCorrection(14, 2065);
         //  analogSound.setAnalogResolution(4096);
 
         display.begin(SSD1306_SWITCHCAPVCC, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
@@ -362,7 +372,7 @@ void setup() {
         voice.say(spYOU_ARE_FIRED);
 
         Wire.setClock(2000000L);  //magnifique ! ? plante à 3mhz
-        attachInterrupt(GATE, setBLUE_ON, CHANGE);
+      //  attachInterrupt(GATE, setBLUE_ON, CHANGE);
         attachInterrupt(ROTA, rot, CHANGE);
 
 
@@ -385,7 +395,7 @@ void loop() {
         digitalWrite(BLUE_LED,HIGH);
         detachInterrupt(GATE);
         WTF=LOW;
-        delay(400);
+        delay(300);
         interruptCount=0;
         display.setFont(&Orbitron_Light_16);
         display.setTextSize(1);
@@ -403,45 +413,167 @@ void loop() {
 
         } while(digitalRead(PUSH));
         delay(400);
-        attachInterrupt(GATE, setBLUE_ON, CHANGE);
+      // attachInterrupt(GATE, setBLUE_ON, CHANGE);
         WTF=HIGH;
 
 // process functions
 
-        do {
-                /* code */
+        switch (function)
+        {
+        case 0: // Allophones
+        {
+                fin=0; // reset long presss counter
+                prevAllo=9999; //to force display at startup
 
-
-                voice.mode=digitalRead(SW0)+digitalRead(SW1)*2;
-                // while(digitalRead(GATE)==0) ; //to avoid repeat in speech mode)
                 do {
 
-//readSound(); // to display while gate is low helps to set sequence
-                }
-                while(digitalRead(GATE)==1);
-                moy=0;
-                for (int i = 0; i < 5; i++) {
-                        moy=moy +analogRead(A6);
-                }
-                allo=map(moy/5,4095,0,0,124);
-                voice.say(alphons[allo]);
-                //sayNumber(map(analogRead(A6),4095,0,0,9));
-                if (allo!=prevAllo)
-                {
-                        prevAllo=allo;
-                        display.clearDisplay();
-                        display.setFont(&Orbitron_Light_22);
-                        display.setTextSize(1);
-                        display.setCursor(0,16);
-                        display.print(allo+1);
-                        display.setFont(&Orbitron_Light_24);
-                        display.setCursor(0,40);
-                        display.setTextSize(1);
-                        display.print(alloL[allo]);
-                        display.display();
-                }
 
-        } while(digitalRead(PUSH));
+
+                        voice.mode=digitalRead(SW0)+digitalRead(SW1)*2;
+                        // while(digitalRead(GATE)==0) ; //to avoid repeat in speech mode)
+                        do {
+
+                                //     readSound(); // to display while gate is low helps to set sequence
+                        }
+                        while(digitalRead(GATE)==1 && digitalRead(PUSH)==1 );
+                        moy=0;
+                        for (int i = 0; i < 10; i++) {
+                                moy=moy +analogRead(A6);
+                        }
+                        allo=map(moy/10,4095,0,0,124);
+                        voice.say(alphons[allo]);
+
+                        if (allo!=prevAllo)
+                        {
+                                prevAllo=allo;
+                                display.clearDisplay();
+                                display.setFont(&Orbitron_Light_22);
+                                display.setTextSize(1);
+                                display.setCursor(0,16);
+                                display.print(allo+1);
+                                display.setFont(&Orbitron_Light_24);
+                                display.setCursor(0,40);
+                                display.setTextSize(1);
+                                display.print(alloL[allo]);
+                                display.display();
+                        }
+                        fin=0;
+                        do {
+                                fin++;
+                                if (fin>100000L) break;
+                        } while(digitalRead(PUSH)==0);
+
+                } while(fin<100000L); // long presss
+                display.clearDisplay();
+                display.display();
+
+        }
+        break;
+
+        case 1: // Numbers
+        {
+                fin=0; // reset long presss counter
+                prevAllo=9999; //to force display at startup
+
+                do {
+
+
+
+                        voice.mode=digitalRead(SW0)+digitalRead(SW1)*2;
+                        //  if (mode==2) while(digitalRead(GATE)==0) ; //to avoid repeat in speech mode)
+
+                        do {
+                                //  Serial.println(digitalRead(SW0)+digitalRead(SW1)*2);
+                                readSound(); // to display while gate is low helps to set sequence
+                        }
+                        while(digitalRead(GATE)==1);
+
+                        allo=map(potRead(6),4095,0,0,9);
+
+                        sayNumber(allo);
+                        if (allo!=prevAllo)
+                        {
+                                prevAllo=allo;
+                                display.clearDisplay();
+                                display.setFont(&Orbitron_Light_22);
+                                display.setTextSize(1);
+                                display.setCursor(0,16);
+                                display.print(allo);
+                                display.setFont(&Orbitron_Light_24);
+                                display.setCursor(0,40);
+                                display.setTextSize(1);
+                                display.print(allo);
+                                display.display();
+                        }
+
+                        do {
+                                fin++;
+
+                                //  Serial.println(fin);
+                                if (fin>100000L) break;
+                        } while(digitalRead(PUSH)==0);
+
+                } while(fin<100000L); // long presss
+                display.clearDisplay();
+                display.display();
+
+        }
+        break;
+
+        case 2: // Number 2
+        {
+
+                prevAllo=9999; //to force display at startup
+
+                do {
+                        fin=0; // reset long presss counter
+
+                        voice.mode=digitalRead(SW0)+digitalRead(SW1)*2;
+                        allo=map(potRead(6),4095,10,0,9);
+
+/*
+                          if (allo!=prevAllo)
+                        {
+                                prevAllo=allo;
+                                display.clearDisplay();
+                                display.setFont(&Orbitron_Light_22);
+                                display.setTextSize(1);
+                                display.setCursor(0,16);
+                                display.print(allo);
+                                display.setFont(&Orbitron_Light_24);
+                                display.setCursor(0,40);
+                                display.setTextSize(1);
+                                display.print(allo);
+                                display.display();
+                        }
+*/
+
+                    //  if (digitalRead(GATE)==ON || digitalRead(PUSH)==ON)
+                    // {
+
+                    //   digitalWrite(RED_LED,ON);
+                           sayNumber(allo);
+                    //   digitalWrite(RED_LED,OFF);
+
+                //  }
+                        do {
+                                fin++;
+
+                                //  Serial.println(fin);
+                                if (fin>100000L) break;
+                        } while(digitalRead(PUSH)==0);
+
+                } while(fin<100000L); // long presss
+                display.clearDisplay();
+                display.display();
+
+        }
+        break;
+
+
+
+        }
+
 
 
 }

@@ -2,393 +2,272 @@
 // Copyright 2011 Peter Knight
 // This code is released under GPLv2 license.
 
-// Though the Wave Shield DAC pins are configurable, much else in this code
-// is still very Uno-specific; the timers and timer control registers, the
-// PWM output pin, etc.  Compatibility with other boards is not guaranteed.
-
+#if (ARDUINO >= 100)
+ #include "Arduino.h"
+#else
+ #include <avr/io.h>
+ #include "WProgram.h"
+#endif
 #include "talkie.h"
 
-#if defined(__SAMD21G18A__) || defined(__SAMD21E18A__) || defined(__SAMD21J18A__)
- #define __SAMD__
- #define TIMER       TC4
- #define IRQN        TC4_IRQn
- #define IRQ_HANDLER TC4_Handler
- #define PORTTYPE    uint32_t
-#else
- #define PORTTYPE    uint8_t
-//#define PIEZO      // If set, connect piezo on pins 3 & 11, is louder
-#endif
+#define FS 8000 // Speech engine sample rate
 
-//#define FS    8000      // Speech engine sample rate
-static volatile int16_t  FS=8000;
-//#define TICKS (FS / 40) // Speech data rate
-#define TICKS 0 // Strech hack
-// Some of these variables could go in the Talkie object, but the hardware
-// specificity (reliance on certain timers and/or PWM pins) kills any point
-// in multiple instances; there can be only one.  So they're declared as
-// static here to keep the header simple and self-documenting.
-//#if TICKS < 255
-//static volatile uint8_t   interruptCount;
-//#else
-static volatile uint16_t  interruptCount;
-static volatile uint16_t slower;
-//#endif
-static volatile PORTTYPE *csPort, *clkPort, *datPort;
-static volatile uint16_t  synthEnergy;
-static volatile int16_t   synthK1, synthK2;
-static volatile int8_t    synthK3, synthK4, synthK5, synthK6,
-                          synthK7, synthK8, synthK9, synthK10;
-static uint16_t           buf, synthRand = 1;
-static int16_t            x0, x1, x2, x3, x4, x5, x6, x7, x8, x9;
-static uint8_t            periodCounter, synthPeriod, bufBits;
-static PORTTYPE           csBitMask, clkBitMask, datBitMask;
-static const uint8_t     *ptrAddr;
-#ifdef __SAMD__
-static uint16_t           nextPwm = 0x200; // 10-bit PWM
-#else
-static uint8_t            nextPwm = 0x80;  // 8-bit PWM
-#endif
+uint8_t synthPeriod;
+uint16_t synthEnergy;
+int16_t synthK1,synthK2;
+int8_t synthK3,synthK4,synthK5,synthK6,synthK7,synthK8,synthK9,synthK10;
 
-static const int16_t PROGMEM
-  tmsK1[]     = {0x82C0,0x8380,0x83C0,0x8440,0x84C0,0x8540,0x8600,0x8780,
-                 0x8880,0x8980,0x8AC0,0x8C00,0x8D40,0x8F00,0x90C0,0x92C0,
-                 0x9900,0xA140,0xAB80,0xB840,0xC740,0xD8C0,0xEBC0,0x0000,
-                 0x1440,0x2740,0x38C0,0x47C0,0x5480,0x5EC0,0x6700,0x6D40},
-  tmsK2[]     = {0xAE00,0xB480,0xBB80,0xC340,0xCB80,0xD440,0xDDC0,0xE780,
-                 0xF180,0xFBC0,0x0600,0x1040,0x1A40,0x2400,0x2D40,0x3600,
-                 0x3E40,0x45C0,0x4CC0,0x5300,0x5880,0x5DC0,0x6240,0x6640,
-                 0x69C0,0x6CC0,0x6F80,0x71C0,0x73C0,0x7580,0x7700,0x7E80};
+uint8_t tmsEnergy[0x10] = {0x00,0x02,0x03,0x04,0x05,0x07,0x0a,0x0f,0x14,0x20,0x29,0x39,0x51,0x72,0xa1,0xff};
+uint8_t tmsPeriod[0x40] = {0x00,0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1A,0x1B,0x1C,0x1D,0x1E,0x1F,0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,0x28,0x29,0x2A,0x2B,0x2D,0x2F,0x31,0x33,0x35,0x36,0x39,0x3B,0x3D,0x3F,0x42,0x45,0x47,0x49,0x4D,0x4F,0x51,0x55,0x57,0x5C,0x5F,0x63,0x66,0x6A,0x6E,0x73,0x77,0x7B,0x80,0x85,0x8A,0x8F,0x95,0x9A,0xA0};
+int16_t tmsK1[0x20]     = {0x82C0,0x8380,0x83C0,0x8440,0x84C0,0x8540,0x8600,0x8780,0x8880,0x8980,0x8AC0,0x8C00,0x8D40,0x8F00,0x90C0,0x92C0,0x9900,0xA140,0xAB80,0xB840,0xC740,0xD8C0,0xEBC0,0x0000,0x1440,0x2740,0x38C0,0x47C0,0x5480,0x5EC0,0x6700,0x6D40};
+int16_t tmsK2[0x20]     = {0xAE00,0xB480,0xBB80,0xC340,0xCB80,0xD440,0xDDC0,0xE780,0xF180,0xFBC0,0x0600,0x1040,0x1A40,0x2400,0x2D40,0x3600,0x3E40,0x45C0,0x4CC0,0x5300,0x5880,0x5DC0,0x6240,0x6640,0x69C0,0x6CC0,0x6F80,0x71C0,0x73C0,0x7580,0x7700,0x7E80};
+int8_t tmsK3[0x10]      = {0x92,0x9F,0xAD,0xBA,0xC8,0xD5,0xE3,0xF0,0xFE,0x0B,0x19,0x26,0x34,0x41,0x4F,0x5C};
+int8_t tmsK4[0x10]      = {0xAE,0xBC,0xCA,0xD8,0xE6,0xF4,0x01,0x0F,0x1D,0x2B,0x39,0x47,0x55,0x63,0x71,0x7E};
+int8_t tmsK5[0x10]      = {0xAE,0xBA,0xC5,0xD1,0xDD,0xE8,0xF4,0xFF,0x0B,0x17,0x22,0x2E,0x39,0x45,0x51,0x5C};
+int8_t tmsK6[0x10]      = {0xC0,0xCB,0xD6,0xE1,0xEC,0xF7,0x03,0x0E,0x19,0x24,0x2F,0x3A,0x45,0x50,0x5B,0x66};
+int8_t tmsK7[0x10]      = {0xB3,0xBF,0xCB,0xD7,0xE3,0xEF,0xFB,0x07,0x13,0x1F,0x2B,0x37,0x43,0x4F,0x5A,0x66};
+int8_t tmsK8[0x08]      = {0xC0,0xD8,0xF0,0x07,0x1F,0x37,0x4F,0x66};
+int8_t tmsK9[0x08]      = {0xC0,0xD4,0xE8,0xFC,0x10,0x25,0x39,0x4D};
+int8_t tmsK10[0x08]     = {0xCD,0xDF,0xF1,0x04,0x16,0x20,0x3B,0x4D};
 
-static const int8_t PROGMEM
-  tmsK3[]     = {0x92,0x9F,0xAD,0xBA,0xC8,0xD5,0xE3,0xF0,
-                 0xFE,0x0B,0x19,0x26,0x34,0x41,0x4F,0x5C},
-  tmsK4[]     = {0xAE,0xBC,0xCA,0xD8,0xE6,0xF4,0x01,0x0F,
-                 0x1D,0x2B,0x39,0x47,0x55,0x63,0x71,0x7E},
-  tmsK5[]     = {0xAE,0xBA,0xC5,0xD1,0xDD,0xE8,0xF4,0xFF,
-                 0x0B,0x17,0x22,0x2E,0x39,0x45,0x51,0x5C},
-  tmsK6[]     = {0xC0,0xCB,0xD6,0xE1,0xEC,0xF7,0x03,0x0E,
-                 0x19,0x24,0x2F,0x3A,0x45,0x50,0x5B,0x66},
-  tmsK7[]     = {0xB3,0xBF,0xCB,0xD7,0xE3,0xEF,0xFB,0x07,
-                 0x13,0x1F,0x2B,0x37,0x43,0x4F,0x5A,0x66},
-  tmsK8[]     = {0xC0,0xD8,0xF0,0x07,0x1F,0x37,0x4F,0x66},
-  tmsK9[]     = {0xC0,0xD4,0xE8,0xFC,0x10,0x25,0x39,0x4D},
-  tmsK10[]    = {0xCD,0xDF,0xF1,0x04,0x16,0x20,0x3B,0x4D},
-  chirp[]     = {0x00,0x2A,0xD4,0x32,0xB2,0x12,0x25,0x14,
-                 0x02,0xE1,0xC5,0x02,0x5F,0x5A,0x05,0x0F,
-                 0x26,0xFC,0xA5,0xA5,0xD6,0xDD,0xDC,0xFC,
-                 0x25,0x2B,0x22,0x21,0x0F,0xFF,0xF8,0xEE,
-                 0xED,0xEF,0xF7,0xF6,0xFA,0x00,0x03,0x02,0x01};
 
-static const uint8_t PROGMEM
-  tmsEnergy[] = {0x00,0x02,0x03,0x04,0x05,0x07,0x0A,0x0F,
-                 0x14,0x20,0x29,0x39,0x51,0x72,0xA1,0xFF},
-  tmsPeriod[] = {0x00,0x10,0x11,0x12,0x13,0x14,0x15,0x16,
-                 0x17,0x18,0x19,0x1A,0x1B,0x1C,0x1D,0x1E,
-                 0x1F,0x20,0x21,0x22,0x23,0x24,0x25,0x26,
-                 0x27,0x28,0x29,0x2A,0x2B,0x2D,0x2F,0x31,
-                 0x33,0x35,0x36,0x39,0x3B,0x3D,0x3F,0x42,
-                 0x45,0x47,0x49,0x4D,0x4F,0x51,0x55,0x57,
-                 0x5C,0x5F,0x63,0x66,0x6A,0x6E,0x73,0x77,
-                 0x7B,0x80,0x85,0x8A,0x8F,0x95,0x9A,0xA0};
 
-// Constructor for PWM mode
-Talkie::Talkie(void) {
-#ifdef __SAMD__
-	analogWriteResolution(10);
-#elif defined(__AVR_ATmega32U4__) // Circuit Playground
-	pinMode(5, OUTPUT);  // !OC4A
-#else // Arduino Uno
-	pinMode(3, OUTPUT);  // OC2B
- #ifdef PIEZO
-	pinMode(11, OUTPUT); // OC2A
- #endif
-#endif
-	csBitMask = 0;       // DAC not in use
+
+bool tcIsSyncing()
+{
+  return TC5->COUNT16.STATUS.reg & TC_STATUS_SYNCBUSY;
 }
 
-// Constructor for DAC mode
-Talkie::Talkie(uint8_t cs, uint8_t clk, uint8_t dat) {
-	csPort     = portOutputRegister(digitalPinToPort(cs));
-	csBitMask  = digitalPinToBitMask(cs);
-	clkPort    = portOutputRegister(digitalPinToPort(clk));
-	clkBitMask = digitalPinToBitMask(clk);
-	datPort    = portOutputRegister(digitalPinToPort(dat));
-	datBitMask = digitalPinToBitMask(dat);
-	pinMode(cs , OUTPUT);
-	pinMode(clk, OUTPUT);
-	pinMode(dat, OUTPUT);
-	*csPort   |=  csBitMask;  // Deselect
-	*clkPort  &= ~clkBitMask; // Clock low
+void tcStartCounter()
+{
+  TC5->COUNT16.CTRLA.reg |= TC_CTRLA_ENABLE; //set the CTRLA register
+  while (tcIsSyncing()); //wait until snyc'd
 }
 
-void Talkie::say(const uint8_t *addr, boolean block) {
-
-	// Enable the speech system whenever say() is called.
 
 
-	if(!csBitMask) {
-#if defined(__AVR_ATmega32U4__)
-		// Set up Timer4 for fast PWM on !OC4A
-		PLLFRQ = (PLLFRQ & 0xCF) | 0x30;   // Route PLL to async clk
-		TCCR4A = _BV(COM4A0) | _BV(PWM4A); // Clear on match, PWMA on
-		TCCR4B = _BV(PWM4X)  |_BV(CS40);   // PWM invert, 1:1 prescale
-		TCCR4D = 0;                        // Fast PWM mode
-		TCCR4E = 0;                        // Not enhanced mode
-		TC4H   = 0;                        // Not 10-bit mode
-		DT4    = 0;                        // No dead time
-		OCR4C  = 255;                      // TOP
-		OCR4A  = 127;                      // 50% duty to start
-#elif defined(__AVR__)
-		// Set up Timer2 for 8-bit, 62500 Hz PWM on OC2B
-		TCCR2A  = _BV(COM2B1) | _BV(WGM21) | _BV(WGM20);
-		TCCR2B  = _BV(CS20); // No prescale
-		TIMSK2  = 0;         // No interrupt
-		OCR2B   = 0x80;      // 50% duty cycle
- #ifdef PIEZO
-		OCR2A   = 0x80;
-		TCCR2A |= _BV(COM2A1) | _BV(COM2A0); // OC2A inverting mode
- #endif // endif PIEZO
-#endif // endif AVR
-		// SAMD uses onboard DAC; no init needed here
-	}
 
-	// Reset synth state and 'ROM' reader
-	x0 = x1 = x2 = x3 = x4 = x5 = x6 = x7 = x8 =
-	  periodCounter = buf = bufBits = 0;
-	ptrAddr        = addr;
-	interruptCount = TICKS;
+void tcConfigure(int sampleRate)
+{
+// Enable GCLK for TCC2 and TC5 (timer counter input clock)
+GCLK->CLKCTRL.reg = (uint16_t) (GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_ID(GCM_TC4_TC5)) ;
+while (GCLK->STATUS.bit.SYNCBUSY);
 
-#ifdef __SAMD__
 
-	// Enable GCLK for TC4 and COUNTER (timer counter input clock)
-	GCLK->CLKCTRL.reg = (uint16_t)(GCLK_CLKCTRL_CLKEN |
-	  GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_ID(GCM_TC4_TC5));
-	while(GCLK->STATUS.bit.SYNCBUSY == 1);
 
-	// Counter must first be disabled to configure it
-	TIMER->COUNT16.CTRLA.reg &= ~TC_CTRLA_ENABLE;
-	while(TIMER->COUNT16.STATUS.bit.SYNCBUSY);
+ // Set Timer counter Mode to 16 bits
+TC5->COUNT16.CTRLA.reg |= TC_CTRLA_MODE_COUNT16;
+// Set TC5 mode as match frequency
+TC5->COUNT16.CTRLA.reg |= TC_CTRLA_WAVEGEN_MFRQ;
+//set prescaler and enable TC5
+TC5->COUNT16.CTRLA.reg |= TC_CTRLA_PRESCALER_DIV1 | TC_CTRLA_ENABLE;
+//set TC5 timer counter based off of the system clock and the user defined sample rate or waveform
+TC5->COUNT16.CC[0].reg = (uint16_t) (SystemCoreClock / sampleRate - 1);
+while (tcIsSyncing());
 
-	TIMER->COUNT16.CTRLA.reg =  // Configure timer counter
-	  TC_CTRLA_PRESCALER_DIV1 | // 1:1 Prescale
-	  TC_CTRLA_WAVEGEN_MFRQ   | // Match frequency generation mode (MFRQ)
-	  TC_CTRLA_MODE_COUNT16;    // 16-bit counter mode
-	while(TIMER->COUNT16.STATUS.bit.SYNCBUSY);
+// Configure interrupt request
+NVIC_DisableIRQ(TC5_IRQn);
+NVIC_ClearPendingIRQ(TC5_IRQn);
+NVIC_SetPriority(TC5_IRQn, 0);
+NVIC_EnableIRQ(TC5_IRQn);
 
-	TIMER->COUNT16.CTRLBCLR.reg = TCC_CTRLBCLR_DIR; // Count up
-	while(TIMER->COUNT16.STATUS.bit.SYNCBUSY);
-
-	TIMER->COUNT16.CC[0].reg = ((F_CPU + (FS / 2)) / FS) - 1;
-	while(TIMER->COUNT16.STATUS.bit.SYNCBUSY);
-
-	TIMER->COUNT16.INTENSET.reg = TC_INTENSET_OVF; // Overflow interrupt
-
-	NVIC_DisableIRQ(IRQN);
-	NVIC_ClearPendingIRQ(IRQN);
-	NVIC_SetPriority(IRQN, 0); // Top priority
-	NVIC_EnableIRQ(IRQN);
-
-	// Enable TCx
-	TIMER->COUNT16.CTRLA.reg |= TC_CTRLA_ENABLE;
-	while(TIMER->COUNT16.STATUS.bit.SYNCBUSY);
-
-	if(block) while(!(TIMER->COUNT16.STATUS.reg & TC_STATUS_STOP));
- slower= map(analogRead(2),4095,0,300,10);
- FS=map(analogRead(1),4095,0,2000,20000); // Rate HACK
-#else // AVR
-
-	// Set up Timer1 to trigger periodic synth calc at 'FS' Hz
-	TCCR1A = 0;                             // No output
-	TCCR1B = _BV(WGM12) | _BV(CS10);        // CTC mode, no prescale
-	OCR1A  = ((F_CPU + (FS / 2)) / FS) - 1; // 'FS' Hz (w/rounding)
-	TCNT1  = 0;                             // Reset counter
-	TIMSK1 = _BV(OCIE1A);                   // Compare match interrupt on
-
-	if(block) while(TIMSK1 & _BV(OCIE1A));
-
-#endif // AVR
+ // Enable the TC5 interrupt request
+TC5->COUNT16.INTENSET.bit.MC0 = 1;
+while (tcIsSyncing()); //wait until TC5 is done syncing
 }
 
-boolean Talkie::talking(void) {
-#ifdef __SAMD__
-	return !(TIMER->COUNT16.STATUS.reg & TC_STATUS_STOP);
-#else
-	return TIMSK1 & _BV(OCIE1A);
-#endif
+
+void Talkie::setPtr(const uint8_t* addr) {
+	ptrAddr = addr;
+	ptrBit = 0;
 }
 
-static inline uint8_t rev(uint8_t a) { // Reverse bit sequence in 8-bit value
-	a = ( a         >> 4) | ( a         << 4); // 76543210 -> 32107654
-	a = ((a & 0xCC) >> 2) | ((a & 0x33) << 2); // 32107654 -> 10325476
-	a = ((a & 0xAA) >> 1) | ((a & 0x55) << 1); // 10325476 -> 01234567
+// The ROMs used with the TI speech were serial, not byte wide.
+// Here's a handy routine to flip ROM data which is usually reversed.
+uint8_t Talkie::rev(uint8_t a) {
+	// 76543210
+	a = (a>>4) | (a<<4); // Swap in groups of 4
+	// 32107654
+	a = ((a & 0xcc)>>2) | ((a & 0x33)<<2); // Swap in groups of 2
+	// 10325476
+	a = ((a & 0xaa)>>1) | ((a & 0x55)<<1); // Swap bit pairs
+	// 01234567
 	return a;
 }
-
-static uint8_t getBits(uint8_t bits) {
+uint8_t Talkie::getBits(uint8_t bits) {
 	uint8_t value;
-	if(bits > bufBits) {
-		buf     |= rev(pgm_read_byte(ptrAddr)) << (8 - bufBits);
-		bufBits += 8;
-		ptrAddr++; // Don't post-inc in pgm_read_byte! Is a macro.
+	uint16_t data;
+	data = rev(pgm_read_byte(ptrAddr))<<8;
+	if (ptrBit+bits > 8) {
+		data |= rev(pgm_read_byte(ptrAddr+1));
 	}
-	value    = buf >> (16 - bits);
-	buf    <<= bits;
-	bufBits -= bits;
+	data <<= ptrBit;
+	value = data >> (16-bits);
+	ptrBit += bits;
+	if (ptrBit >= 8) {
+		ptrBit -= 8;
+		ptrAddr++;
+	}
 	return value;
 }
 
-static void dacOut(uint8_t value) {
-	uint8_t bit;
 
-	*csPort  &= ~csBitMask; // Select DAC
+void Talkie::say(const uint8_t* addr) {
+	uint8_t energy;
 
-	// Clock out 4 bits DAC config (not in loop because it's constant)
-	*datPort &= ~datBitMask; // 0 = Select DAC A, unbuffered
-	*clkPort |=  clkBitMask; *clkPort &= ~clkBitMask;
-	*clkPort |=  clkBitMask; *clkPort &= ~clkBitMask;
-	*datPort |=  datBitMask; // 1X gain, enable = 1
-	*clkPort |=  clkBitMask; *clkPort &= ~clkBitMask;
-	*clkPort |=  clkBitMask; *clkPort &= ~clkBitMask;
-
-	// Output is expanded from 8 to 12 bits for DAC.  Perhaps the
-	// synthesizer math could be fiddled to generate 12-bit values.
-	for(bit=0x80; bit; bit>>=1) { // Clock out first 8 bits of data
-		if(value & bit) *datPort |=  datBitMask;
-		else            *datPort &= ~datBitMask;
-		*clkPort |= clkBitMask; *clkPort &= ~clkBitMask;
-	}
-	for(bit=0x80; bit >= 0x10; bit>>=1) { // Low 4 bits = repeat hi 4
-		if(value & bit) *datPort |=  datBitMask;
-		else            *datPort &= ~datBitMask;
-		*clkPort |= clkBitMask; *clkPort &= ~clkBitMask;
-	}
-	*csPort  |=  csBitMask; // Unselect DAC
+  if(!setup)
+		{
+        analogWriteResolution(10);
+        setup = 1;
 }
 
-#define read8(base, bits)  pgm_read_byte(&base[getBits(bits)]);
-#define read16(base, bits) pgm_read_word(&base[getBits(bits)]);
-
-#ifdef __SAMD__
-void IRQ_HANDLER() {
-	TIMER->COUNT16.INTFLAG.reg = TC_INTFLAG_OVF;
-#else
-ISR(TIMER1_COMPA_vect) {
-#endif
-	int16_t u0;
-
-	if(csBitMask) {
-		dacOut(nextPwm);
-	} else {
-#ifdef __SAMD__
-		analogWrite(A0, nextPwm);
-#elif defined(__AVR_ATmega32U4__) // Circuit Playground
-		OCR4A = nextPwm;
-#else // Uno
- #ifdef PIEZO
-		OCR2A = OCR2B = nextPwm;
- #else
-		OCR2B = nextPwm;
- #endif // endif PIEZO
-#endif // endif Uno
-	}
-
-	if(++interruptCount >= TICKS + slower) {
-		// Read speech data, processing the variable size frames
-		uint8_t energy;
-   energy=getBits(4);
-
-  // TRIGGER HACK
-
-// need to add MODE_REPEAT
-  			if(digitalRead(PIN_GATE)==1)
-  				{
-  				energy=0xf; // if gate is LOW in repeat mode then stop the speech
-  				}
+      tcConfigure(map(analogRead(1),4096,0,4000,20000)); //setup the timer counter based off of the user entered sample rate
+      tcStartCounter();
 
 
-		if(energy == 0) {  // Rest frame
+
+	setPtr(addr);
+	do {
+		uint8_t repeat;
+
+		// Read speech data, processing the variable size frames.
+
+		energy = getBits(4);
+
+
+    if (mode!=MODE_SPEECH )
+    			{
+    			if(digitalRead(PIN_GATE)==OFF)
+    				{
+    				energy=0xf; // if gate is LOW in repeat mode then stop the speech
+    				}
+    			}
+
+		if (energy == 0) {
+			// Energy = 0: rest frame
 			synthEnergy = 0;
-		} else if(energy == 0xF) {        // Stop frame; silence
-#ifdef __SAMD__
-			// Disable timer/counter
-			TIMER->COUNT16.CTRLA.reg &= ~TC_CTRLA_ENABLE;
-			while(TIMER->COUNT16.STATUS.bit.SYNCBUSY);
-			nextPwm = 0x200;          // Neutral
-#else
-			TIMSK1 &= ~_BV(OCIE1A);   // Stop interrupt
-			nextPwm = 0x80;           // Neutral
-#endif
-			if(csBitMask) {
-				dacOut(nextPwm);
-			} else {
-				// Stop PWM/DAC out:
-#ifdef __SAMD__
-				analogWrite(A0, nextPwm);
-#elif defined(__AVR_ATmega32U4__)
-				TCCR4A = 0;
-#else
-				TCCR2A = 0;
-#endif
-			}
-			return;
+		} else if (energy == 0xf) {
+			// Energy = 15: stop frame. Silence the synthesiser.
+			synthEnergy = 0;
+			synthK1 = 0;
+			synthK2 = 0;
+			synthK3 = 0;
+			synthK4 = 0;
+			synthK5 = 0;
+			synthK6 = 0;
+			synthK7 = 0;
+			synthK8 = 0;
+			synthK9 = 0;
+			synthK10 = 0;
 		} else {
-			synthEnergy    = pgm_read_byte(&tmsEnergy[energy]);
-			uint8_t repeat = getBits(1);
-			synthPeriod    = pgm_read_byte(&tmsPeriod[getBits(6)]);
-			if(!repeat) { // A repeat frame uses last coefficients
-				synthK1 = read16(tmsK1, 5); // All frames
-				synthK2 = read16(tmsK2, 5); // use the first
-				synthK3 = read8( tmsK3, 4); // 4 coefficients
-				synthK4 = read8( tmsK4, 4);
-				if(synthPeriod) {
-					synthK5  = read8(tmsK5 , 4); // Voiced
-					synthK6  = read8(tmsK6 , 4); // frames
-					synthK7  = read8(tmsK7 , 4); // use
-					synthK8  = read8(tmsK8 , 3); // six
-					synthK9  = read8(tmsK9 , 3); // extra
-					synthK10 = read8(tmsK10, 3); // coeffs
+			synthEnergy = tmsEnergy[energy];
+			repeat = getBits(1);
+			synthPeriod = tmsPeriod[getBits(6)];
+			// A repeat frame uses the last coefficients
+
+			if (!repeat) {
+
+				// All frames use the first 4 coefficients
+				synthK1 = tmsK1[getBits(5)];
+				synthK2 = tmsK2[getBits(5)];
+				synthK3 = tmsK3[getBits(4)];
+				synthK4 = tmsK4[getBits(4)];
+
+				if (synthPeriod) {
+
+          // Voiced frames use 6 extra coefficients.
+					synthK5 = tmsK5[getBits(4)];
+					synthK6 = tmsK6[getBits(4)];
+					synthK7 = tmsK7[getBits(4)];
+					synthK8 = tmsK8[getBits(3)];
+					synthK9 = tmsK9[getBits(3)];
+					synthK10 = tmsK10[getBits(3)];
 				}
 			}
 		}
-		interruptCount = 0;
-	}
+	delay(map(analogRead(2), 4096, 0, 0, 100));
+	} while (energy != 0xf);
 
-	if(synthPeriod) { // Voiced source
-		if(++periodCounter >= synthPeriod) periodCounter = 0;
-		u0 = (periodCounter >= sizeof(chirp)) ? 0 :
-		     (pgm_read_byte(&chirp[periodCounter]) *
-                     (uint32_t)synthEnergy) >> 8;
-	} else {          // Unvoiced source
-		synthRand = (synthRand >> 1) ^ ((synthRand & 1) ? 0xB800 : 0);
-		u0        = (synthRand & 1) ? synthEnergy : -synthEnergy;
-	}
-	u0     -=       ((synthK10 *          x9) +
-	                 (synthK9  *          x8)) >>  7;
-	x9      = x8  + ((synthK9  *          u0 ) >>  7);
-	u0     -=       ((synthK8  *          x7 ) >>  7);
-	x8      = x7  + ((synthK8  *          u0 ) >>  7);
-	u0     -=       ((synthK7  *          x6 ) >>  7);
-	x7      = x6  + ((synthK7  *          u0 ) >>  7);
-	u0     -=       ((synthK6  *          x5 ) >>  7);
-	x6      = x5  + ((synthK6  *          u0 ) >>  7);
-	u0     -=       ((synthK5  *          x4 ) >>  7);
-	x5      = x4  + ((synthK5  *          u0 ) >>  7);
-	u0     -=       ((synthK4  *          x3 ) >>  7);
-	x4      = x3  + ((synthK4  *          u0 ) >>  7);
-	u0     -=       ((synthK3  *          x2 ) >>  7);
-	x3      = x2  + ((synthK3  *          u0 ) >>  7);
-	u0     -=       ((synthK2  * (int32_t)x1 ) >> 15);
-	x2      = x1  + ((synthK2  * (int32_t)u0 ) >> 15);
-	u0     -=       ((synthK1  * (int32_t)x0 ) >> 15);
-	x1      = x0  + ((synthK1  * (int32_t)u0 ) >> 15);
+  	//better handling of silence
 
-	if(     u0 >  511) u0 =  511; // Output clamp
-	else if(u0 < -512) u0 = -512;
+  	if(mode!=MODE_SPEECH) // check for repeat mode
+  	{
+  	while(digitalRead(PIN_GATE)==OFF);
+  	}
 
-	x0      =  u0;
-#ifdef __SAMD__
-	nextPwm = u0 + 0x200; // 10-bit
-#else
-	nextPwm = (u0 >> 2) + 0x80; // 8-bit
-#endif
+
+}
+
+
+
+#define CHIRP_SIZE 41
+int8_t chirp[CHIRP_SIZE] = {0x00,0x2a,0xd4,0x32,0xb2,0x12,0x25,0x14,0x02,0xe1,0xc5,0x02,0x5f,0x5a,0x05,0x0f,0x26,0xfc,0xa5,0xa5,0xd6,0xdd,0xdc,0xfc,0x25,0x2b,0x22,0x21,0x0f,0xff,0xf8,0xee,0xed,0xef,0xf7,0xf6,0xfa,0x00,0x03,0x02,0x01};
+
+
+
+void TC5_Handler (void)
+
+{
+
+  static uint16_t nextPwm; // in case we want to use 10 bit output
+  static uint8_t periodCounter;
+  static int16_t x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10;
+  int16_t u0,u1,u2,u3,u4,u5,u6,u7,u8,u9,u10;
+
+ //analogWrite(A0, random(1000));
+// nextPwm++;
+ analogWrite(A0,nextPwm);
+ TC5->COUNT16.INTFLAG.bit.MC0 = 1;
+
+  if (synthPeriod) {
+    // Voiced source
+    if (periodCounter < synthPeriod) {
+      periodCounter++;
+    } else {
+      periodCounter = 0;
+    }
+    if (periodCounter < CHIRP_SIZE) {
+      u10 = ((chirp[periodCounter]) * (uint32_t) synthEnergy) >> 8;
+    } else {
+      u10 = 0;
+    }
+  } else {
+    // Unvoiced source
+    static uint16_t synthRand = 1;
+    synthRand = (synthRand >> 1) ^ ((synthRand & 1) ? 0xB800 : 0);
+    u10 = (synthRand & 1) ? synthEnergy : -synthEnergy;
+  }
+  // Lattice filter forward path
+  u9 = u10 - (((int16_t)synthK10*x9) >> 7);
+  u8 = u9 - (((int16_t)synthK9*x8) >> 7);
+  u7 = u8 - (((int16_t)synthK8*x7) >> 7);
+  u6 = u7 - (((int16_t)synthK7*x6) >> 7);
+  u5 = u6 - (((int16_t)synthK6*x5) >> 7);
+  u4 = u5 - (((int16_t)synthK5*x4) >> 7);
+  u3 = u4 - (((int16_t)synthK4*x3) >> 7);
+  u2 = u3 - (((int16_t)synthK3*x2) >> 7);
+  u1 = u2 - (((int32_t)synthK2*x1) >> 15);
+  u0 = u1 - (((int32_t)synthK1*x0) >> 15);
+
+
+  // Lattice filter reverse path
+  x9 = x8 + (((int16_t)synthK9*u8) >> 7);
+  x8 = x7 + (((int16_t)synthK8*u7) >> 7);
+  x7 = x6 + (((int16_t)synthK7*u6) >> 7);
+  x6 = x5 + (((int16_t)synthK6*u5) >> 7);
+  x5 = x4 + (((int16_t)synthK5*u4) >> 7);
+  x4 = x3 + (((int16_t)synthK4*u3) >> 7);
+  x3 = x2 + (((int16_t)synthK3*u2) >> 7);
+  x2 = x1 + (((int32_t)synthK2*u1) >> 15);
+  x1 = x0 + (((int32_t)synthK1*u0) >> 15);
+  x0 = u0;
+
+  if(     u0 >  511) u0 =  511; // Output clamp
+  	else if(u0 < -512) u0 = -512;
+
+
+ // nextPwm = (u0>>2)+0x80; //original 8 bits scaling
+nextPwm = u0+512; // 10 bits
+
+
 }

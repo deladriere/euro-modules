@@ -369,10 +369,10 @@ void setup() {
 
 
 
-        voice.say(spYOU_ARE_FIRED);
+      //  voice.say(spYOU_ARE_FIRED);
 
         Wire.setClock(2000000L);  //magnifique ! ? plante à 3mhz
-      //  attachInterrupt(GATE, setBLUE_ON, CHANGE);
+        //  attachInterrupt(GATE, setBLUE_ON, CHANGE);
         attachInterrupt(ROTA, rot, CHANGE);
 
 
@@ -531,8 +531,8 @@ void loop() {
                         voice.mode=digitalRead(SW0)+digitalRead(SW1)*2;
                         allo=map(potRead(6),4095,10,0,9);
 
-/*
-                          if (allo!=prevAllo)
+
+                        if (allo!=prevAllo)
                         {
                                 prevAllo=allo;
                                 display.clearDisplay();
@@ -546,16 +546,28 @@ void loop() {
                                 display.print(allo);
                                 display.display();
                         }
-*/
 
-                    //  if (digitalRead(GATE)==ON || digitalRead(PUSH)==ON)
-                    // {
 
-                    //   digitalWrite(RED_LED,ON);
-                           sayNumber(allo);
-                    //   digitalWrite(RED_LED,OFF);
+                        //  if (digitalRead(GATE)==ON || digitalRead(PUSH)==ON)
 
-                //  }
+                        if (voice.mode==MODE_SPEECH)
+
+                      {
+                                if (digitalRead(GATE)==ON || digitalRead(PUSH)==ON)
+                                {
+
+                                        digitalWrite(RED_LED,ON);
+                                        sayNumber(allo);
+                                        digitalWrite(RED_LED,OFF);
+                                }
+                        }
+                        else
+                        {
+                                sayNumber(allo);
+                        }
+
+
+
                         do {
                                 fin++;
 

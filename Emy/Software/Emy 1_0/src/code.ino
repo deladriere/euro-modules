@@ -16,9 +16,8 @@
 #include <Wire.h>
 #include <Encoder.h>
 #include "SAMD_AnalogCorrection.h"
-//#include <Average.h>
-
-//#include <ResponsiveAnalogRead.h> // attention modif ligne 64     int analogResolution = 1024;
+#include <SD.h>
+#include <SPI.h>
 
 const unsigned char Eye [] PROGMEM = {
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x07, 0xe0, 0x18, 0x38, 0x39, 0x9c, 0x49, 0x92,
@@ -57,6 +56,13 @@ const unsigned char Eye [] PROGMEM = {
 
 #define VERSION "Ver. 1.0"
 
+char inputChar;
+char* myFiles[20];  // max 20 files
+int fileCounter=0; // file index
+int fileNumber=0; // file number
+int filePointer=0;
+char fileName[13];
+
 
 
 #define GATE_HIGH !digitalRead(GATE)
@@ -78,7 +84,7 @@ char* mainFunctions[12]={
 
         "Phoneme",
         "Numbers",
-        "Numbers 2",
+        "SD LPC",
         "Set Time","","",""
 };
 
@@ -101,6 +107,7 @@ int fin =0; /// pour pression longue
 Adafruit_SSD1306 display(0); // modif library for 64
 Talkie voice;
 Encoder myEnc(6, 7);
+File root;
 
 
 
@@ -114,7 +121,76 @@ Encoder myEnc(6, 7);
 
  */
 
+ void displayFilesList(int p)
+ {
 
+         //  detachInterrupt(ROTA);
+         display.clearDisplay();
+         display.setCursor(0,12);
+         display.print(">");
+         for (int i = 0; i<4; i++) {
+
+                 display.setCursor(12,i*16+12); //
+                 String str2=myFiles[i+p];
+                 str2.remove(str2.length()-4);
+
+                 display.print(str2);
+
+
+         }
+         display.display();
+ //attachInterrupt(ROTA, rot, CHANGE);
+ }
+
+ bool isTxtFile(char* filename) {
+         bool result;
+         if(strstr(strlwr(filename),".lpc") && !strstr(strlwr(filename),"_") ) // filtering out just ".txt" file not containing "_"
+         { result=true; }
+         else
+         { result= false; }
+         return result;
+ }
+
+
+
+ void GetFilesList(File dir) {
+         fileNumber=0;
+
+         while(true) {
+
+
+                 File entry =  dir.openNextFile();// was dir
+                 if (!entry) {
+                         // no more files
+                         break;
+                 }
+
+                 if(isTxtFile(entry.name())) //check if it's a .txt file
+                 {
+
+                         String str=entry.name();
+                         //  str.remove(str.length()-4);
+
+
+ // Length (with one extra character for the null terminator)
+                         int str_len = str.length() + 1;
+
+ // Prepare the character array (the buffer)
+                         char char_array[str_len];
+
+ // Copy it over
+                         str.toCharArray(char_array, str_len);
+ //Serial.println(char_array);
+
+                         myFiles[fileCounter]=strdup(char_array); //WTF is strdup ?
+                         fileCounter++;
+
+                 }
+                 entry.close();
+
+         }
+         fileNumber=fileCounter;
+ }
 
 int potRead(int pot)
 {
@@ -362,6 +438,23 @@ void setup() {
 
         Serial.begin(115200);
 
+        Serial.print("Initializing SD card...");
+
+        if (!SD.begin(10)) {
+                Serial.println("initialization failed!");
+                display.setTextSize(2);
+                display.setTextColor(BLACK,WHITE);
+                display.println(" Error #1 ");
+                display.setTextColor(WHITE);
+                display.println("SD card");
+                display.println("failed to ");
+                display.println("initialize");
+
+                display.display();
+                while(1);
+        }
+        Serial.println("initialization done.");
+
         display.clearDisplay();
         display.setTextSize(2);
         display.setTextColor(WHITE);
@@ -374,6 +467,14 @@ void setup() {
         Wire.setClock(2000000L);  //magnifique ! ? plante à 3mhz
         //  attachInterrupt(GATE, setBLUE_ON, CHANGE);
         attachInterrupt(ROTA, rot, CHANGE);
+
+        root = SD.open("/");
+
+
+        GetFilesList(root);
+        Serial.println("done!");
+
+        Serial.println(fileNumber);
 
 
 }
@@ -482,13 +583,9 @@ void loop() {
         }
         break;
 
-        case 1: // New function
-        {
 
-        }
-        break;
 
-        case 2: // Number 2
+        case 1: // Number
         {
 
                 prevAllo=9999; //to force display at startup
@@ -546,6 +643,29 @@ void loop() {
                 } while(fin<100000L); // long presss
                 display.clearDisplay();
                 display.display();
+
+        }
+        break;
+
+        case 2: // SD LPC
+        {
+          interruptCount=0;
+
+          delay(400);
+
+
+
+          do {
+                  // choose the file
+                  interruptCount=constrain(interruptCount,0,fileNumber-1);
+                  filePointer=interruptCount;
+                  Serial.println(filePointer);
+                  displayFilesList(filePointer);
+                  delay(100);
+          }
+          while(digitalRead(PUSH)); // ok when have a file
+
+
 
         }
         break;

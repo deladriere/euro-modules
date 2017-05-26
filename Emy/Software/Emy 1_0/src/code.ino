@@ -64,6 +64,14 @@ int filePointer=0;
 char fileName[13];
 
 
+char song[60][120] {}; // max 80 caracter per lines // 100 lines max
+int pointer=0;
+int linePointer=0;
+int ligne=0;
+int serialPointer=0;
+char serialtext[40];
+
+
 
 #define GATE_HIGH !digitalRead(GATE)
 
@@ -121,83 +129,149 @@ File root;
 
  */
 
- void displayFilesList(int p)
+ void readLine()
  {
 
-         //  detachInterrupt(ROTA);
          display.clearDisplay();
-         display.setCursor(0,12);
-         display.print(">");
-         for (int i = 0; i<4; i++) {
+         display.setFont(&Orbitron_Light_22);
+         display.setTextSize(1);
+         display.setCursor(0,16);
+         ligne=map(analogRead(A6),0,4095,linePointer-1,0);
+         display.setTextSize(1);
+         display.print(ligne+1);
+         display.setFont(&Orbitron_Light_24);
+         display.setCursor(0,40);
+         display.setTextSize(1);
 
-                 display.setCursor(12,i*16+12); //
-                 String str2=myFiles[i+p];
-                 str2.remove(str2.length()-4);
+         //display.setTextSize(3);
 
-                 display.print(str2);
+         // erase
+         memset( &serialtext, 0, 40 );
+         for (int p=0; p<40; p++)
 
-
-         }
-         display.display();
- //attachInterrupt(ROTA, rot, CHANGE);
- }
-
- bool isTxtFile(char* filename) {
-         bool result;
-         if(strstr(strlwr(filename),".lpc") && !strstr(strlwr(filename),"_") ) // filtering out just ".txt" file not containing "_"
-         { result=true; }
-         else
-         { result= false; }
-         return result;
- }
+         {
+                 if (song[ligne][p] !=10)
+                 {
+                         //  Serial.write(song[ligne][p]);
+                         display.print(song[ligne][p]);
+                         serialtext[p]=song[ligne][p];
 
 
-
- void GetFilesList(File dir) {
-         fileNumber=0;
-
-         while(true) {
-
-
-                 File entry =  dir.openNextFile();// was dir
-                 if (!entry) {
-                         // no more files
+                 }
+                 else
+                 {
+                         //Serial.write(10);
+                         //  Serial.println("");
                          break;
                  }
+         }
 
-                 if(isTxtFile(entry.name())) //check if it's a .txt file
+         display.display();
+         display.setFont();
+
+
+
+ }
+
+ void showArray()
+ {
+
+         for (int l=0; l<linePointer; l++)
+         {
+                 for (int p=0; p<40; p++)
                  {
-
-                         String str=entry.name();
-                         //  str.remove(str.length()-4);
-
-
- // Length (with one extra character for the null terminator)
-                         int str_len = str.length() + 1;
-
- // Prepare the character array (the buffer)
-                         char char_array[str_len];
-
- // Copy it over
-                         str.toCharArray(char_array, str_len);
- //Serial.println(char_array);
-
-                         myFiles[fileCounter]=strdup(char_array); //WTF is strdup ?
-                         fileCounter++;
-
+                         if (song[l][p] !=10)
+                         {
+                                 Serial.write(song[l][p]);
+                         }
+                         else
+                         {
+                                 //Serial.write(10);
+                                 Serial.println("");
+                                 break;
+                         }
                  }
-                 entry.close();
 
          }
-         fileNumber=fileCounter;
  }
+
+void displayFilesList(int p)
+{
+
+        //  detachInterrupt(ROTA);
+        display.clearDisplay();
+        display.setCursor(0,12);
+        display.print(">");
+        for (int i = 0; i<4; i++) {
+
+                display.setCursor(12,i*16+12);  //
+                String str2=myFiles[i+p];
+                str2.remove(str2.length()-4);
+
+                display.print(str2);
+
+
+        }
+        display.display();
+        //attachInterrupt(ROTA, rot, CHANGE);
+}
+
+bool isTxtFile(char* filename) {
+        bool result;
+        if(strstr(strlwr(filename),".lpc") && !strstr(strlwr(filename),"_") )  // filtering out just ".txt" file not containing "_"
+        { result=true; }
+        else
+        { result= false; }
+        return result;
+}
+
+
+
+void GetFilesList(File dir) {
+        fileNumber=0;
+
+        while(true) {
+
+
+                File entry =  dir.openNextFile(); // was dir
+                if (!entry) {
+                        // no more files
+                        break;
+                }
+
+                if(isTxtFile(entry.name()))  //check if it's a .txt file
+                {
+
+                        String str=entry.name();
+                        //  str.remove(str.length()-4);
+
+
+                        // Length (with one extra character for the null terminator)
+                        int str_len = str.length() + 1;
+
+                        // Prepare the character array (the buffer)
+                        char char_array[str_len];
+
+                        // Copy it over
+                        str.toCharArray(char_array, str_len);
+                        //Serial.println(char_array);
+
+                        myFiles[fileCounter]=strdup(char_array);  //WTF is strdup ?
+                        fileCounter++;
+
+                }
+                entry.close();
+
+        }
+        fileNumber=fileCounter;
+}
 
 int potRead(int pot)
 {
         moy=0;
         for (int i = 0; i < 10; i++) {
                 moy=moy +analogRead(pot);
-              //  moy=moy +analogReadFast(pot,2);
+                //  moy=moy +analogReadFast(pot,2);
         }
         return moy/10;
 
@@ -462,7 +536,7 @@ void setup() {
 
 
 
-      //  voice.say(spYOU_ARE_FIRED);
+        //  voice.say(spYOU_ARE_FIRED);
 
         Wire.setClock(2000000L);  //magnifique ! ? plante à 3mhz
         //  attachInterrupt(GATE, setBLUE_ON, CHANGE);
@@ -514,7 +588,7 @@ void loop() {
 
         } while(digitalRead(PUSH));
         delay(400);
-      // attachInterrupt(GATE, setBLUE_ON, CHANGE);
+        // attachInterrupt(GATE, setBLUE_ON, CHANGE);
         WTF=HIGH;
 
 // process functions
@@ -553,7 +627,7 @@ void loop() {
 
                         if (voice.mode==MODE_SPEECH)
 
-                      {
+                        {
                                 if (digitalRead(GATE)==ON || digitalRead(PUSH)==ON)
                                 {
 
@@ -617,7 +691,7 @@ void loop() {
 
                         if (voice.mode==MODE_SPEECH)
 
-                      {
+                        {
                                 if (digitalRead(GATE)==ON || digitalRead(PUSH)==ON)
                                 {
 
@@ -649,26 +723,139 @@ void loop() {
 
         case 2: // SD LPC
         {
-          interruptCount=0;
+                interruptCount=0;
 
-          delay(400);
+                delay(400);
 
 
 
-          do {
-                  // choose the file
-                  interruptCount=constrain(interruptCount,0,fileNumber-1);
-                  filePointer=interruptCount;
-                  Serial.println(filePointer);
-                  displayFilesList(filePointer);
-                  delay(100);
-          }
-          while(digitalRead(PUSH)); // ok when have a file
+                do {
+                        // choose the file
+                        interruptCount=constrain(interruptCount,0,fileNumber-1);
+                        filePointer=interruptCount;
+                        Serial.println(filePointer);
+                        displayFilesList(filePointer);
+                        delay(100);
+                }
+                while(digitalRead(PUSH)); // ok when have a file
+                Serial.print("opening ");
+                display.clearDisplay();
+                display.setCursor(15,0);
+                display.print("Reading");
+                display.setCursor(15,20); //
+                display.print(myFiles[filePointer]);
+                Serial.println(myFiles[filePointer]);
+                display.display();
+
+
+                String str=myFiles[filePointer];
+                str.remove(str.length()-4);
+
+
+                Serial.println(str);
+
+                File myfile = SD.open(myFiles[filePointer]);
+                pointer=0;
+                linePointer=0;
+
+
+
+                if (myfile)
+                {
+                        while (myfile.available())
+                        {
+                                inputChar = myfile.read();
+                                //  Serial.print("[");
+                                //  Serial.print(line);
+                                //  Serial.print("] ");
+                                if (inputChar != 10) // define breaking char here (\n isnt working for some reason, i will follow this up later)
+                                {
+                                        song[linePointer][pointer]= inputChar;
+                                        //  Serial.write(inputChar);
+                                        pointer++;
+                                        //  Serial.print(pointer);
+
+                                }
+                                else
+                                {
+
+
+                                        song[linePointer][pointer]= inputChar;
+                                        //  Serial.write(inputChar);
+                                        pointer=0;
+                                        linePointer++;
+
+
+                                }
+
+                                //  delay(10);
+                        }
+
+                        myfile.close();
+                        showArray(); // to proof keep it
+
+                        attachInterrupt(GATE, setBLUE_ON, CHANGE);
+                        WTF=HIGH;
+
+                        do { /// show A1
+
+
+
+                                // readline into array to pass to Synthe
+
+
+                                do {
+                                        if(!digitalRead(PUSH)) break;
+                                        //    readLine();
+
+                                }
+                                while(digitalRead(GATE)==ON);
+
+                                do {
+                                        if(!digitalRead(PUSH)) break;
+                                        readLine();
+
+                                }
+                                while(digitalRead(GATE)==OFF);
+                                readLine();
+                              //  SetSpeed(map(analogRead(1),4095,0,50,300));
+                              //  delayMicroseconds(10000); // 2000 wih 8Mhz but not lower search for minimal value at low clock
+                              //  SetPitch(map(analogRead(2),4095,0,254,0));
+                              //  delayMicroseconds(10000);
+                              //  SetAccent(map(analogRead(3),4095,0,0,255));
+
+                                  //  Serial.println("SD speaking");
+                                //  Serial.print(serialtext);
+                                //longVowels(serialtext); was for debug
+                              //  Sing(serialtext);
+
+
+                        }
+
+                        while(digitalRead(PUSH));
+                        detachInterrupt(GATE);
+                        WTF=LOW;
+                        digitalWrite(BLUE_LED,HIGH);
+                        delay(200);
+
+
+
+                }
+                // if the file cannot be opened give error report
+                else {
+                        Serial.println("error opening the text file");
+                        // add error message on OLED too
+                }
+
+
 
 
 
         }
         break;
+
+
+
 
 
 

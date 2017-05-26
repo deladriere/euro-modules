@@ -64,15 +64,19 @@ int filePointer=0;
 char fileName[13];
 
 
-char song[60][120] {}; // max 80 caracter per lines // 60 lines max
-String lineLabel[20];
+//char song[60][120] {}; // max 80 caracter per lines // 60 lines max
+String lineLabel[20]; //max 20 lignes
+byte stream[20][500]; //max 20 lignes de 500 bytes
 int pointer=0;
 bool part2=0;
+byte msb=0;
+byte lsb=0;
 int linePointer=0;
 int ligne=0;
 int serialPointer=0;
 char serialtext[40];
 
+byte convert=0;
 
 
 #define GATE_HIGH !digitalRead(GATE)
@@ -159,8 +163,12 @@ void showArray()
         {
 
 
-              Serial.println(lineLabel[l]);
-
+                Serial.print(lineLabel[l]);
+                for (int i=0; i<500;i++)
+                {
+                    Serial.print(stream[l][i]);
+                }
+                Serial.println("");
 
         }
 }
@@ -694,6 +702,7 @@ void loop() {
         case 2: // SD LPC
         {
                 interruptCount=0;
+                WTF=LOW;
 
                 //delay(400);
 
@@ -703,7 +712,7 @@ void loop() {
                         // choose the file
                         interruptCount=constrain(interruptCount,0,fileNumber-1);
                         filePointer=interruptCount;
-                      //  Serial.println(filePointer);
+                        //  Serial.println(filePointer);
                         displayFilesList(filePointer);
                         delay(100);
                 }
@@ -728,7 +737,7 @@ void loop() {
                 part2=0;
 
                 for (int i = 0; i < 20; i++) {
-                  lineLabel[i]="";
+                        lineLabel[i]="";
                 }
 
 
@@ -744,34 +753,86 @@ void loop() {
 
                                 switch (inputChar)
                                 {
+                                  case 44:
+                                  {
 
+                                    inputChar = myfile.read(); // readnext
+                                    Serial.print("/");
+                                  }
+                                  break;
                                 case 58:
                                 {
-                                    part2=1;
+                                        part2=1;
+
+                                        inputChar = myfile.read();
                                 }
                                 break;
 
                                 case 10:
                                 {
-                                  part2=0;
-                                  linePointer++;
-                                  pointer=0;
-                                  Serial.print("[");
-                                  Serial.print(linePointer);
-                                  Serial.println("] ");
+                                        part2=0;
+                                        linePointer++;
+                                        pointer=0;
+                                        Serial.print("[");
+                                        Serial.print(linePointer);
+                                        Serial.println("] ");
                                 }
                                 break;
 
+                                default:
+                                {
+
+                                }
+                                break;
 
 
                                 }
 
                                 if (part2==0 &&inputChar!=10)
-                                { Serial.print(inputChar);
-                                  Serial.print(pointer);
-                                  lineLabel[linePointer]=lineLabel[linePointer]+inputChar;
+                                {
+                                        //  Serial.print(inputChar);
+                                        //  Serial.print(pointer);
+                                        lineLabel[linePointer]=lineLabel[linePointer]+inputChar;
 
-                                  pointer++;
+
+                                }
+
+                                if (part2 &&inputChar!=10)
+                                {
+                                      msb=int(inputChar);
+                                      if (msb < 64)
+                                      {
+                                        msb=msb-48;
+                                      }
+                                      else
+                                      {
+                                        msb=msb-87;// assume we have lower case
+                                      }
+                                    //  Serial.print(msb);
+
+                                        inputChar = myfile.read();
+
+                                        lsb=int(inputChar);
+                                        if (lsb < 64)
+                                        {
+                                          lsb=lsb-48;
+                                        }
+                                        else
+                                        {
+                                          lsb=lsb-87;// assume we have lower case
+                                        }
+
+                                        Serial.print(msb*16+lsb);
+
+
+
+
+                                      //  Serial.print(inputChar);
+                                        Serial.print(".");
+                                        Serial.print(pointer);
+                                        stream[linePointer][pointer]=msb*16+lsb;
+
+                                      pointer++;
                                 }
 
 
@@ -779,7 +840,7 @@ void loop() {
                         }
 
                         myfile.close();
-
+                        Serial.println();
                         showArray(); // to proof keep it
 
                         attachInterrupt(GATE, setBLUE_ON, CHANGE);
@@ -806,16 +867,7 @@ void loop() {
                                 }
                                 while(digitalRead(GATE)==OFF);
                                 readLine();
-                                //  SetSpeed(map(analogRead(1),4095,0,50,300));
-                                //  delayMicroseconds(10000); // 2000 wih 8Mhz but not lower search for minimal value at low clock
-                                //  SetPitch(map(analogRead(2),4095,0,254,0));
-                                //  delayMicroseconds(10000);
-                                //  SetAccent(map(analogRead(3),4095,0,0,255));
 
-                                //  Serial.println("SD speaking");
-                                //  Serial.print(serialtext);
-                                //longVowels(serialtext); was for debug
-                                //  Sing(serialtext);
 
 
                         }

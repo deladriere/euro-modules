@@ -757,7 +757,7 @@ void loop() {
                                   {
 
                                     inputChar = myfile.read(); // readnext
-                                    Serial.print("/");
+                                  //  Serial.print("/");
                                   }
                                   break;
                                 case 58:
@@ -773,9 +773,9 @@ void loop() {
                                         part2=0;
                                         linePointer++;
                                         pointer=0;
-                                        Serial.print("[");
-                                        Serial.print(linePointer);
-                                        Serial.println("] ");
+                                      //  Serial.print("[");
+                                      //  Serial.print(linePointer);
+                                      //  Serial.println("] ");
                                 }
                                 break;
 
@@ -822,14 +822,14 @@ void loop() {
                                           lsb=lsb-87;// assume we have lower case
                                         }
 
-                                        Serial.print(msb*16+lsb);
+                                      //  Serial.print(msb*16+lsb);
 
 
 
 
                                       //  Serial.print(inputChar);
-                                        Serial.print(".");
-                                        Serial.print(pointer);
+                                      //  Serial.print(".");
+                                      //  Serial.print(pointer);
                                         stream[linePointer][pointer]=msb*16+lsb;
 
                                       pointer++;
@@ -848,6 +848,7 @@ void loop() {
 
                         do { /// show A1
 
+                          voice.mode=digitalRead(SW0)+digitalRead(SW1)*2;
 
 
                                 // readline into array to pass to Synthe
@@ -855,7 +856,7 @@ void loop() {
 
                                 do {
                                         if(!digitalRead(PUSH)) break;
-                                        //    readLine();
+                                          readLine();
 
                                 }
                                 while(digitalRead(GATE)==ON);
@@ -867,6 +868,12 @@ void loop() {
                                 }
                                 while(digitalRead(GATE)==OFF);
                                 readLine();
+                            //    Serial.print("say ");
+                                ligne=map(analogRead(A6),0,4095,linePointer-1,0);
+                            //    Serial.print(lineLabel[ligne]);
+                                voice.say(&stream[ligne][0]);
+
+
 
 
 

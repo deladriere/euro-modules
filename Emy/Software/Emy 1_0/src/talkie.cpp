@@ -121,7 +121,7 @@ void Talkie::say(const uint8_t* addr) {
         setup = 1;
 }
 
-      tcConfigure(map(analogRead(1),4096,0,4000,20000)); //setup the timer counter based off of the user entered sample rate
+      tcConfigure(map(analogRead(1),4096,0,4000,15000)); //setup the timer counter based off of the user entered sample rate
       tcStartCounter();
 
 
@@ -185,7 +185,7 @@ void Talkie::say(const uint8_t* addr) {
 				}
 			}
 		}
-	delay(map(analogRead(2), 4096, 0, 0, 100));
+	delay(map(analogRead(2), 4096, 0, 0, 40));
 	} while (energy != 0xf);
 
   	//better handling of silence

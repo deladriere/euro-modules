@@ -117,8 +117,8 @@ uint8_t Talkie::getBits(uint8_t bits) {
 void Talkie::say(const uint8_t* addr) {
 	uint8_t energy;
 
-pitcher=map(analogRead(4),4096,0,64,1);
-pitcher=constrain(pitcher,1,64);
+pitcher=map(analogRead(4),4096,10,64,0); // 64 avoid change , O growling
+pitcher=constrain(pitcher,0,64);
 
   if(!setup)
 		{
@@ -225,8 +225,8 @@ void TC5_Handler (void)
  analogWrite(A0,nextPwm);
  TC5->COUNT16.INTFLAG.bit.MC0 = 1;
 
-  if (synthPeriod) {
-    if(pitcher<64)synthPeriod=pitcher;
+  if (synthPeriod && pitcher) { // pitch=0 jump to else for  growling MODE
+    if(pitcher<64)synthPeriod=pitcher; // pitch overide only if pitcher < 64 (to allow normal mode)
     // Voiced source
     if (periodCounter < synthPeriod) {
       periodCounter++;
@@ -239,10 +239,17 @@ void TC5_Handler (void)
       u10 = 0;
     }
   } else {
-    // Unvoiced source
     static uint16_t synthRand = 1;
     synthRand = (synthRand >> 1) ^ ((synthRand & 1) ? 0xB800 : 0);
-    u10 = (synthRand & 1) ? synthEnergy : -synthEnergy;
+    //u10 = (synthRand & 1) ? synthEnergy : -synthEnergy;
+    if (pitcher==0)
+    {
+      u10 = ((synthRand & 1) ? synthEnergy : -synthEnergy)>>3; // divide by 8 avoid screaming growling
+    }
+    else
+    {
+      u10 = (synthRand & 1) ? synthEnergy : -synthEnergy;
+    }
   }
   // Lattice filter forward path
   u9 = u10 - (((int16_t)synthK10*x9) >> 7);

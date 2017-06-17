@@ -14,7 +14,7 @@
 #include <Adafruit_SSD1306.h>
 #include <Kfonts.h>
 #include <Wire.h>
-#include <Encoder.h>
+
 #include "SAMD_AnalogCorrection.h"
 #include <SD.h>
 #include <SPI.h>
@@ -35,6 +35,7 @@ const unsigned char Eye [] PROGMEM = {
 
  */
 
+#define BUSY 38
 #define SW0 0
 #define SW1 1
 #define GATE 2
@@ -120,7 +121,7 @@ int fin =0; /// pour pression longue
  */
 Adafruit_SSD1306 display(0); // modif library for 64
 Talkie voice;
-Encoder myEnc(6, 7);
+
 File root;
 
 
@@ -247,7 +248,7 @@ void GetFilesList(File dir) {
 int potRead(int pot)
 {
         moy=0;
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 3; i++) {
                 moy=moy +analogRead(pot);
                 //  moy=moy +analogReadFast(pot,2);
         }
@@ -471,6 +472,7 @@ void setup() {
         pinMode(GATE, INPUT_PULLUP);
         pinMode(BLUE_LED,OUTPUT);
         pinMode(RED_LED,OUTPUT);
+        pinMode(BUSY,OUTPUT);
         // turn transistorized outputs low ;
         digitalWrite(BLUE_LED,HIGH);
         digitalWrite(RED_LED,HIGH);
@@ -516,7 +518,8 @@ void setup() {
 
         //  voice.say(spYOU_ARE_FIRED);
 
-        Wire.setClock(2000000L);  //magnifique ! ? plante à 3mhz
+        // must be after display begin !
+        Wire.setClock(2500000L);  //magnifique ! 2.5 mhz max? plante à 3mhz
         //  attachInterrupt(GATE, setBLUE_ON, CHANGE);
         attachInterrupt(ROTA, rot, CHANGE);
 
@@ -597,7 +600,7 @@ void loop() {
                                 display.setCursor(0,40);
                                 display.setTextSize(1);
                                 display.print(alloL[allo]);
-                                display.display();
+                                //display.display();
                         }
 
 
@@ -640,29 +643,18 @@ void loop() {
         case 1: // Number
         {
 
+          // add display function screen for
+
+
                 prevAllo=9999; //to force display at startup
 
                 do {
                         fin=0; // reset long presss counter
 
                         voice.mode=digitalRead(SW0)+digitalRead(SW1)*2;
-                        allo=map(potRead(6),4095,10,0,9);
+                        //allo=map(potRead(6),4095,10,0,9);
+                        allo=map(analogRead(6),4095,10,0,9);
 
-
-                        if (allo!=prevAllo)
-                        {
-                                prevAllo=allo;
-                                display.clearDisplay();
-                                display.setFont(&Orbitron_Light_22);
-                                display.setTextSize(1);
-                                display.setCursor(0,16);
-                                display.print(allo);
-                                display.setFont(&Orbitron_Light_24);
-                                display.setCursor(0,40);
-                                display.setTextSize(1);
-                                display.print(allo);
-                                display.display();
-                        }
 
 
                         //  if (digitalRead(GATE)==ON || digitalRead(PUSH)==ON)
@@ -670,18 +662,39 @@ void loop() {
                         if (voice.mode==MODE_SPEECH)
 
                         {
+                          display.clearDisplay();
+                          display.setFont(&Orbitron_Light_22);
+                          display.setTextSize(1);
+                          display.setCursor(0,16);
+                          display.print(allo);
+                          display.setFont(&Orbitron_Light_24);
+                          display.setCursor(0,40);
+                          display.setTextSize(1);
+                          display.print(allo);
+                         display.display();
+
+
                                 if (digitalRead(GATE)==ON || digitalRead(PUSH)==ON)
                                 {
 
                                         digitalWrite(RED_LED,ON);
+                                        digitalWrite(BUSY,ON);
                                         sayNumber(allo);
+                                        digitalWrite(BUSY,OFF);
                                         digitalWrite(RED_LED,OFF);
                                 }
                         }
                         else
                         {
-                                sayNumber(allo);
+
+
+                          sayNumber(allo);
+
+
                         }
+
+
+
 
 
 
@@ -871,7 +884,9 @@ void loop() {
                             //    Serial.print("say ");
                                 ligne=map(analogRead(A6),0,4095,linePointer-1,0);
                             //    Serial.print(lineLabel[ligne]);
+
                                 voice.say(&stream[ligne][0]);
+
 
 
 

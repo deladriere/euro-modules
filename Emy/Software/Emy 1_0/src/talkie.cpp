@@ -12,6 +12,8 @@
 
 #define FS 8000 // Speech engine sample rate
 
+uint8_t pitcher;
+
 uint8_t synthPeriod;
 uint16_t synthEnergy;
 int16_t synthK1,synthK2;
@@ -115,6 +117,9 @@ uint8_t Talkie::getBits(uint8_t bits) {
 void Talkie::say(const uint8_t* addr) {
 	uint8_t energy;
 
+pitcher=map(analogRead(4),4096,0,64,1);
+pitcher=constrain(pitcher,1,64);
+
   if(!setup)
 		{
         analogWriteResolution(10);
@@ -163,6 +168,7 @@ void Talkie::say(const uint8_t* addr) {
 			synthEnergy = tmsEnergy[energy];
 			repeat = getBits(1);
 			synthPeriod = tmsPeriod[getBits(6)];
+
 			// A repeat frame uses the last coefficients
 
 			if (!repeat) {
@@ -220,6 +226,7 @@ void TC5_Handler (void)
  TC5->COUNT16.INTFLAG.bit.MC0 = 1;
 
   if (synthPeriod) {
+    if(pitcher<64)synthPeriod=pitcher;
     // Voiced source
     if (periodCounter < synthPeriod) {
       periodCounter++;

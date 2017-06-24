@@ -653,7 +653,7 @@ void loop() {
 
                         voice.mode=digitalRead(SW0)+digitalRead(SW1)*2;
                         //allo=map(potRead(6),4095,10,0,9);
-                        allo=map(analogRead(6),4095,10,0,9);
+                        allo=map(analogRead(6),4095,10,0,999);
 
 
 

@@ -38,13 +38,13 @@ int8_t tmsK10[0x08]     = {0xCD,0xDF,0xF1,0x04,0x16,0x20,0x3B,0x4D};
 
 bool tcIsSyncing()
 {
-  return TC5->COUNT16.STATUS.reg & TC_STATUS_SYNCBUSY;
+        return TC5->COUNT16.STATUS.reg & TC_STATUS_SYNCBUSY;
 }
 
 void tcStartCounter()
 {
-  TC5->COUNT16.CTRLA.reg |= TC_CTRLA_ENABLE; //set the CTRLA register
-  while (tcIsSyncing()); //wait until snyc'd
+        TC5->COUNT16.CTRLA.reg |= TC_CTRLA_ENABLE; //set the CTRLA register
+        while (tcIsSyncing()) ; //wait until snyc'd
 }
 
 
@@ -53,163 +53,163 @@ void tcStartCounter()
 void tcConfigure(int sampleRate)
 {
 // Enable GCLK for TCC2 and TC5 (timer counter input clock)
-GCLK->CLKCTRL.reg = (uint16_t) (GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_ID(GCM_TC4_TC5)) ;
-while (GCLK->STATUS.bit.SYNCBUSY);
+        GCLK->CLKCTRL.reg = (uint16_t) (GCLK_CLKCTRL_CLKEN | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_ID(GCM_TC4_TC5));
+        while (GCLK->STATUS.bit.SYNCBUSY) ;
 
 
 
- // Set Timer counter Mode to 16 bits
-TC5->COUNT16.CTRLA.reg |= TC_CTRLA_MODE_COUNT16;
+        // Set Timer counter Mode to 16 bits
+        TC5->COUNT16.CTRLA.reg |= TC_CTRLA_MODE_COUNT16;
 // Set TC5 mode as match frequency
-TC5->COUNT16.CTRLA.reg |= TC_CTRLA_WAVEGEN_MFRQ;
+        TC5->COUNT16.CTRLA.reg |= TC_CTRLA_WAVEGEN_MFRQ;
 //set prescaler and enable TC5
-TC5->COUNT16.CTRLA.reg |= TC_CTRLA_PRESCALER_DIV1 | TC_CTRLA_ENABLE;
+        TC5->COUNT16.CTRLA.reg |= TC_CTRLA_PRESCALER_DIV1 | TC_CTRLA_ENABLE;
 //set TC5 timer counter based off of the system clock and the user defined sample rate or waveform
-TC5->COUNT16.CC[0].reg = (uint16_t) (SystemCoreClock / sampleRate - 1);
-while (tcIsSyncing());
+        TC5->COUNT16.CC[0].reg = (uint16_t) (SystemCoreClock / sampleRate - 1);
+        while (tcIsSyncing()) ;
 
 // Configure interrupt request
-NVIC_DisableIRQ(TC5_IRQn);
-NVIC_ClearPendingIRQ(TC5_IRQn);
-NVIC_SetPriority(TC5_IRQn, 0);
-NVIC_EnableIRQ(TC5_IRQn);
+        NVIC_DisableIRQ(TC5_IRQn);
+        NVIC_ClearPendingIRQ(TC5_IRQn);
+        NVIC_SetPriority(TC5_IRQn, 0);
+        NVIC_EnableIRQ(TC5_IRQn);
 
- // Enable the TC5 interrupt request
-TC5->COUNT16.INTENSET.bit.MC0 = 1;
-while (tcIsSyncing()); //wait until TC5 is done syncing
+        // Enable the TC5 interrupt request
+        TC5->COUNT16.INTENSET.bit.MC0 = 1;
+        while (tcIsSyncing()) ; //wait until TC5 is done syncing
 }
 
 
 void Talkie::setPtr(const uint8_t* addr) {
-	ptrAddr = addr;
-	ptrBit = 0;
+        ptrAddr = addr;
+        ptrBit = 0;
 }
 
 // The ROMs used with the TI speech were serial, not byte wide.
 // Here's a handy routine to flip ROM data which is usually reversed.
 uint8_t Talkie::rev(uint8_t a) {
-	// 76543210
-	a = (a>>4) | (a<<4); // Swap in groups of 4
-	// 32107654
-	a = ((a & 0xcc)>>2) | ((a & 0x33)<<2); // Swap in groups of 2
-	// 10325476
-	a = ((a & 0xaa)>>1) | ((a & 0x55)<<1); // Swap bit pairs
-	// 01234567
-	return a;
+        // 76543210
+        a = (a>>4) | (a<<4); // Swap in groups of 4
+        // 32107654
+        a = ((a & 0xcc)>>2) | ((a & 0x33)<<2); // Swap in groups of 2
+        // 10325476
+        a = ((a & 0xaa)>>1) | ((a & 0x55)<<1); // Swap bit pairs
+        // 01234567
+        return a;
 }
 uint8_t Talkie::getBits(uint8_t bits) {
-	uint8_t value;
-	uint16_t data;
-	data = rev(pgm_read_byte(ptrAddr))<<8;
-	if (ptrBit+bits > 8) {
-		data |= rev(pgm_read_byte(ptrAddr+1));
-	}
-	data <<= ptrBit;
-	value = data >> (16-bits);
-	ptrBit += bits;
-	if (ptrBit >= 8) {
-		ptrBit -= 8;
-		ptrAddr++;
-	}
-	return value;
+        uint8_t value;
+        uint16_t data;
+        data = rev(pgm_read_byte(ptrAddr))<<8;
+        if (ptrBit+bits > 8) {
+                data |= rev(pgm_read_byte(ptrAddr+1));
+        }
+        data <<= ptrBit;
+        value = data >> (16-bits);
+        ptrBit += bits;
+        if (ptrBit >= 8) {
+                ptrBit -= 8;
+                ptrAddr++;
+        }
+        return value;
 }
 
 
 void Talkie::say(const uint8_t* addr) {
-	uint8_t energy;
+        uint8_t energy;
 
-pitcher=map(analogRead(4),4096,10,64,0); // 64 avoid change , O growling
-pitcher=constrain(pitcher,0,64);
+        pitcher=map(analogRead(4),4096,10,64,0); // 64 avoid change , O growling
+        pitcher=constrain(pitcher,0,64);
 
-  if(!setup)
-		{
-        analogWriteResolution(10);
-        setup = 1;
-}
+        if(!setup)
+        {
+                analogWriteResolution(10);
+                setup = 1;
+        }
 
-      tcConfigure(map(analogRead(1),4096,0,4000,15000)); //setup the timer counter based off of the user entered sample rate
-      tcStartCounter();
-
-
-
-	setPtr(addr);
-	do {
-		uint8_t repeat;
-
-		// Read speech data, processing the variable size frames.
-
-		energy = getBits(4);
+        tcConfigure(map(analogRead(1),4096,0,4000,15000)); //setup the timer counter based off of the user entered sample rate
+        tcStartCounter();
 
 
-    if (mode!=MODE_SPEECH )
-    			{
-    			if(digitalRead(PIN_GATE)==OFF)
-    				{
-    				energy=0xf; // if gate is LOW in repeat mode then stop the speech
-    				}
-    			}
 
-		if (energy == 0) {
-			// Energy = 0: rest frame
-			synthEnergy = 0;
-		} else if (energy == 0xf) {
-			// Energy = 15: stop frame. Silence the synthesiser.
-			synthEnergy = 0;
-			synthK1 = 0;
-			synthK2 = 0;
-			synthK3 = 0;
-			synthK4 = 0;
-			synthK5 = 0;
-			synthK6 = 0;
-			synthK7 = 0;
-			synthK8 = 0;
-			synthK9 = 0;
-			synthK10 = 0;
-		} else {
-			synthEnergy = tmsEnergy[energy];
-			repeat = getBits(1);
-			synthPeriod = tmsPeriod[getBits(6)];
+        setPtr(addr);
+        do {
+                uint8_t repeat;
 
-			// A repeat frame uses the last coefficients
+                // Read speech data, processing the variable size frames.
 
-			if (!repeat) {
-
-				// All frames use the first 4 coefficients
-				synthK1 = tmsK1[getBits(5)];
-				synthK2 = tmsK2[getBits(5)];
-				synthK3 = tmsK3[getBits(4)];
-				synthK4 = tmsK4[getBits(4)];
-
-				if (synthPeriod) {
-
-          // Voiced frames use 6 extra coefficients.
-					synthK5 = tmsK5[getBits(4)];
-					synthK6 = tmsK6[getBits(4)];
-					synthK7 = tmsK7[getBits(4)];
-					synthK8 = tmsK8[getBits(3)];
-					synthK9 = tmsK9[getBits(3)];
-					synthK10 = tmsK10[getBits(3)];
-
-          bend=analogRead(3);
-          if (bend < 4090)
-          {
-            synthK5= map(bend,4090,0,0,110);  //
-						synthK10= map(bend,4090,0,0,150); // Talko was reversed (150-0)
-          }
+                energy = getBits(4);
 
 
-				}
-			}
-		}
-	delay(map(analogRead(2), 4096, 0, 0, 40)); // Stretch
-	} while (energy != 0xf);
+                if (mode!=MODE_SPEECH )
+                {
+                        if(digitalRead(PIN_GATE)==OFF)
+                        {
+                                energy=0xf; // if gate is LOW in repeat mode then stop the speech
+                        }
+                }
 
-  	//better handling of silence
+                if (energy == 0) {
+                        // Energy = 0: rest frame
+                        synthEnergy = 0;
+                } else if (energy == 0xf) {
+                        // Energy = 15: stop frame. Silence the synthesiser.
+                        synthEnergy = 0;
+                        synthK1 = 0;
+                        synthK2 = 0;
+                        synthK3 = 0;
+                        synthK4 = 0;
+                        synthK5 = 0;
+                        synthK6 = 0;
+                        synthK7 = 0;
+                        synthK8 = 0;
+                        synthK9 = 0;
+                        synthK10 = 0;
+                } else {
+                        synthEnergy = tmsEnergy[energy];
+                        repeat = getBits(1);
+                        synthPeriod = tmsPeriod[getBits(6)];
 
-  	if(mode!=MODE_SPEECH) // check for repeat mode
-  	{
-  	while(digitalRead(PIN_GATE)==OFF);
-  	}
+                        // A repeat frame uses the last coefficients
+
+                        if (!repeat) {
+
+                                // All frames use the first 4 coefficients
+                                synthK1 = tmsK1[getBits(5)];
+                                synthK2 = tmsK2[getBits(5)];
+                                synthK3 = tmsK3[getBits(4)];
+                                synthK4 = tmsK4[getBits(4)];
+
+                                if (synthPeriod) {
+
+                                        // Voiced frames use 6 extra coefficients.
+                                        synthK5 = tmsK5[getBits(4)];
+                                        synthK6 = tmsK6[getBits(4)];
+                                        synthK7 = tmsK7[getBits(4)];
+                                        synthK8 = tmsK8[getBits(3)];
+                                        synthK9 = tmsK9[getBits(3)];
+                                        synthK10 = tmsK10[getBits(3)];
+
+                                        bend=analogRead(3);
+                                        if (bend < 4090)
+                                        {
+                                                synthK5= map(bend,4090,0,0,110); //
+                                                synthK10= map(bend,4090,0,0,150); // Talko was reversed (150-0)
+                                        }
+
+
+                                }
+                        }
+                }
+                delay(map(analogRead(2), 4096, 0, 0, 40)); // Stretch
+        } while (energy != 0xf);
+
+        //better handling of silence
+
+        if(mode!=MODE_SPEECH) // check for repeat mode
+        {
+                while(digitalRead(PIN_GATE)==OFF) ;
+        }
 
 
 }
@@ -225,73 +225,73 @@ void TC5_Handler (void)
 
 {
 
-  static uint16_t nextPwm; // in case we want to use 10 bit output
-  static uint8_t periodCounter;
-  static int16_t x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10;
-  int16_t u0,u1,u2,u3,u4,u5,u6,u7,u8,u9,u10;
+        static uint16_t nextPwm; // in case we want to use 10 bit output
+        static uint8_t periodCounter;
+        static int16_t x0,x1,x2,x3,x4,x5,x6,x7,x8,x9,x10;
+        int16_t u0,u1,u2,u3,u4,u5,u6,u7,u8,u9,u10;
 
- //analogWrite(A0, random(1000));
+        //analogWrite(A0, random(1000));
 // nextPwm++;
- analogWrite(A0,nextPwm);
- TC5->COUNT16.INTFLAG.bit.MC0 = 1;
+        analogWrite(A0,nextPwm);
+        TC5->COUNT16.INTFLAG.bit.MC0 = 1;
 
-  if (synthPeriod && pitcher) { // pitch=0 jump to else for  growling MODE
-    if(pitcher<64)synthPeriod=pitcher; // pitch overide only if pitcher < 64 (to allow normal mode)
-    // Voiced source
-    if (periodCounter < synthPeriod) {
-      periodCounter++;
-    } else {
-      periodCounter = 0;
-    }
-    if (periodCounter < CHIRP_SIZE) {
-      u10 = ((chirp[periodCounter]) * (uint32_t) synthEnergy) >> 8;
-    } else {
-      u10 = 0;
-    }
-  } else {
-    static uint16_t synthRand = 1;
-    synthRand = (synthRand >> 1) ^ ((synthRand & 1) ? 0xB800 : 0);
-    //u10 = (synthRand & 1) ? synthEnergy : -synthEnergy;
-    if (pitcher==0)
-    {
-      u10 = ((synthRand & 1) ? synthEnergy : -synthEnergy)>>3; // divide by 8 avoid screaming growling
-    }
-    else
-    {
-      u10 = (synthRand & 1) ? synthEnergy : -synthEnergy;
-    }
-  }
-  // Lattice filter forward path
-  u9 = u10 - (((int16_t)synthK10*x9) >> 7);
-  u8 = u9 - (((int16_t)synthK9*x8) >> 7);
-  u7 = u8 - (((int16_t)synthK8*x7) >> 7);
-  u6 = u7 - (((int16_t)synthK7*x6) >> 7);
-  u5 = u6 - (((int16_t)synthK6*x5) >> 7);
-  u4 = u5 - (((int16_t)synthK5*x4) >> 7);
-  u3 = u4 - (((int16_t)synthK4*x3) >> 7);
-  u2 = u3 - (((int16_t)synthK3*x2) >> 7);
-  u1 = u2 - (((int32_t)synthK2*x1) >> 15);
-  u0 = u1 - (((int32_t)synthK1*x0) >> 15);
-
-
-  // Lattice filter reverse path
-  x9 = x8 + (((int16_t)synthK9*u8) >> 7);
-  x8 = x7 + (((int16_t)synthK8*u7) >> 7);
-  x7 = x6 + (((int16_t)synthK7*u6) >> 7);
-  x6 = x5 + (((int16_t)synthK6*u5) >> 7);
-  x5 = x4 + (((int16_t)synthK5*u4) >> 7);
-  x4 = x3 + (((int16_t)synthK4*u3) >> 7);
-  x3 = x2 + (((int16_t)synthK3*u2) >> 7);
-  x2 = x1 + (((int32_t)synthK2*u1) >> 15);
-  x1 = x0 + (((int32_t)synthK1*u0) >> 15);
-  x0 = u0;
-
-  if(     u0 >  511) u0 =  511; // Output clamp
-  	else if(u0 < -512) u0 = -512;
+        if (synthPeriod && pitcher) { // pitch=0 jump to else for  growling MODE
+                if(pitcher<64) synthPeriod=pitcher; // pitch overide only if pitcher < 64 (to allow normal mode)
+                // Voiced source
+                if (periodCounter < synthPeriod) {
+                        periodCounter++;
+                } else {
+                        periodCounter = 0;
+                }
+                if (periodCounter < CHIRP_SIZE) {
+                        u10 = ((chirp[periodCounter]) * (uint32_t) synthEnergy) >> 8;
+                } else {
+                        u10 = 0;
+                }
+        } else {
+                static uint16_t synthRand = 1;
+                synthRand = (synthRand >> 1) ^ ((synthRand & 1) ? 0xB800 : 0);
+                //u10 = (synthRand & 1) ? synthEnergy : -synthEnergy;
+                if (pitcher==0)
+                {
+                        u10 = ((synthRand & 1) ? synthEnergy : -synthEnergy)>>3; // divide by 8 avoid screaming growling
+                }
+                else
+                {
+                        u10 = (synthRand & 1) ? synthEnergy : -synthEnergy;
+                }
+        }
+        // Lattice filter forward path
+        u9 = u10 - (((int16_t)synthK10*x9) >> 7);
+        u8 = u9 - (((int16_t)synthK9*x8) >> 7);
+        u7 = u8 - (((int16_t)synthK8*x7) >> 7);
+        u6 = u7 - (((int16_t)synthK7*x6) >> 7);
+        u5 = u6 - (((int16_t)synthK6*x5) >> 7);
+        u4 = u5 - (((int16_t)synthK5*x4) >> 7);
+        u3 = u4 - (((int16_t)synthK4*x3) >> 7);
+        u2 = u3 - (((int16_t)synthK3*x2) >> 7);
+        u1 = u2 - (((int32_t)synthK2*x1) >> 15);
+        u0 = u1 - (((int32_t)synthK1*x0) >> 15);
 
 
- // nextPwm = (u0>>2)+0x80; //original 8 bits scaling
-nextPwm = u0+512; // 10 bits
+        // Lattice filter reverse path
+        x9 = x8 + (((int16_t)synthK9*u8) >> 7);
+        x8 = x7 + (((int16_t)synthK8*u7) >> 7);
+        x7 = x6 + (((int16_t)synthK7*u6) >> 7);
+        x6 = x5 + (((int16_t)synthK6*u5) >> 7);
+        x5 = x4 + (((int16_t)synthK5*u4) >> 7);
+        x4 = x3 + (((int16_t)synthK4*u3) >> 7);
+        x3 = x2 + (((int16_t)synthK3*u2) >> 7);
+        x2 = x1 + (((int32_t)synthK2*u1) >> 15);
+        x1 = x0 + (((int32_t)synthK1*u0) >> 15);
+        x0 = u0;
+
+        if(     u0 >  511) u0 =  511;// Output clamp
+        else if(u0 < -512) u0 = -512;
+
+
+        // nextPwm = (u0>>2)+0x80; //original 8 bits scaling
+        nextPwm = u0+512; // 10 bits
 
 
 }

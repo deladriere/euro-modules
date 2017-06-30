@@ -103,6 +103,8 @@ char* mainFunctions[12]={
         "SD PHN","Set Time","",""
 };
 
+char* filetype[4] = {".lpc", ".phn", ".tts"};
+
 #define numFunctions 5
 int function;
 
@@ -195,9 +197,12 @@ void displayFilesList(int p)
         //attachInterrupt(ROTA, rot, CHANGE);
 }
 
-bool isTxtFile(char* filename) {
+bool isTxtFile(char* filename, int type) {
         bool result;
-        if(strstr(strlwr(filename),".lpc") && !strstr(strlwr(filename),"_") )  // filtering out just ".txt" file not containing "_"
+        Serial.print(type);
+        Serial.print(" ");
+        Serial.println(filetype[type]);
+        if(strstr(strlwr(filename),filetype[type]) && !strstr(strlwr(filename),"_") )  // filtering out just ".txt" file not containing "_"
         { result=true; }
         else
         { result= false; }
@@ -206,8 +211,12 @@ bool isTxtFile(char* filename) {
 
 
 
-void GetFilesList(File dir) {
+void GetFilesList(File dir,int type) {
         fileNumber=0;
+        fileCounter=0;
+        for (int8_t i = 0; i < 20; i++) {
+          myFiles[i]=""; // to emty the list
+        }
 
         while(true) {
 
@@ -218,7 +227,7 @@ void GetFilesList(File dir) {
                         break;
                 }
 
-                if(isTxtFile(entry.name()))  //check if it's a .txt file
+                if(isTxtFile(entry.name(),type))  //check if it's a .txt file
                 {
 
                         String str=entry.name();
@@ -241,8 +250,10 @@ void GetFilesList(File dir) {
                 }
                 entry.close();
 
+
         }
         fileNumber=fileCounter;
+
 }
 
 int potRead(int pot)
@@ -528,6 +539,7 @@ void setup() {
 
         Serial.println(fileNumber);
 
+        root = SD.open("/");
 
 }
 
@@ -711,10 +723,11 @@ void loop() {
 
         case 2: // SD LPC
         {
-          root = SD.open("/");
 
 
-          GetFilesList(root);
+                root.rewindDirectory();
+                GetFilesList(root,0);
+
                 interruptCount=0;
                 WTF=LOW;
 
@@ -855,7 +868,7 @@ void loop() {
 
                         myfile.close();
                         Serial.println();
-                        showArray(); // to proof keep it
+                      //  showArray(); // to proof keep it
 
                         attachInterrupt(GATE, setBLUE_ON, CHANGE);
                         WTF=HIGH;
@@ -919,6 +932,9 @@ void loop() {
 
         case 3: // SD Phn
 
+
+        root.rewindDirectory();
+        GetFilesList(root,1);
         interruptCount=0;
         WTF=LOW;
 
@@ -932,7 +948,16 @@ void loop() {
                 delay(100);
         }
         while(digitalRead(PUSH)); // ok when have a file
-
+        display.clearDisplay();
+        display.setCursor(0,12);
+        Serial.print("Reading file:");
+        display.print("Reading file:");
+        display.setCursor(0,28); //
+        display.print(myFiles[filePointer]);
+        Serial.println(myFiles[filePointer]);
+        display.display();
+        String str=myFiles[filePointer];
+        str.remove(str.length()-4);
 
         break;
 

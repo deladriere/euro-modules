@@ -27,7 +27,7 @@ void setup() {
         cp5 = new ControlP5(this);
         frameRate(50);
 
-        PFont pfont = createFont("orbitron",20,true); //Create a font
+        PFont pfont = createFont("amadstic",20,true); //Create a font
         ControlFont font = new ControlFont(pfont,20); //font, font-size
 
 

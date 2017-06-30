@@ -100,10 +100,10 @@ char* mainFunctions[12]={
         "Phoneme",
         "Numbers",
         "SD LPC",
-        "Set Time","","",""
+        "SD PHN","Set Time","",""
 };
 
-#define numFunctions 4
+#define numFunctions 5
 int function;
 
 bool WTF; // to avoid led interrupt trigger by rotary !
@@ -523,10 +523,7 @@ void setup() {
         //  attachInterrupt(GATE, setBLUE_ON, CHANGE);
         attachInterrupt(ROTA, rot, CHANGE);
 
-        root = SD.open("/");
 
-
-        GetFilesList(root);
         Serial.println("done!");
 
         Serial.println(fileNumber);
@@ -714,6 +711,10 @@ void loop() {
 
         case 2: // SD LPC
         {
+          root = SD.open("/");
+
+
+          GetFilesList(root);
                 interruptCount=0;
                 WTF=LOW;
 
@@ -916,8 +917,24 @@ void loop() {
         }
         break;
 
+        case 3: // SD Phn
+
+        interruptCount=0;
+        WTF=LOW;
 
 
+        do {
+                // choose the file
+                interruptCount=constrain(interruptCount,0,fileNumber-1);
+                filePointer=interruptCount;
+                //  Serial.println(filePointer);
+                displayFilesList(filePointer);
+                delay(100);
+        }
+        while(digitalRead(PUSH)); // ok when have a file
+
+
+        break;
 
 
 
@@ -926,55 +943,3 @@ void loop() {
 
 
 }
-
-
-
-/*
-   ██████  ██████   ██████  ██
-   ██   ██ ██   ██ ██    ██ ██
-   ██████  ██████  ██    ██ ██
-   ██   ██ ██   ██ ██    ██ ██
-   ██████  ██   ██  ██████  ███████
- */
-
-/*
-      //  if (GATE_HIGH)
-      //  {
-                switch (voice.mode)
-                {
-                case MODE_SPEECH:
-
-                        {
-                        if (!voice.talking() && busy==0)
-                        {
-                                if(!busy) voice.say(alphons[allo]);
-                                busy=1;
-                        }
-
-                        break;
-                      }
-
-                case MODE_REPEAT:
-                        voice.say(alphons[allo],false);
-                        break;
-
-
-                }
-
-
-
-                case 1: // New function
-                {
-
-                }
-                break;
-
-
-
- */
-//}
-//  else
-//{
-//        busy=0; // si mode speech
-//        //  if (MODE_REPEAT) voice.say(sp_alphon127);// si mode 3 stop sound
-//  }

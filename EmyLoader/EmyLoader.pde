@@ -27,7 +27,7 @@ void setup() {
         cp5 = new ControlP5(this);
         frameRate(50);
 
-        PFont pfont = createFont("orbitron.ttf",20,true); //Create a font
+        PFont pfont = createFont("orbitron",20,true); //Create a font
         ControlFont font = new ControlFont(pfont,20); //font, font-size
 
 
@@ -38,7 +38,7 @@ void setup() {
                      .setLineHeight(14)
                      .setColor(color(200))
                      .setColorBackground(color(0, 100))
-                     .setColorForeground(color(255, 100));
+                     .setColorForeground(color(255, 100));  
         ;
 
 
@@ -87,7 +87,7 @@ void draw() {
         fill(done);
         noStroke();
         ellipse(650, 74, 50, 50);
-        text(fileName+portName, 100,130);
+        //text(fileName+portName, 100,130); not needed anymore
 
         if(d1.isMouseOver()) {
                 d1.clear(); //Delete all the items
@@ -111,12 +111,12 @@ void controlEvent(ControlEvent theEvent) { //when something in the list is selec
                 println("Serial index set to: " + theEvent.getController().getValue());
                 // jld
                 myPort.stop();
-                delay(2000);
+                //delay(2000);
         }
 }
 
 void Upload(float theValue) {
-        done=#FFFFFF;
+        done=#FFFFFF;  // white circle
         String returnedValues;
         String commandToRun = "./bossac";
 
@@ -157,10 +157,11 @@ void Upload(float theValue) {
                         // read the output from the command
                         while ( (returnedValues = stdInput.readLine ()) != null) {
 
-                                //print(returnedValues);
+                                print(returnedValues);
+
                                 if(returnedValues.indexOf("Verify successful") == 0)
                                 {
-                                        print("sucess");
+                                      //print("sucess");
                                         done=#29F70F;
 
                                 }

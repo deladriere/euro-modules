@@ -12,6 +12,7 @@
 
 #define FS 8000 // Speech engine sample rate
 
+uint16_t bend;
 uint8_t pitcher;
 
 uint8_t synthPeriod;
@@ -188,10 +189,19 @@ pitcher=constrain(pitcher,0,64);
 					synthK8 = tmsK8[getBits(3)];
 					synthK9 = tmsK9[getBits(3)];
 					synthK10 = tmsK10[getBits(3)];
+
+          bend=analogRead(3);
+          if (bend < 4090)
+          {
+            synthK5= map(bend,4090,0,0,110);  //
+						synthK10= map(bend,4090,0,0,150); // Talko was reversed (150-0)
+          }
+
+
 				}
 			}
 		}
-	delay(map(analogRead(2), 4096, 0, 0, 40));
+	delay(map(analogRead(2), 4096, 0, 0, 40)); // Stretch
 	} while (energy != 0xf);
 
   	//better handling of silence

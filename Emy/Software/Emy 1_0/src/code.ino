@@ -16,7 +16,7 @@
 #include <Wire.h>
 
 #include "SAMD_AnalogCorrection.h"
-#include <SD.h>
+#include <SD.h> // Sparkfun
 #include <SPI.h>
 
 const unsigned char Eye [] PROGMEM = {

@@ -22,7 +22,7 @@ void setup() {
 
         clear();
         size(700, 400 );
-
+        surface.setTitle("BossaLoader Version 1.0");
         fileName="";
         cp5 = new ControlP5(this);
         frameRate(50);
@@ -107,16 +107,22 @@ void controlEvent(ControlEvent theEvent) { //when something in the list is selec
         myPort.stop(); //stop the port
         if (theEvent.isController() && d1.isMouseOver()) {
                 portName = Serial.list()[int(theEvent.getController().getValue())]; //port name is set to the selected port in the dropDownMeny
-                myPort = new Serial(this, portName, 1200); //Create a new connection // was 9600
+               // myPort = new Serial(this, portName, 1200); //Create a new connection // was 9600
                 println("Serial index set to: " + theEvent.getController().getValue());
                 // jld
-                myPort.stop();
+               // myPort.stop();
                 //delay(2000);
+                 done=#FFFFFF; // use the function to clear the circle
         }
 }
 
 void Upload(float theValue) {
         done=#FFFFFF;  // white circle
+        
+         // force bootloader mode
+         myPort = new Serial(this, portName, 1200); //Create a new connection // was 9600
+         myPort.stop();
+         delay(1000);
         String returnedValues;
         String commandToRun = "./bossac";
 
@@ -168,7 +174,7 @@ void Upload(float theValue) {
 
                                 if(returnedValues.indexOf("failed") == 0)
                                 {
-                                        print("failed");
+                                        //print("failed");
                                         done=#F7320F;
 
                                 }

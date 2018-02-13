@@ -1,4 +1,5 @@
 #include <SPI.h>
+#include <SD.h> // 868
 #include <string.h>
 #include "S1V30120_defines.h"
 #include "text_to_speech_img.h"
@@ -7,12 +8,32 @@
 #include "SSD1306Ascii.h"
 #include "SSD1306AsciiWire.h"
 
+/*
+
+   ██   ██  █████  ██████  ██████  ██     ██  █████  ██████  ███████
+   ██   ██ ██   ██ ██   ██ ██   ██ ██     ██ ██   ██ ██   ██ ██
+   ███████ ███████ ██████  ██   ██ ██  █  ██ ███████ ██████  █████
+   ██   ██ ██   ██ ██   ██ ██   ██ ██ ███ ██ ██   ██ ██   ██ ██
+   ██   ██ ██   ██ ██   ██ ██████   ███ ███  ██   ██ ██   ██ ███████
+
+ */
 
 
 #define S1V30120_RST    4
 #define S1V30120_RDY    11
 #define S1V30120_CS     5
 #define S1V30120_MUTE   9
+
+#define BUSY 38
+#define SW0 0
+#define SW1 1
+#define GATE 2
+#define PUSH 3
+#define ROTA 6
+#define ROTB 7
+#define GREEN_LED  12
+#define RED_LED 13
+
 
 
 
@@ -68,15 +89,56 @@ static volatile unsigned short TTS_DATA_IDX;
 
  */
 SSD1306AsciiWire display;
+File root;
 
 
 /*
-███████ ██    ██ ███    ██  ██████ ████████ ██  ██████  ███    ██ ███████
-██      ██    ██ ████   ██ ██         ██    ██ ██    ██ ████   ██ ██
-█████   ██    ██ ██ ██  ██ ██         ██    ██ ██    ██ ██ ██  ██ ███████
-██      ██    ██ ██  ██ ██ ██         ██    ██ ██    ██ ██  ██ ██      ██
-██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████ ███████
-*/
+   ███████ ██    ██ ███    ██  ██████ ████████ ██  ██████  ███    ██ ███████
+   ██      ██    ██ ████   ██ ██         ██    ██ ██    ██ ████   ██ ██
+   █████   ██    ██ ██ ██  ██ ██         ██    ██ ██    ██ ██ ██  ██ ███████
+   ██      ██    ██ ██  ██ ██ ██         ██    ██ ██    ██ ██  ██ ██      ██
+   ██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████ ███████
+ */
+
+ void printDirectory(File dir, int numTabs) {
+   while (true) {
+
+     File entry =  dir.openNextFile();
+     if (! entry) {
+       // no more files
+       break;
+     }
+     for (uint8_t i = 0; i < numTabs; i++) {
+       Serial.print('\t');
+     }
+     Serial.print(entry.name());
+     if (entry.isDirectory()) {
+       Serial.println("/");
+       printDirectory(entry, numTabs + 1);
+     } else {
+       // files have sizes, directories do not
+       Serial.print("\t\t");
+       Serial.println(entry.size(), DEC);
+     }
+     entry.close();
+   }
+ }
+
+void initSD()
+{
+
+
+        if (!SD.begin(10)) {
+                display.clear();
+                display.println("Error");
+                display.println("SD card");
+                display.println("failed to ");
+                display.println("initialize");
+                while(1) ;
+        }
+        root = SD.open("/");
+
+}
 
 
 void splashScreen()
@@ -92,99 +154,138 @@ void splashScreen()
 
 
         display.setRow(2);
-        display.println("Vax");
+        display.println("VAX");
         display.setRow(4);
         display.println(VERSION);
         display.setRow(6);
         display.println(analogRead(A6));
 
-        delay(1500);
+        //delay(1500);
         //
 
 }
 
 /*
-███████ ███████ ████████ ██    ██ ██████
-██      ██         ██    ██    ██ ██   ██
-███████ █████      ██    ██    ██ ██████
+   ███████ ███████ ████████ ██    ██ ██████
+   ██      ██         ██    ██    ██ ██   ██
+   ███████ █████      ██    ██    ██ ██████
      ██ ██         ██    ██    ██ ██
-███████ ███████    ██     ██████  ██
-*/
+   ███████ ███████    ██     ██████  ██
+ */
 
 
 void setup() {
 
-   Wire.begin();
+        Wire.begin();
 
-  //Pin settings
-  pinMode(S1V30120_RST, OUTPUT);
-  pinMode(S1V30120_RDY, INPUT);
-  pinMode(S1V30120_CS, OUTPUT);
-  pinMode(S1V30120_MUTE, OUTPUT);
 
-  // Unmute
-  digitalWrite(S1V30120_MUTE,LOW);
+        //Pin settings
+        pinMode(S1V30120_RST, OUTPUT);
+        pinMode(S1V30120_RDY, INPUT);
+        pinMode(S1V30120_CS, OUTPUT);
+        pinMode(S1V30120_MUTE, OUTPUT);
 
-  // for debugging
-  Serial.begin(9600);
-  while (!Serial);
+        pinMode(SW0, INPUT_PULLUP);
+        pinMode(SW1, INPUT_PULLUP);
+        pinMode(ROTA, INPUT_PULLUP);
+        pinMode(ROTB, INPUT_PULLUP);
+        pinMode(PUSH, INPUT_PULLUP);
+        pinMode(GATE, INPUT_PULLUP);
+        pinMode(GREEN_LED,OUTPUT);
+        pinMode(RED_LED,OUTPUT);
+        pinMode(BUSY,OUTPUT);
+        pinMode(10,OUTPUT);
 
-  //splashScreen();
+        // turn transistorized outputs low ;
+        digitalWrite(GREEN_LED,HIGH);
+        digitalWrite(RED_LED,HIGH);
 
-  SPI.begin();
 
-  S1V30120_reset();
-    S1V30120_reset();
-      S1V30120_reset();
 
-  tmp = S1V30120_get_version();
-  if (tmp == 0x0402)
-  {
-    Serial.println("S1V30120 found. Downloading boot image!");
-  }
-  success = S1V30120_download();
-  Serial.print("Boot image download: ");
-  show_response(success);
-  success = S1V30120_boot_run();
-  Serial.print("Boot image run: ");
-  show_response(success);
-  delay(150); // Wait for the boot image to execute
-  Serial.print("Registering: ");
-  success = S1V30120_registration();
-  show_response(success);
-  // Once again print version information
-  S1V30120_get_version();
-  success = S1V30120_configure_audio();
-  Serial.print("Configuring audio: ");
-  show_response(success);
-  success = S1V30120_set_volume();
-  Serial.print("Setting volume: ");
-  show_response(success);
 
-  success = S1V30120_configure_tts();
-  Serial.print("Configure TTS: ");
-  show_response(success);
+        // Unmute
+        digitalWrite(S1V30120_MUTE,LOW);
 
-  //success = S1V30120_speech(mytext,0);
-  Serial.print("Speaking1: ");
-  show_response(success);
-  delay(250);
+        // for debugging
+        Serial.begin(9600);
+        while (!Serial) ;
 
-  Serial.print("Speaking2: ");
-  //success = S1V30120_speech("ok",0);
-  delay(250);
+        display.begin(&Adafruit128x64, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
 
-  show_response(success);
 
-  // success = S1V30120_speech("2",0);
-  Serial.print("Speaking3: ");
-  show_response(success);
+        splashScreen();
 
- S1V30120_speech("[:n9][:ra 50][:dv ap 50 pr 0] we are the robots",0);
+        initSD();
+        printDirectory(root, 0);
 
-S1V30120_speech("[:n3] we are the machines",0);
-S1V30120_speech("[:dv ap 100 pr 0][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
-S1V30120_speech("[WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
+
+
+        //SPI.begin();
+
+        S1V30120_reset();
+        S1V30120_reset();
+        S1V30120_reset();
+
+
+        tmp = S1V30120_get_version();
+        if (tmp == 0x0402)
+        {
+                Serial.println("S1V30120 found. Downloading boot image!");
+        }
+        success = S1V30120_download();
+        Serial.print("Boot image download: ");
+        show_response(success);
+        success = S1V30120_boot_run();
+        Serial.print("Boot image run: ");
+        show_response(success);
+        delay(150); // Wait for the boot image to execute
+        Serial.print("Registering: ");
+        success = S1V30120_registration();
+        show_response(success);
+        // Once again print version information
+        S1V30120_get_version();
+        success = S1V30120_configure_audio();
+        Serial.print("Configuring audio: ");
+        show_response(success);
+        success = S1V30120_set_volume();
+        Serial.print("Setting volume: ");
+        show_response(success);
+
+        success = S1V30120_configure_tts();
+        Serial.print("Configure TTS: ");
+        show_response(success);
+
+
+
+        //success = S1V30120_speech(mytext,0);
+        Serial.print("Speaking1: ");
+        show_response(success);
+        delay(250);
+
+        Serial.print("Speaking2: ");
+        //success = S1V30120_speech("ok",0);
+        delay(250);
+
+        show_response(success);
+
+        // success = S1V30120_speech("2",0);
+        Serial.print("Speaking3: ");
+        show_response(success);
+
+        S1V30120_speech("[:n9][:ra 50][:dv ap 50 pr 0] we are the robots",0);
+
+      //  S1V30120_speech("[:n3] we are the machines",0);
+        //S1V30120_speech("[:dv ap 100 pr 0][:rate 75][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
+      //  S1V30120_speech("[:dv ap 100 pr 0][:rate 600][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
+
+      //  S1V30120_speech("[:n3][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
+        //S1V30120_speech("[:n0][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
+
+        digitalWrite(S1V30120_CS, HIGH);
+        delay(100);
+        SD.begin(10);
+        root.rewindDirectory();
+        printDirectory(root, 0);
 
 }
 
@@ -193,156 +294,156 @@ S1V30120_speech("[WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0>
 // This function resets the S1V30120 chip and loads the firmware code
 void S1V30120_reset(void)
 {
-  digitalWrite(S1V30120_CS,HIGH); // S1V30120 not selected
-  digitalWrite(S1V30120_RST,LOW);
-  // send one dummy byte, this will leave the clock line high
-  SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
-  SPI.transfer(0x00);
-  SPI.endTransaction();
-  delay(5);
-  digitalWrite(S1V30120_RST,HIGH);
-  delay(150);
+        digitalWrite(S1V30120_CS,HIGH); // S1V30120 not selected
+        digitalWrite(S1V30120_RST,LOW);
+        // send one dummy byte, this will leave the clock line high
+        SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
+        SPI.transfer(0x00);
+        SPI.endTransaction();
+        delay(5);
+        digitalWrite(S1V30120_RST,HIGH);
+        delay(150);
 }
 
 unsigned short S1V30120_get_version(void)
 {
-    // Querry version
-    unsigned short S1V30120_version = 0;
-    unsigned short tmp_disp;
-    // Sending ISC_VERSION_REQ = [0x00, 0x04, 0x00, 0x05];
-    char msg_ver[] = {0x04, 0x00, 0x05, 0x00};
-    S1V30120_send_message(msg_ver, 0x04);
+        // Querry version
+        unsigned short S1V30120_version = 0;
+        unsigned short tmp_disp;
+        // Sending ISC_VERSION_REQ = [0x00, 0x04, 0x00, 0x05];
+        char msg_ver[] = {0x04, 0x00, 0x05, 0x00};
+        S1V30120_send_message(msg_ver, 0x04);
 
-    //wait for ready signal
-    while(digitalRead(S1V30120_RDY) == 0);
+        //wait for ready signal
+        while(digitalRead(S1V30120_RDY) == 0) ;
 
-    // receive 20 bytes
-    digitalWrite(S1V30120_CS,LOW);
-    SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
-    // wait for message start
-    while(SPI.transfer(0x00) != 0xAA);
-    for (int i = 0; i < 20; i++)
-    {
-      rcvd_msg[i] = SPI.transfer(0x00);
-    }
-    // Send 16 bytes padding
-    S1V30120_send_padding(16);
-    SPI.endTransaction();
-    digitalWrite(S1V30120_CS,HIGH);
-    S1V30120_version = rcvd_msg[4] << 8 | rcvd_msg[5];
-    Serial.print("HW version ");
-    Serial.print(rcvd_msg[4],HEX);
-    Serial.print(".");
-    Serial.println(rcvd_msg[5],HEX);
-    Serial.print("Firmware version ");
-    Serial.print(rcvd_msg[6],HEX);
-    Serial.print(".");
-    Serial.print(rcvd_msg[7],HEX);
-    Serial.print(".");
-    Serial.println(rcvd_msg[16],HEX);
-    Serial.print("Firmware features ");
-    Serial.println(((rcvd_msg[11] << 24) | (rcvd_msg[10] << 16) | (rcvd_msg[9] << 8) | rcvd_msg[8]),HEX);
-    Serial.print("Firmware extended features ");
-    Serial.println(((rcvd_msg[15] << 24) | (rcvd_msg[14] << 16) | (rcvd_msg[13] << 8) | rcvd_msg[12]),HEX);
-    return S1V30120_version;
+        // receive 20 bytes
+        digitalWrite(S1V30120_CS,LOW);
+        SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
+        // wait for message start
+        while(SPI.transfer(0x00) != 0xAA) ;
+        for (int i = 0; i < 20; i++)
+        {
+                rcvd_msg[i] = SPI.transfer(0x00);
+        }
+        // Send 16 bytes padding
+        S1V30120_send_padding(16);
+        SPI.endTransaction();
+        digitalWrite(S1V30120_CS,HIGH);
+        S1V30120_version = rcvd_msg[4] << 8 | rcvd_msg[5];
+        Serial.print("HW version ");
+        Serial.print(rcvd_msg[4],HEX);
+        Serial.print(".");
+        Serial.println(rcvd_msg[5],HEX);
+        Serial.print("Firmware version ");
+        Serial.print(rcvd_msg[6],HEX);
+        Serial.print(".");
+        Serial.print(rcvd_msg[7],HEX);
+        Serial.print(".");
+        Serial.println(rcvd_msg[16],HEX);
+        Serial.print("Firmware features ");
+        Serial.println(((rcvd_msg[11] << 24) | (rcvd_msg[10] << 16) | (rcvd_msg[9] << 8) | rcvd_msg[8]),HEX);
+        Serial.print("Firmware extended features ");
+        Serial.println(((rcvd_msg[15] << 24) | (rcvd_msg[14] << 16) | (rcvd_msg[13] << 8) | rcvd_msg[12]),HEX);
+        return S1V30120_version;
 }
 
 bool S1V30120_download(void)
 {
-   // TTS_INIT_DATA is of unsigned char type (one byte)
-   unsigned short len = sizeof (TTS_INIT_DATA);
-   unsigned short fullchunks;
-   unsigned short remaining;
-   bool chunk_result;
-   long data_index = 0;
-   Serial.print("TTS_INIT_DATA length is ");
-   Serial.println(len);
-   // We are loading chunks of data
-   // Each chunk, including header must be of maximum 2048 bytes
-   // as the header is 4 bytes, this leaves 2044 bytes to load each time
-   // Computing number of chunks
-   fullchunks = len / 2044;
-   remaining = len - fullchunks * 2044;
-   Serial.print("Full chunks to load: ");
-   Serial.println(fullchunks);
-   Serial.print("Remaining bytes: ");
-   Serial.println(remaining);
-   // Load a chunk of data
-   for (int num_chunks = 0; num_chunks < fullchunks; num_chunks++)
-   {
-     chunk_result = S1V30120_load_chunk (2044);
-     if (chunk_result)
-     {
-       Serial.println("Success");
-     }
-     else
-     {
-       Serial.print("Failed at chunk ");
-       Serial.println(num_chunks);
-       return 0;
-     }
-   }
-   // Now load the last chunk of data
-   chunk_result = S1V30120_load_chunk (remaining);
-   if (chunk_result)
-   {
-     Serial.println("Success");
-   }
-   else
-   {
-     Serial.print("Failed at last chunk ");
-     return 0;
-   }
+        // TTS_INIT_DATA is of unsigned char type (one byte)
+        unsigned short len = sizeof (TTS_INIT_DATA);
+        unsigned short fullchunks;
+        unsigned short remaining;
+        bool chunk_result;
+        long data_index = 0;
+        Serial.print("TTS_INIT_DATA length is ");
+        Serial.println(len);
+        // We are loading chunks of data
+        // Each chunk, including header must be of maximum 2048 bytes
+        // as the header is 4 bytes, this leaves 2044 bytes to load each time
+        // Computing number of chunks
+        fullchunks = len / 2044;
+        remaining = len - fullchunks * 2044;
+        Serial.print("Full chunks to load: ");
+        Serial.println(fullchunks);
+        Serial.print("Remaining bytes: ");
+        Serial.println(remaining);
+        // Load a chunk of data
+        for (int num_chunks = 0; num_chunks < fullchunks; num_chunks++)
+        {
+                chunk_result = S1V30120_load_chunk (2044);
+                if (chunk_result)
+                {
+                        Serial.println("Success");
+                }
+                else
+                {
+                        Serial.print("Failed at chunk ");
+                        Serial.println(num_chunks);
+                        return 0;
+                }
+        }
+        // Now load the last chunk of data
+        chunk_result = S1V30120_load_chunk (remaining);
+        if (chunk_result)
+        {
+                Serial.println("Success");
+        }
+        else
+        {
+                Serial.print("Failed at last chunk ");
+                return 0;
+        }
 // All was OK, returning 1
-return 1;
+        return 1;
 }
 
 bool S1V30120_load_chunk(unsigned short chunk_len)
 {
-  // Load a chunk of data
-  char len_msb = ((chunk_len + 4) & 0xFF00) >> 8;
-  char len_lsb = (chunk_len + 4) & 0xFF;
-  digitalWrite(S1V30120_CS,LOW);
-  SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
-  SPI.transfer(0xAA);  // Start Message Command
-  SPI.transfer(len_lsb);  // Message length is 2048 bytes = 0x0800
-  SPI.transfer(len_msb);  // LSB first
-  SPI.transfer(0x00);  // Send SC_BOOT_LOAD_REQ (0x1000)
-  SPI.transfer(0x10);
-  for (int chunk_idx = 0; chunk_idx < chunk_len; chunk_idx++)
-  {
-    SPI.transfer(TTS_INIT_DATA[TTS_DATA_IDX]);
-    TTS_DATA_IDX++;
-  }
-  SPI.endTransaction();
-  digitalWrite(S1V30120_CS,HIGH);
-  return S1V30120_parse_response(ISC_BOOT_LOAD_RESP, 0x0001, 16);
+        // Load a chunk of data
+        char len_msb = ((chunk_len + 4) & 0xFF00) >> 8;
+        char len_lsb = (chunk_len + 4) & 0xFF;
+        digitalWrite(S1V30120_CS,LOW);
+        SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
+        SPI.transfer(0xAA); // Start Message Command
+        SPI.transfer(len_lsb); // Message length is 2048 bytes = 0x0800
+        SPI.transfer(len_msb); // LSB first
+        SPI.transfer(0x00); // Send SC_BOOT_LOAD_REQ (0x1000)
+        SPI.transfer(0x10);
+        for (int chunk_idx = 0; chunk_idx < chunk_len; chunk_idx++)
+        {
+                SPI.transfer(TTS_INIT_DATA[TTS_DATA_IDX]);
+                TTS_DATA_IDX++;
+        }
+        SPI.endTransaction();
+        digitalWrite(S1V30120_CS,HIGH);
+        return S1V30120_parse_response(ISC_BOOT_LOAD_RESP, 0x0001, 16);
 }
 
 bool S1V30120_boot_run(void)
 {
-    char boot_run_msg[] = {0x04, 0x00, 0x02, 0x10};
-    S1V30120_send_message(boot_run_msg, 0x04);
-    return S1V30120_parse_response(ISC_BOOT_RUN_RESP, 0x0001, 8);
+        char boot_run_msg[] = {0x04, 0x00, 0x02, 0x10};
+        S1V30120_send_message(boot_run_msg, 0x04);
+        return S1V30120_parse_response(ISC_BOOT_RUN_RESP, 0x0001, 8);
 }
 
 void show_response(bool response)
 {
-  if(response)
-    Serial.println("OK!");
-  else
-  {
-    Serial.println("Failed. System halted!");
-    while(1);
-  }
+        if(response)
+                Serial.println("OK!");
+        else
+        {
+                Serial.println("Failed. System halted!");
+                while(1) ;
+        }
 }
 
 bool S1V30120_registration(void)
 {
-  SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
-  char reg_code[] = {0x0C, 0x00, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  S1V30120_send_message(reg_code, 0x0C);
-  return S1V30120_parse_response(ISC_TEST_RESP, 0x0000, 16);
+        SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
+        char reg_code[] = {0x0C, 0x00, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        S1V30120_send_message(reg_code, 0x0C);
+        return S1V30120_parse_response(ISC_TEST_RESP, 0x0000, 16);
 }
 
 
@@ -353,161 +454,161 @@ bool S1V30120_registration(void)
 // (2 bytes length + 2 bytes response code + 2 bytes response)
 bool S1V30120_parse_response(unsigned short expected_message, unsigned short expected_result, unsigned short padding_bytes)
 {
-    unsigned short rcvd_tmp;
+        unsigned short rcvd_tmp;
 
-    //wait for ready signal
-    while(digitalRead(S1V30120_RDY) == 0);
+        //wait for ready signal
+        while(digitalRead(S1V30120_RDY) == 0) ;
 
-    // receive 6 bytes
-    digitalWrite(S1V30120_CS,LOW);
-    SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
-    // wait for message start
-    while(SPI.transfer(0x00) != 0xAA);
-    for (int i = 0; i < 6; i++)
-    {
-      rcvd_msg[i] = SPI.transfer(0x00);
-    }
-    // padding bytes
-    S1V30120_send_padding(padding_bytes);
-    SPI.endTransaction();
-    digitalWrite(S1V30120_CS,HIGH);
-    // Are we successfull? We shall check
-    rcvd_tmp = rcvd_msg[3] << 8 | rcvd_msg[2];
-    if (rcvd_tmp == expected_message) // Have we received ISC_BOOT_RUN_RESP?
-    {
-       // We check the response
-       rcvd_tmp = rcvd_msg[5] << 8 | rcvd_msg[4];
-       if (rcvd_tmp == expected_result) // success, return 1
-         return 1;
-       else
-         return 0;
-    }
-    else // We received something else
-    return 0;
+        // receive 6 bytes
+        digitalWrite(S1V30120_CS,LOW);
+        SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
+        // wait for message start
+        while(SPI.transfer(0x00) != 0xAA) ;
+        for (int i = 0; i < 6; i++)
+        {
+                rcvd_msg[i] = SPI.transfer(0x00);
+        }
+        // padding bytes
+        S1V30120_send_padding(padding_bytes);
+        SPI.endTransaction();
+        digitalWrite(S1V30120_CS,HIGH);
+        // Are we successfull? We shall check
+        rcvd_tmp = rcvd_msg[3] << 8 | rcvd_msg[2];
+        if (rcvd_tmp == expected_message) // Have we received ISC_BOOT_RUN_RESP?
+        {
+                // We check the response
+                rcvd_tmp = rcvd_msg[5] << 8 | rcvd_msg[4];
+                if (rcvd_tmp == expected_result) // success, return 1
+                        return 1;
+                else
+                        return 0;
+        }
+        else // We received something else
+                return 0;
 }
 
 // Padding function
 // Sends a num_padding_bytes over the SPI bus
 void S1V30120_send_padding(unsigned short num_padding_bytes)
 {
-  for (int i = 0; i < num_padding_bytes; i++)
-  {
-     SPI.transfer(0x00);
-  }
+        for (int i = 0; i < num_padding_bytes; i++)
+        {
+                SPI.transfer(0x00);
+        }
 }
 
 // Functions that run in normal mode
 
 void S1V30120_send_message(volatile char message[], unsigned char message_length)
 {
-  // Check to see if there's an incoming response or indication
- while(digitalRead(S1V30120_RDY) == 1);  // blocking
-  // OK, we can proceed
-  digitalWrite(S1V30120_CS,LOW);
-  SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
-  SPI.transfer(0xAA);  // Start Message Command
-  for (int i = 0; i < message_length; i++)
-  {
-    SPI.transfer(message[i]);
-  }
-  SPI.endTransaction();
+        // Check to see if there's an incoming response or indication
+        while(digitalRead(S1V30120_RDY) == 1) ; // blocking
+        // OK, we can proceed
+        digitalWrite(S1V30120_CS,LOW);
+        SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
+        SPI.transfer(0xAA); // Start Message Command
+        for (int i = 0; i < message_length; i++)
+        {
+                SPI.transfer(message[i]);
+        }
+        SPI.endTransaction();
 }
 
 bool S1V30120_configure_audio(void)
 {
-  msg_len = 0x0C;
-  send_msg[0] = msg_len & 0xFF;          // LSB of msg len
-  send_msg[1] = (msg_len & 0xFF00) >> 8; // MSB of msg len
-  send_msg[2] = ISC_AUDIO_CONFIG_REQ & 0xFF;
-  send_msg[3] = (ISC_AUDIO_CONFIG_REQ & 0xFF00) >> 8;
-  send_msg[4] = TTS_AUDIO_CONF_AS;
-  send_msg[5] = TTS_AUDIO_CONF_AG;
-  send_msg[6] = TTS_AUDIO_CONF_AMP;
-  send_msg[7] = TTS_AUDIO_CONF_ASR;
-  send_msg[8] = TTS_AUDIO_CONF_AR;
-  send_msg[9] = TTS_AUDIO_CONF_ATC;
-  send_msg[10] = TTS_AUDIO_CONF_ACS;
-  send_msg[11] = TTS_AUDIO_CONF_DC;
-  S1V30120_send_message(send_msg, msg_len);
-  return S1V30120_parse_response(ISC_AUDIO_CONFIG_RESP, 0x0000, 16);
+        msg_len = 0x0C;
+        send_msg[0] = msg_len & 0xFF;    // LSB of msg len
+        send_msg[1] = (msg_len & 0xFF00) >> 8; // MSB of msg len
+        send_msg[2] = ISC_AUDIO_CONFIG_REQ & 0xFF;
+        send_msg[3] = (ISC_AUDIO_CONFIG_REQ & 0xFF00) >> 8;
+        send_msg[4] = TTS_AUDIO_CONF_AS;
+        send_msg[5] = TTS_AUDIO_CONF_AG;
+        send_msg[6] = TTS_AUDIO_CONF_AMP;
+        send_msg[7] = TTS_AUDIO_CONF_ASR;
+        send_msg[8] = TTS_AUDIO_CONF_AR;
+        send_msg[9] = TTS_AUDIO_CONF_ATC;
+        send_msg[10] = TTS_AUDIO_CONF_ACS;
+        send_msg[11] = TTS_AUDIO_CONF_DC;
+        S1V30120_send_message(send_msg, msg_len);
+        return S1V30120_parse_response(ISC_AUDIO_CONFIG_RESP, 0x0000, 16);
 }
 
 // set gain to 0 db
 bool S1V30120_set_volume(void)
 {
 
-  int16_t gain = -15   ;
-  uint8_t tmp_gain[ 2 ] = { 0 };
-  tmp_gain[ 0 ] = gain & 0x00FF;
-  tmp_gain[ 1 ] = ( gain & 0xFF00 ) >> 8;
+        int16_t gain = -15;
+        uint8_t tmp_gain[ 2 ] = { 0 };
+        tmp_gain[ 0 ] = gain & 0x00FF;
+        tmp_gain[ 1 ] = ( gain & 0xFF00 ) >> 8;
 
-  char setvol_code[]={0x06, 0x00, 0x0A, 0x00 , tmp_gain[ 0 ] ,tmp_gain[ 1 ]}; // was 0/0 EC FF / F6 FF
-  S1V30120_send_message(setvol_code, 0x06);
-  return S1V30120_parse_response(ISC_AUDIO_VOLUME_RESP, 0x0000, 16);
+        char setvol_code[]={0x06, 0x00, 0x0A, 0x00, tmp_gain[ 0 ],tmp_gain[ 1 ]}; // was 0/0 EC FF / F6 FF
+        S1V30120_send_message(setvol_code, 0x06);
+        return S1V30120_parse_response(ISC_AUDIO_VOLUME_RESP, 0x0000, 16);
 }
 
 bool S1V30120_configure_tts(void)
 {
-  msg_len = 0x0C;
-  send_msg[0] = msg_len & 0xFF;          // LSB of msg len
-  send_msg[1] = (msg_len & 0xFF00) >> 8; // MSB of msg len
-  send_msg[2] = ISC_TTS_CONFIG_REQ & 0xFF;
-  send_msg[3] = (ISC_TTS_CONFIG_REQ & 0xFF00) >> 8;
-  send_msg[4] = ISC_TTS_SAMPLE_RATE;
-  send_msg[5] = ISC_TTS_VOICE;
-  send_msg[6] = ISC_TTS_EPSON_PARSE;
-  send_msg[7] = ISC_TTS_LANGUAGE;
-  send_msg[8] = ISC_TTS_SPEAK_RATE_LSB;
-  send_msg[9] = ISC_TTS_SPEAK_RATE_MSB;
-  send_msg[10] = ISC_TTS_DATASOURCE;
-  send_msg[11] = 0x00;
-  S1V30120_send_message(send_msg, msg_len);
-  return S1V30120_parse_response(ISC_TTS_CONFIG_RESP, 0x0000, 16);
+        msg_len = 0x0C;
+        send_msg[0] = msg_len & 0xFF;    // LSB of msg len
+        send_msg[1] = (msg_len & 0xFF00) >> 8; // MSB of msg len
+        send_msg[2] = ISC_TTS_CONFIG_REQ & 0xFF;
+        send_msg[3] = (ISC_TTS_CONFIG_REQ & 0xFF00) >> 8;
+        send_msg[4] = ISC_TTS_SAMPLE_RATE;
+        send_msg[5] = ISC_TTS_VOICE;
+        send_msg[6] = ISC_TTS_EPSON_PARSE;
+        send_msg[7] = ISC_TTS_LANGUAGE;
+        send_msg[8] = ISC_TTS_SPEAK_RATE_LSB;
+        send_msg[9] = ISC_TTS_SPEAK_RATE_MSB;
+        send_msg[10] = ISC_TTS_DATASOURCE;
+        send_msg[11] = 0x00;
+        S1V30120_send_message(send_msg, msg_len);
+        return S1V30120_parse_response(ISC_TTS_CONFIG_RESP, 0x0000, 16);
 }
 
 // bool S1V30120_speech(void)
 bool S1V30120_speech(String text_to_speech, unsigned char flush_enable)
 {
-  bool response;
-  txt_len = text_to_speech.length();
-  msg_len = txt_len + 6;
-  Serial.println(msg_len);
-  send_msg[0] = msg_len & 0xFF;          // LSB of msg len
-  send_msg[1] = (msg_len & 0xFF00) >> 8; // MSB of msg len
-  send_msg[2] = ISC_TTS_SPEAK_REQ & 0xFF;
-  send_msg[3] = (ISC_TTS_SPEAK_REQ & 0xFF00) >> 8;
-  send_msg[4] = flush_enable; // flush control
-  for (int i = 0; i < txt_len; i++)
-  {
-     send_msg[i+5] = text_to_speech[i];
-  }
-  send_msg[msg_len-1] = '\0'; // null character
-  S1V30120_send_message(send_msg, msg_len);
-  response = S1V30120_parse_response(ISC_TTS_SPEAK_RESP, 0x0000, 16);
-  if (send_msg[4] == 0)
-  {
-    while (!S1V30120_parse_response(ISC_TTS_FINISHED_IND, 0x0000, 16)); // blocking
-  }
+        bool response;
+        txt_len = text_to_speech.length();
+        msg_len = txt_len + 6;
+        Serial.println(msg_len);
+        send_msg[0] = msg_len & 0xFF;    // LSB of msg len
+        send_msg[1] = (msg_len & 0xFF00) >> 8; // MSB of msg len
+        send_msg[2] = ISC_TTS_SPEAK_REQ & 0xFF;
+        send_msg[3] = (ISC_TTS_SPEAK_REQ & 0xFF00) >> 8;
+        send_msg[4] = flush_enable; // flush control
+        for (int i = 0; i < txt_len; i++)
+        {
+                send_msg[i+5] = text_to_speech[i];
+        }
+        send_msg[msg_len-1] = '\0'; // null character
+        S1V30120_send_message(send_msg, msg_len);
+        response = S1V30120_parse_response(ISC_TTS_SPEAK_RESP, 0x0000, 16);
+        if (send_msg[4] == 0)
+        {
+                while (!S1V30120_parse_response(ISC_TTS_FINISHED_IND, 0x0000, 16)) ; // blocking
+        }
 
-  return response;
+        return response;
 }
 
 /*
-██       ██████   ██████  ██████
-██      ██    ██ ██    ██ ██   ██
-██      ██    ██ ██    ██ ██████
-██      ██    ██ ██    ██ ██
-███████  ██████   ██████  ██
-*/
+   ██       ██████   ██████  ██████
+   ██      ██    ██ ██    ██ ██   ██
+   ██      ██    ██ ██    ██ ██████
+   ██      ██    ██ ██    ██ ██
+   ███████  ██████   ██████  ██
+ */
 
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  //S1V30120_speech("hello",0);
+        // put your main code here, to run repeatedly:
+        //S1V30120_speech("hello",0);
 
 
 //S1V30120_speech("[hxae<300,10>piy<300,10> brr<600,12>th<100>dey<600,10> tuw<600,15> yu<1200,14>_<120>][hxae<300,10>piy<300,10> brr<600,12>th<100>dey<600,10> tuw<600,17> yu<1200,15>_<120>] ",0);
 //S1V30120_speech("[hxae<300,10>piy<300,10>brr<600,22>th<100>dey<600,19>dih<600,15>rdeh<600,14>ktao<600,12>k_<120>_<120>][hxae<300,20>piy<300,20> brr<600,19>th<100>dey<600,15> tuw<600,17> yu<1200,15>] ",0);
 //S1V30120_speech("[_<50,22>dey<400,22>ziy<400,19>dey<400,15>ziy<400,10>gih<200,12>vmiy<200,14>yurr<200,15>ae<400,12>nsax<200,15>rduw<400,10>] ",0);
-S1V30120_speech("[ay<400,17>mhxae<400,22> kray<400,19> ziy<400,15>ao<200,12>lfao<200,14>rdhax<200,15>lah<400,17>vao<200,19>vyu<400,17>ih<200,19>twow<200,20>ntbiy<200,19>ax<200,17>stay<400,22>] ",0);
+        S1V30120_speech("[ay<400,17>mhxae<400,22> kray<400,19> ziy<400,15>ao<200,12>lfao<200,14>rdhax<200,15>lah<400,17>vao<200,19>vyu<400,17>ih<200,19>twow<200,20>ntbiy<200,19>ax<200,17>stay<400,22>] ",0);
 }

@@ -165,129 +165,6 @@ void splashScreen()
 
 }
 
-/*
-   ███████ ███████ ████████ ██    ██ ██████
-   ██      ██         ██    ██    ██ ██   ██
-   ███████ █████      ██    ██    ██ ██████
-     ██ ██         ██    ██    ██ ██
-   ███████ ███████    ██     ██████  ██
- */
-
-
-void setup() {
-
-        Wire.begin();
-
-
-        //Pin settings
-        pinMode(S1V30120_RST, OUTPUT);
-        pinMode(S1V30120_RDY, INPUT);
-        pinMode(S1V30120_CS, OUTPUT);
-        pinMode(S1V30120_MUTE, OUTPUT);
-
-        pinMode(SW0, INPUT_PULLUP);
-        pinMode(SW1, INPUT_PULLUP);
-        pinMode(ROTA, INPUT_PULLUP);
-        pinMode(ROTB, INPUT_PULLUP);
-        pinMode(PUSH, INPUT_PULLUP);
-        pinMode(GATE, INPUT_PULLUP);
-        pinMode(GREEN_LED,OUTPUT);
-        pinMode(RED_LED,OUTPUT);
-        pinMode(BUSY,OUTPUT);
-        pinMode(10,OUTPUT);
-
-        // turn transistorized outputs low ;
-        digitalWrite(GREEN_LED,HIGH);
-        digitalWrite(RED_LED,HIGH);
-
-
-
-
-        // Unmute
-        digitalWrite(S1V30120_MUTE,LOW);
-
-        // for debugging
-        Serial.begin(9600);
-        while (!Serial) ;
-
-        display.begin(&Adafruit128x64, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
-
-
-        splashScreen();
-
-        initSD();
-        printDirectory(root, 0);
-
-
-
-        //SPI.begin();
-
-        S1V30120_reset();
-        S1V30120_reset();
-        S1V30120_reset();
-
-
-        tmp = S1V30120_get_version();
-        if (tmp == 0x0402)
-        {
-                Serial.println("S1V30120 found. Downloading boot image!");
-        }
-        success = S1V30120_download();
-        Serial.print("Boot image download: ");
-        show_response(success);
-        success = S1V30120_boot_run();
-        Serial.print("Boot image run: ");
-        show_response(success);
-        delay(150); // Wait for the boot image to execute
-        Serial.print("Registering: ");
-        success = S1V30120_registration();
-        show_response(success);
-        // Once again print version information
-        S1V30120_get_version();
-        success = S1V30120_configure_audio();
-        Serial.print("Configuring audio: ");
-        show_response(success);
-        success = S1V30120_set_volume();
-        Serial.print("Setting volume: ");
-        show_response(success);
-
-        success = S1V30120_configure_tts();
-        Serial.print("Configure TTS: ");
-        show_response(success);
-
-
-
-        //success = S1V30120_speech(mytext,0);
-        Serial.print("Speaking1: ");
-        show_response(success);
-        delay(250);
-
-        Serial.print("Speaking2: ");
-        //success = S1V30120_speech("ok",0);
-        delay(250);
-
-        show_response(success);
-
-        // success = S1V30120_speech("2",0);
-        Serial.print("Speaking3: ");
-        show_response(success);
-
-        S1V30120_speech("[:n9][:ra 50][:dv ap 50 pr 0] we are the robots",0);
-
-      //  S1V30120_speech("[:n3] we are the machines",0);
-        //S1V30120_speech("[:dv ap 100 pr 0][:rate 75][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
-      //  S1V30120_speech("[:dv ap 100 pr 0][:rate 600][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
-
-      //  S1V30120_speech("[:n3][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
-        //S1V30120_speech("[:n0][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
-
-        digitalWrite(S1V30120_CS, HIGH);
-        delay(100);
-        SD.begin(10);
-        root.rewindDirectory();
-        printDirectory(root, 0);
-
-}
 
 
 
@@ -594,6 +471,130 @@ bool S1V30120_speech(String text_to_speech, unsigned char flush_enable)
 }
 
 /*
+   ███████ ███████ ████████ ██    ██ ██████
+   ██      ██         ██    ██    ██ ██   ██
+   ███████ █████      ██    ██    ██ ██████
+     ██ ██         ██    ██    ██ ██
+   ███████ ███████    ██     ██████  ██
+ */
+
+
+void setup() {
+
+        Wire.begin();
+
+
+        //Pin settings
+        pinMode(S1V30120_RST, OUTPUT);
+        pinMode(S1V30120_RDY, INPUT);
+        pinMode(S1V30120_CS, OUTPUT);
+        pinMode(S1V30120_MUTE, OUTPUT);
+
+        pinMode(SW0, INPUT_PULLUP);
+        pinMode(SW1, INPUT_PULLUP);
+        pinMode(ROTA, INPUT_PULLUP);
+        pinMode(ROTB, INPUT_PULLUP);
+        pinMode(PUSH, INPUT_PULLUP);
+        pinMode(GATE, INPUT_PULLUP);
+        pinMode(GREEN_LED,OUTPUT);
+        pinMode(RED_LED,OUTPUT);
+        pinMode(BUSY,OUTPUT);
+        pinMode(10,OUTPUT);
+
+        // turn transistorized outputs low ;
+        digitalWrite(GREEN_LED,HIGH);
+        digitalWrite(RED_LED,HIGH);
+
+
+
+
+        // Unmute
+        digitalWrite(S1V30120_MUTE,LOW);
+
+        // for debugging
+        Serial.begin(9600);
+        while (!Serial) ;
+
+        display.begin(&Adafruit128x64, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
+
+
+        splashScreen();
+
+        initSD();
+        printDirectory(root, 0);
+
+
+
+        //SPI.begin();
+
+        S1V30120_reset();
+
+
+
+        tmp = S1V30120_get_version();
+        if (tmp == 0x0402)
+        {
+                Serial.println("S1V30120 found. Downloading boot image!");
+        }
+        success = S1V30120_download();
+        Serial.print("Boot image download: ");
+        show_response(success);
+        success = S1V30120_boot_run();
+        Serial.print("Boot image run: ");
+        show_response(success);
+        delay(150); // Wait for the boot image to execute
+        Serial.print("Registering: ");
+        success = S1V30120_registration();
+        show_response(success);
+        // Once again print version information
+        S1V30120_get_version();
+        success = S1V30120_configure_audio();
+        Serial.print("Configuring audio: ");
+        show_response(success);
+        success = S1V30120_set_volume();
+        Serial.print("Setting volume: ");
+        show_response(success);
+
+        success = S1V30120_configure_tts();
+        Serial.print("Configure TTS: ");
+        show_response(success);
+
+
+
+        //success = S1V30120_speech(mytext,0);
+        Serial.print("Speaking1: ");
+        show_response(success);
+        delay(250);
+
+        Serial.print("Speaking2: ");
+        //success = S1V30120_speech("ok",0);
+        delay(250);
+
+        show_response(success);
+
+        // success = S1V30120_speech("2",0);
+        Serial.print("Speaking3: ");
+        show_response(success);
+
+        S1V30120_speech("[:n9][:ra 50][:dv ap 50 pr 0] we are the robots",0);
+
+      //  S1V30120_speech("[:n3] we are the machines",0);
+        //S1V30120_speech("[:dv ap 100 pr 0][:rate 75][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
+      //  S1V30120_speech("[:dv ap 100 pr 0][:rate 600][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
+
+      //  S1V30120_speech("[:n3][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
+        //S1V30120_speech("[:n0][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
+
+
+        digitalWrite(S1V30120_RST,LOW);
+        initSD();
+        printDirectory(root, 0);
+        S1V30120_reset();
+
+}
+
+
+/*
    ██       ██████   ██████  ██████
    ██      ██    ██ ██    ██ ██   ██
    ██      ██    ██ ██    ██ ██████
@@ -610,5 +611,12 @@ void loop() {
 //S1V30120_speech("[hxae<300,10>piy<300,10> brr<600,12>th<100>dey<600,10> tuw<600,15> yu<1200,14>_<120>][hxae<300,10>piy<300,10> brr<600,12>th<100>dey<600,10> tuw<600,17> yu<1200,15>_<120>] ",0);
 //S1V30120_speech("[hxae<300,10>piy<300,10>brr<600,22>th<100>dey<600,19>dih<600,15>rdeh<600,14>ktao<600,12>k_<120>_<120>][hxae<300,20>piy<300,20> brr<600,19>th<100>dey<600,15> tuw<600,17> yu<1200,15>] ",0);
 //S1V30120_speech("[_<50,22>dey<400,22>ziy<400,19>dey<400,15>ziy<400,10>gih<200,12>vmiy<200,14>yurr<200,15>ae<400,12>nsax<200,15>rduw<400,10>] ",0);
-        S1V30120_speech("[ay<400,17>mhxae<400,22> kray<400,19> ziy<400,15>ao<200,12>lfao<200,14>rdhax<200,15>lah<400,17>vao<200,19>vyu<400,17>ih<200,19>twow<200,20>ntbiy<200,19>ax<200,17>stay<400,22>] ",0);
+      //  S1V30120_speech("[ay<400,17>mhxae<400,22> kray<400,19> ziy<400,15>ao<200,12>lfao<200,14>rdhax<200,15>lah<400,17>vao<200,19>vyu<400,17>ih<200,19>twow<200,20>ntbiy<200,19>ax<200,17>stay<400,22>] ",0);
+
+
+
+
+
+
+
 }

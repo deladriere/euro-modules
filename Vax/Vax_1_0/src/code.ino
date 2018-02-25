@@ -49,9 +49,17 @@
 
 
 
-//#define DEBUG_TRACE
+#define DEBUG_TRACE
 #define VERSION "Ver. 1.0"
 
+char inputChar;
+char* myFiles[20];  // max 20 files
+int fileCounter=0; // file index
+int fileNumber=0; // file number
+int filePointer=0;
+char fileName[13];
+
+char* filetype[4] = {".txt", ".sng", ".tts"};
 
 
 String mytext = "Success! Look at me, I can speak. I'm the best!";
@@ -71,6 +79,36 @@ static volatile unsigned short txt_len;
 unsigned short tmp;
 long idx;
 bool success;
+
+//#define DEBUG_TRACE
+#define VERSION "Ver. 1.0"
+#define ON 0
+#define OFF 1
+
+
+bool rd=0; // rotary display
+
+volatile int interruptCount=0; // The rotary counter
+volatile bool rotF; // because use in rot
+
+bool WTF; // to avoid led interrupt trigger by rotary !
+
+char* mainFunctions[12]={
+
+        "test",
+        "SD TTS",
+        "Singing",
+        "Clock","","",""
+};
+
+
+#define numFunctions 4
+int function;
+int fin =0; /// pour pression longue
+
+int allo;
+int prevAllo;
+
 
 // Used to download image data. This is changed by the
 // This is why is declares as static volatile.
@@ -99,30 +137,153 @@ File root;
    ██      ██    ██ ██  ██ ██ ██         ██    ██ ██    ██ ██  ██ ██      ██
    ██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████ ███████
  */
+//<start>[MK]::LogEnhancement v0.0.1 toggle 'Sprintln()' and 'Serial.print()'
+//       on/off with preprocessor variable 'DEBUG_TRACE' (https://forum.arduino.cc/index.php?topic=46900.0)
 
- void printDirectory(File dir, int numTabs) {
-   while (true) {
+     #ifdef DEBUG_TRACE
+     #define Sprintln(MSG) Serial.println(MSG)
+     #define Sprint(MSG)   Serial.print(MSG)
+     #else
+     #define Sprintln(MSG)
+     #define Sprint(MSG)
+     #endif
+//<end>[MK]::LogEnhancement
 
-     File entry =  dir.openNextFile();
-     if (! entry) {
-       // no more files
-       break;
-     }
-     for (uint8_t i = 0; i < numTabs; i++) {
-       Serial.print('\t');
-     }
-     Serial.print(entry.name());
-     if (entry.isDirectory()) {
-       Serial.println("/");
-       printDirectory(entry, numTabs + 1);
-     } else {
-       // files have sizes, directories do not
-       Serial.print("\t\t");
-       Serial.println(entry.size(), DEC);
-     }
-     entry.close();
-   }
- }
+void displayFilesList(int p)
+{
+
+        for (int i = 0; i<4; i++) {
+
+                display.setCursor(13,i*8);   //
+                String str2=myFiles[i+p];
+                str2.remove(str2.length()-4);
+                display.clearToEOL();
+                display.println(str2);
+        }
+
+}
+
+
+bool isTxtFile(char* filename, int type) {
+        bool result;
+        Sprint(type);
+        Sprint(" ");
+        Sprintln(filetype[type]);
+        if(strstr(strlwr(filename),filetype[type]) && !strstr(strlwr(filename),"_") )   // filtering out just ".txt" file not containing "_"
+        { result=true; }
+        else
+        { result= false; }
+        return result;
+}
+
+
+void GetFilesList(File dir,int type) {
+        fileNumber=0;
+        fileCounter=0;
+        for (int8_t i = 0; i < 20; i++) {
+                myFiles[i]="";  // to emty the list
+        }
+
+        while(true) {
+
+
+                File entry =  dir.openNextFile();  // was dir
+                if (!entry) {
+                        // no more files
+                        break;
+                }
+
+                if(isTxtFile(entry.name(),type))   //check if it's a .txt file
+                {
+
+                        String str=entry.name();
+                        //  str.remove(str.length()-4);
+
+
+                        // Length (with one extra character for the null terminator)
+                        int str_len = str.length() + 1;
+
+                        // Prepare the character array (the buffer)
+                        char char_array[str_len];
+
+                        // Copy it over
+                        str.toCharArray(char_array, str_len);
+                        //Sprintln(char_array);
+
+                        myFiles[fileCounter]=strdup(char_array);   //WTF is strdup ?
+                        fileCounter++;
+
+                }
+                entry.close();
+
+
+        }
+        fileNumber=fileCounter;
+
+}
+
+
+void displayFunctionList(int p)
+{
+
+        for (int i = 0; i<4; i++) {   // nbr of lines to display
+
+                display.setCursor(13,i*8);   //
+                String str2=mainFunctions[i+p];
+                display.clearToEOL();
+                display.println(str2);
+        }
+
+
+}
+
+void rot()
+{
+
+
+
+        if(digitalRead(ROTA))
+        {
+                if(digitalRead(ROTB))
+                {
+                        interruptCount--;
+                }
+                else
+                {
+                        interruptCount++;
+                }
+                rotF=1;
+        }
+
+
+
+
+}   // Rot function
+
+
+void printDirectory(File dir, int numTabs) {
+        while (true) {
+
+                File entry =  dir.openNextFile();
+                if (!entry) {
+                        // no more files
+                        break;
+                }
+                for (uint8_t i = 0; i < numTabs; i++) {
+                        Serial.print('\t');
+                }
+                Serial.print(entry.name());
+                if (entry.isDirectory()) {
+                        Serial.println("/");
+                        printDirectory(entry, numTabs + 1);
+                } else {
+                        // files have sizes, directories do not
+                        Serial.print("\t\t");
+                        Serial.println(entry.size(), DEC);
+                }
+                entry.close();
+        }
+}
 
 void initSD()
 {
@@ -134,7 +295,7 @@ void initSD()
                 display.println("SD card");
                 display.println("failed to ");
                 display.println("initialize");
-                while(1) ;
+                while(1);
         }
         root = SD.open("/");
 
@@ -192,13 +353,13 @@ unsigned short S1V30120_get_version(void)
         S1V30120_send_message(msg_ver, 0x04);
 
         //wait for ready signal
-        while(digitalRead(S1V30120_RDY) == 0) ;
+        while(digitalRead(S1V30120_RDY) == 0);
 
         // receive 20 bytes
         digitalWrite(S1V30120_CS,LOW);
         SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
         // wait for message start
-        while(SPI.transfer(0x00) != 0xAA) ;
+        while(SPI.transfer(0x00) != 0xAA);
         for (int i = 0; i < 20; i++)
         {
                 rcvd_msg[i] = SPI.transfer(0x00);
@@ -232,7 +393,9 @@ bool S1V30120_download(void)
         unsigned short fullchunks;
         unsigned short remaining;
         bool chunk_result;
-        long data_index = 0;
+
+        //long data_index = 0;
+
         Serial.print("TTS_INIT_DATA length is ");
         Serial.println(len);
         // We are loading chunks of data
@@ -311,7 +474,7 @@ void show_response(bool response)
         else
         {
                 Serial.println("Failed. System halted!");
-                while(1) ;
+                while(1);
         }
 }
 
@@ -334,13 +497,13 @@ bool S1V30120_parse_response(unsigned short expected_message, unsigned short exp
         unsigned short rcvd_tmp;
 
         //wait for ready signal
-        while(digitalRead(S1V30120_RDY) == 0) ;
+        while(digitalRead(S1V30120_RDY) == 0);
 
         // receive 6 bytes
         digitalWrite(S1V30120_CS,LOW);
         SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
         // wait for message start
-        while(SPI.transfer(0x00) != 0xAA) ;
+        while(SPI.transfer(0x00) != 0xAA);
         for (int i = 0; i < 6; i++)
         {
                 rcvd_msg[i] = SPI.transfer(0x00);
@@ -378,8 +541,10 @@ void S1V30120_send_padding(unsigned short num_padding_bytes)
 
 void S1V30120_send_message(volatile char message[], unsigned char message_length)
 {
+
         // Check to see if there's an incoming response or indication
-        while(digitalRead(S1V30120_RDY) == 1) ; // blocking
+        while(digitalRead(S1V30120_RDY) == 1);  // blocking
+
         // OK, we can proceed
         digitalWrite(S1V30120_CS,LOW);
         SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
@@ -446,10 +611,11 @@ bool S1V30120_configure_tts(void)
 // bool S1V30120_speech(void)
 bool S1V30120_speech(String text_to_speech, unsigned char flush_enable)
 {
+        Serial.println("speech..");
         bool response;
         txt_len = text_to_speech.length();
         msg_len = txt_len + 6;
-        Serial.println(msg_len);
+
         send_msg[0] = msg_len & 0xFF;    // LSB of msg len
         send_msg[1] = (msg_len & 0xFF00) >> 8; // MSB of msg len
         send_msg[2] = ISC_TTS_SPEAK_REQ & 0xFF;
@@ -458,13 +624,18 @@ bool S1V30120_speech(String text_to_speech, unsigned char flush_enable)
         for (int i = 0; i < txt_len; i++)
         {
                 send_msg[i+5] = text_to_speech[i];
+                Serial.print(text_to_speech[i]);
         }
+        Serial.println();
         send_msg[msg_len-1] = '\0'; // null character
+
         S1V30120_send_message(send_msg, msg_len);
-        response = S1V30120_parse_response(ISC_TTS_SPEAK_RESP, 0x0000, 16);
+          Sprintln("msg sent");
+        //response = S1V30120_parse_response(ISC_TTS_SPEAK_RESP, 0x0000, 16);
+        Sprintln("go response");
         if (send_msg[4] == 0)
         {
-                while (!S1V30120_parse_response(ISC_TTS_FINISHED_IND, 0x0000, 16)) ; // blocking
+          while (!S1V30120_parse_response(ISC_TTS_FINISHED_IND, 0x0000, 16));  // blocking
         }
 
         return response;
@@ -505,6 +676,8 @@ void setup() {
         digitalWrite(GREEN_LED,HIGH);
         digitalWrite(RED_LED,HIGH);
 
+        attachInterrupt(ROTA, rot, CHANGE);
+
 
 
 
@@ -513,20 +686,19 @@ void setup() {
 
         // for debugging
         Serial.begin(9600);
-        while (!Serial) ;
+        //while (!Serial);
 
         display.begin(&Adafruit128x64, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
 
 
         splashScreen();
 
-        initSD();
-        printDirectory(root, 0);
+        //initSD();
+        //printDirectory(root, 0);
 
+        SPI.begin();
 
-
-        //SPI.begin();
-
+        S1V30120_reset();
         S1V30120_reset();
 
 
@@ -562,34 +734,44 @@ void setup() {
 
 
         //success = S1V30120_speech(mytext,0);
-        Serial.print("Speaking1: ");
-        show_response(success);
-        delay(250);
+        //Serial.print("Speaking1: ");
+        //show_response(success);
+        //delay(250);
 
-        Serial.print("Speaking2: ");
+        //Serial.print("Speaking2: ");
         //success = S1V30120_speech("ok",0);
-        delay(250);
+        //delay(250);
 
-        show_response(success);
+        //show_response(success);
 
         // success = S1V30120_speech("2",0);
-        Serial.print("Speaking3: ");
-        show_response(success);
+        //Serial.print("Speaking3: ");
+        //show_response(success);
 
-        S1V30120_speech("[:n9][:ra 50][:dv ap 50 pr 0] we are the robots",0);
+        S1V30120_speech("[:n9][:ra 20][:dv ap 50 pr 0] Welcome to the machine",0);
 
-      //  S1V30120_speech("[:n3] we are the machines",0);
+        S1V30120_speech("[:n3] we are the robots",0);
         //S1V30120_speech("[:dv ap 100 pr 0][:rate 75][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
-      //  S1V30120_speech("[:dv ap 100 pr 0][:rate 600][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
+        //  S1V30120_speech("[:dv ap 100 pr 0][:rate 600][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
 
-      //  S1V30120_speech("[:n3][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
+        //  S1V30120_speech("[:n3][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
         //S1V30120_speech("[:n0][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
 
 
-        digitalWrite(S1V30120_RST,LOW);
-        initSD();
-        printDirectory(root, 0);
-        S1V30120_reset();
+        //  digitalWrite(S1V30120_RST,LOW);
+        //  delay(1000);
+        //initSD();
+        //root.rewindDirectory();
+        //  printDirectory(root, 0);
+        //  digitalWrite(10,HIGH);
+        //digitalWrite(S1V30120_CS,HIGH);
+        //  delay(100);
+
+
+        // put your main code here, to run repeatedly:
+
+
+
 
 }
 
@@ -604,19 +786,162 @@ void setup() {
 
 
 void loop() {
-        // put your main code here, to run repeatedly:
-        //S1V30120_speech("hello",0);
+
+
+
 
 
 //S1V30120_speech("[hxae<300,10>piy<300,10> brr<600,12>th<100>dey<600,10> tuw<600,15> yu<1200,14>_<120>][hxae<300,10>piy<300,10> brr<600,12>th<100>dey<600,10> tuw<600,17> yu<1200,15>_<120>] ",0);
 //S1V30120_speech("[hxae<300,10>piy<300,10>brr<600,22>th<100>dey<600,19>dih<600,15>rdeh<600,14>ktao<600,12>k_<120>_<120>][hxae<300,20>piy<300,20> brr<600,19>th<100>dey<600,15> tuw<600,17> yu<1200,15>] ",0);
 //S1V30120_speech("[_<50,22>dey<400,22>ziy<400,19>dey<400,15>ziy<400,10>gih<200,12>vmiy<200,14>yurr<200,15>ae<400,12>nsax<200,15>rduw<400,10>] ",0);
-      //  S1V30120_speech("[ay<400,17>mhxae<400,22> kray<400,19> ziy<400,15>ao<200,12>lfao<200,14>rdhax<200,15>lah<400,17>vao<200,19>vyu<400,17>ih<200,19>twow<200,20>ntbiy<200,19>ax<200,17>stay<400,22>] ",0);
+        //  S1V30120_speech("[ay<400,17>mhxae<400,22> kray<400,19> ziy<400,15>ao<200,12>lfao<200,14>rdhax<200,15>lah<400,17>vao<200,19>vyu<400,17>ih<200,19>twow<200,20>ntbiy<200,19>ax<200,17>stay<400,22>] ",0);
+
+
+        //Wire.setClock(2500000L);
+        delay(500);
+        interruptCount=0;
+        display.clear();
+        display.set1X();
+        display.setFont(fixed_bold10x15);
+        display.setCursor(0,12);
+        display.println(">");
+        rotF=1;
+
+
+        do {
+
+
+                if (rotF)
+                {
+                        interruptCount=constrain(interruptCount,0,numFunctions-1);
+                        function=interruptCount;
+                        displayFunctionList(function);
+                        rotF=0;
+                }
+
+
+        } while(digitalRead(PUSH));
+        delay(400);
+        // attachInterrupt(GATE, setBLUE_ON, CHANGE);
+        WTF=HIGH;
+
+        switch (function)
+
+        {
+        case 0:
+        {
+                display.clear();
+                display.println("test");
+
+                //digitalWrite(10,LOW);
+                //SPI.transfer(0XFF);
+                //digitalWrite(10,HIGH);
+                //SPI.transfer(0xAA);
+                SPI.setDataMode(SPI_MODE3);
+                //(https://forum.arduino.cc/index.php?topic=276274.0)
+
+
+                do {
+                        fin=0;
+                        while(digitalRead(GATE)==OFF && digitalRead(PUSH)==OFF);
+                        S1V30120_speech("Testing",0);
+
+
+                        allo=map(analogRead(A6),0,4095,39,0);
 
 
 
 
 
 
+                        //while(digitalRead(GATE)==ON) ;
 
-}
+
+
+
+
+
+                        do {
+                                fin++;
+
+                                //  Sprintln(fin);
+                                if (fin>100000L) break;
+                        } while(digitalRead(PUSH)==0);
+
+                } while(fin<100000L);       // long presss
+
+
+        }
+        break;
+
+        case 1: // SD TTS
+        {
+                //display.clear();
+                //display.println(mainFunctions[function]);
+                initSD();
+                root.rewindDirectory();
+                GetFilesList(root,0);
+                interruptCount=0;
+                WTF=LOW;
+                rotF=1;
+
+                do {
+                        // choose the file
+                        if (rotF)
+                        {
+                                interruptCount=constrain(interruptCount,0,fileNumber-1);
+                                filePointer=interruptCount;
+                                displayFilesList(filePointer);
+                                rotF=0;
+                        }
+                }
+                while(digitalRead(PUSH));
+                delay(400); // ok when have a file
+
+
+
+
+
+
+                do {
+                        fin=0;
+                        //while(digitalRead(GATE)==OFF) ;
+
+
+
+                        allo=map(analogRead(A6),0,4095,39,0);
+
+
+
+
+
+
+                        //while(digitalRead(GATE)==ON) ;
+
+
+
+
+
+
+                        do {
+                                fin++;
+
+                                //  Sprintln(fin);
+                                if (fin>100000L) break;
+                        } while(digitalRead(PUSH)==0);
+
+                } while(fin<100000L);       // long presss
+
+
+        }
+        break;
+
+
+
+        }// end switch
+
+
+
+
+
+}// end loop

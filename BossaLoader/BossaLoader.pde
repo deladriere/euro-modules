@@ -88,7 +88,7 @@ void setup() {
         
          d1.clear(); //Delete all the items
                 println("---");
-                for (int i=0; i<Serial.list().length/2; i++) { // to verify this division by 2
+                for (int i=0; i<Serial.list().length; i++) { // to verify this division by 2
                         d1.addItem(Serial.list()[i], i); //add the items in the list
                        println(Serial.list()[i]);
                 }
@@ -147,13 +147,19 @@ void Upload(float theValue) {
         File workingDir = new File(sketchPath(""));
         // value to return any results
 
-
+        
         println("Uploading",theValue);
         println(fileName);
+        println("Workingdir");
+        println(workingDir);
+        println("--");
+        
         String[] param1 = {"say","uploading file", fileName,portName};
         // exec(param1);
-        //String[] param2= {"./bossac","-e -w -v -R -p ",portName,fileName};
-        String[] param2= {"./bossac","-e","-w","-v","-R","-p",portName,fileName};
+       
+       // String[] param2= {"cmd"," /c","bossac.exe","-e","-w","-v","-R",fileName}; //trying without port on windows
+       // 
+        String[] param2= {"./bossac","-e","-w","-v","-R","-p",portName,fileName}; // OSX
 
         println(param2);
         delay(2000);

@@ -9,6 +9,7 @@
 #include "SSD1306AsciiWire.h"
 
 #include "SAMD_AnalogCorrection.h"
+#include "avdweb_AnalogReadFast.h"
 
 /*
 
@@ -59,10 +60,31 @@
 #define DEBUG_TRACE
 #define VERSION "Ver. 0.1"
 
+
+#define MODE_AUTO 1
+#define MODE_TRIG 2
+#define MODE_GATE 3
+
+#define READY 1
+
 char inputChar;
 char* myFiles[20];  // max 20 files
+char song[60][120] {}; // max 60 caracter per lines // 100 lines max
 int fileCounter=0; // file index
 int fileNumber=0; // file number
+int pointer=0;
+int linePointer=0;
+int ligne=0;
+
+char serialtext[60];
+
+uint8_t mode=0;
+
+int moy;
+
+bool pressed;
+bool triggered;
+
 int filePointer=0;
 char fileName[13];
 
@@ -157,6 +179,87 @@ File root;
      #define Sprint(MSG)
      #endif
 //<end>[MK]::LogEnhancement
+
+int potReadFast(int pot,int readings)
+{
+        moy=0;
+        for (int i = 0; i < readings; i++) {
+                moy=moy + analogReadFast(pot);
+                //  moy=moy +analogReadFast(pot,2);
+        }
+        return moy/readings;
+
+}
+
+void readLine()
+{
+
+        ligne=map(potReadFast(A6,10),0,4095,linePointer-1,0);
+        if (ligne!=prevAllo)
+        {
+                if (READY) {
+                        Wire.setClock(2500000L);
+                }
+                //display.setRow(2);
+                //display.clearToEOL();
+                //display.println(ligne+1);
+                display.setRow(4);
+                display.set2X();
+                display.clearToEOL();
+                //  display.println(lineLabel[ligne]);
+                //Sprintln(lineLabel[ligne]); // for show
+
+
+                // erase
+                memset( &serialtext, 0, 60 );
+                for (int p=0; p<60; p++)
+
+                {
+                        if (song[ligne][p] !=10)
+                        {
+                                //  Serial.write(song[ligne][p]);
+                                display.print(song[ligne][p]);
+                                serialtext[p]=song[ligne][p];
+
+
+                        }
+                        else
+                        {
+                                //Serial.write(10);
+                                //  Sprintln("");
+                                display.println("");
+                                break;
+                        }
+                }
+
+
+                display.set1X();
+                Wire.setClock(200000L);
+                prevAllo=ligne;
+        }
+}
+
+void showArray()
+{
+
+        for (int l=0; l<linePointer; l++)
+        {
+                for (int p=0; p<40; p++)
+                {
+                        if (song[l][p] !=10)
+                        {
+                                Serial.write(song[l][p]);
+                        }
+                        else
+                        {
+                                //Serial.write(10);
+                                Sprintln("");
+                                break;
+                        }
+                }
+
+        }
+}
 
 void displayFilesList(int p)
 {
@@ -644,7 +747,7 @@ bool S1V30120_speech(String text_to_speech, unsigned char flush_enable)
 
         if (send_msg[4] == 0)
         {
-          while (!S1V30120_parse_response(ISC_TTS_FINISHED_IND, 0x0000, 16));  // blocking
+        //while (!S1V30120_parse_response(ISC_TTS_FINISHED_IND, 0x0000, 16));  // blocking
         }
 
         return response;
@@ -754,13 +857,14 @@ void setup() {
 
         //show_response(success);
 
-        // success = S1V30120_speech("2",0);
+        //S1V30120_speech("hello",0);
         //Serial.print("Speaking3: ");
         //show_response(success);
 
         S1V30120_speech("[:n9][:ra 20][:dv ap 50 pr 0] Welcome to the machine",0);
-
-        //S1V30120_speech("[:n3] we are the robots",0);
+        delay(1000);
+        S1V30120_speech("[:n3] we are the robots",0);
+        delay(1000);
         //S1V30120_speech("[:dv ap 100 pr 0][:rate 75][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
         //  S1V30120_speech("[:dv ap 100 pr 0][:rate 600][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
 
@@ -869,7 +973,7 @@ void loop() {
                         display.setRow(2);
                         display.clearToEOL();
                         display.println(allo);
-                          //Sprintln(mytext);
+                        Sprintln(mytext);
                         S1V30120_speech(mytext,0);
                         //S1V30120_speech(buf,0);
 
@@ -937,25 +1041,52 @@ void loop() {
 
                 Sprintln(str);
 
+                File myfile = SD.open(myFiles[filePointer]);
+                pointer=0;
+                linePointer=0;
+                if (myfile)
+                {
+                        while (myfile.available())
+                        {
+                                inputChar = myfile.read();
+
+                                if (inputChar != 10) // define breaking char here (\n isnt working for some reason, i will follow this up later)
+                                {
+                                        song[linePointer][pointer]= inputChar;
+                                        //  Serial.write(inputChar);
+                                        pointer++;
+                                        //  Sprint(pointer);
+
+                                }
+                                else
+                                {
+
+
+                                        song[linePointer][pointer]= inputChar;
+                                        //  Serial.write(inputChar);
+                                        pointer=0;
+                                        linePointer++;
+
+
+                                }
+
+                                //  delay(10);
+                        }
+
+                        myfile.close();
+
+                        showArray(); // to proof keep it
+
+                        // initialize selection
+                        SPI.setDataMode(SPI_MODE3);
+                        S1V30120_speech("ready amigo",0);
+                        display.clear();
+                        display.println(str);
+                        prevAllo=-1;// force first display
 
 
 
 
-
-                do {
-                        fin=0;
-                        //while(digitalRead(GATE)==OFF) ;
-
-
-
-                        allo=map(analogRead(A6),0,4095,39,0);
-
-
-
-
-
-
-                        //while(digitalRead(GATE)==ON) ;
 
 
 
@@ -963,16 +1094,70 @@ void loop() {
 
 
                         do {
-                                fin++;
+                                fin=0;
+                                mode=digitalRead(SW0)+digitalRead(SW1)*2;
+                                potVoice=map(analogRead(A1),0,4095,8,0);
+                                display.setRow(2);
+                                display.clearToEOL();
+                                display.println(potVoice);
 
-                                //  Sprintln(fin);
-                                if (fin>100000L) break;
-                        } while(digitalRead(PUSH)==0);
+                                if ((pressed | digitalRead(PUSH)==ON | digitalRead(GATE)==ON | mode == MODE_AUTO) && READY && !triggered)
 
-                } while(fin<100000L);       // long presss
+                                {
+                                        //  prevAllo=-1;
+                                        pressed=false; //reset flag
+                                        readLine();
+                                        mytext="[:n" + String(potVoice) + "]";
+                                        mytext=mytext+ "[:ra "+String(map(analogRead(P_RATE),0,4095,600,75))+"]";
+                                        mytext=mytext+ "[:dv ap "+String(map(analogRead(P_AVPITCH),0,4095,400,10))+" pr "+String(map(analogRead(P_PITCHR),0,4095,100,0))+" br "+String(map(analogRead(P_BREATH),0,4095,100,0))+ "] ";
 
+                                        //readParam(); // overkill ?
+                                        //Sing(serialtext);
+
+                                        mytext=mytext+ " " + serialtext;
+                                        Sprintln(mytext);
+                                        S1V30120_speech(mytext,0);
+
+                                        if (mode!=MODE_AUTO)
+                                        {
+                                                triggered=true; // pour eviter de stopper sur un Gate en mode auto
+                                        }
+
+                                }
+
+                                if (digitalRead(GATE)==OFF && triggered)
+                                {
+                                        triggered=false;
+                                }
+
+                                if ( digitalRead(GATE)==OFF)
+                                {
+                                        readLine();
+                                }
+
+
+
+
+                                do {
+                                        fin++;
+
+                                        //  Sprintln(fin);
+                                        if (fin>100000L) break;
+                                } while(digitalRead(PUSH)==0);
+
+                        } while(fin<100000L); // long presss
+                        display.clear();
+
+
+                }
+                // if the file cannot be opened give error report
+                else {
+                        Sprintln("error opening the text file");
+                        // add error message on OLED too
+                }
 
         }
+
         break;
 
 

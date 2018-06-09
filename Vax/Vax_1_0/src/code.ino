@@ -655,17 +655,21 @@ void S1V30120_send_message(volatile char message[], unsigned char message_length
 {
 
         // Check to see if there's an incoming response or indication
-        while(digitalRead(S1V30120_RDY) == 1);  // blocking
+        //while(digitalRead(S1V30120_RDY) == 1);  // blocking modif jld 9-juin-2018 je commente pour permettre le "1" sinon plante
 
+        //essai du if ne marche pas
         // OK, we can proceed
-        digitalWrite(S1V30120_CS,LOW);
-        SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
-        SPI.transfer(0xAA); // Start Message Command
-        for (int i = 0; i < message_length; i++)
-        {
-                SPI.transfer(message[i]);
-        }
-        SPI.endTransaction();
+        //if (digitalRead(S1V30120_RDY) == 0)
+        //{
+                digitalWrite(S1V30120_CS,LOW);
+                SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
+                SPI.transfer(0xAA); // Start Message Command
+                for (int i = 0; i < message_length; i++)
+                {
+                        SPI.transfer(message[i]);
+                }
+                SPI.endTransaction();
+        //}
 }
 
 bool S1V30120_configure_audio(void)
@@ -747,7 +751,7 @@ bool S1V30120_speech(String text_to_speech, unsigned char flush_enable)
 
         if (send_msg[4] == 0)
         {
-        //while (!S1V30120_parse_response(ISC_TTS_FINISHED_IND, 0x0000, 16));  // blocking
+                while (!S1V30120_parse_response(ISC_TTS_FINISHED_IND, 0x0000, 16)) ; // blocking
         }
 
         return response;
@@ -861,9 +865,11 @@ void setup() {
         //Serial.print("Speaking3: ");
         //show_response(success);
 
-        S1V30120_speech("[:n9][:ra 20][:dv ap 50 pr 0] Welcome to the machine",0);
+        S1V30120_speech("hello",1);
         delay(1000);
-        S1V30120_speech("[:n3] we are the robots",0);
+        S1V30120_speech("[:n9][:ra 20][:dv ap 50 pr 0] Welcome to the machine",0);
+        delay(800);
+        S1V30120_speech("[:n3] we are the robots",1);
         delay(1000);
         //S1V30120_speech("[:dv ap 100 pr 0][:rate 75][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
         //  S1V30120_speech("[:dv ap 100 pr 0][:rate 600][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
@@ -1096,10 +1102,7 @@ void loop() {
                         do {
                                 fin=0;
                                 mode=digitalRead(SW0)+digitalRead(SW1)*2;
-                                potVoice=map(analogRead(A1),0,4095,8,0);
-                                display.setRow(2);
-                                display.clearToEOL();
-                                display.println(potVoice);
+
 
                                 if ((pressed | digitalRead(PUSH)==ON | digitalRead(GATE)==ON | mode == MODE_AUTO) && READY && !triggered)
 
@@ -1116,7 +1119,11 @@ void loop() {
 
                                         mytext=mytext+ " " + serialtext;
                                         Sprintln(mytext);
-                                        S1V30120_speech(mytext,0);
+                                        S1V30120_speech(mytext,1);
+                                        potVoice=map(analogRead(A1),0,4095,8,0);
+                                        display.setRow(2);
+                                        display.clearToEOL();
+                                        display.println(potVoice);
 
                                         if (mode!=MODE_AUTO)
                                         {

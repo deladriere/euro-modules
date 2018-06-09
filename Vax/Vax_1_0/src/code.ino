@@ -8,6 +8,8 @@
 #include "SSD1306Ascii.h"
 #include "SSD1306AsciiWire.h"
 
+#include "SAMD_AnalogCorrection.h"
+
 /*
 
    ██   ██  █████  ██████  ██████  ██     ██  █████  ██████  ███████
@@ -34,6 +36,11 @@
 #define GREEN_LED  12
 #define RED_LED 13
 
+#define P_VOICE A1
+#define P_RATE A2
+#define P_AVPITCH A3
+#define P_PITCHR A4
+#define P_BREATH A5
 
 
 
@@ -50,7 +57,7 @@
 
 
 #define DEBUG_TRACE
-#define VERSION "Ver. 1.0"
+#define VERSION "Ver. 0.1"
 
 char inputChar;
 char* myFiles[20];  // max 20 files
@@ -61,6 +68,7 @@ char fileName[13];
 
 char* filetype[4] = {".txt", ".sng", ".tts"};
 
+char buf[16]; // for conversion to String
 
 String mytext = "Success! Look at me, I can speak. I'm the best!";
 
@@ -80,8 +88,7 @@ unsigned short tmp;
 long idx;
 bool success;
 
-//#define DEBUG_TRACE
-#define VERSION "Ver. 1.0"
+
 #define ON 0
 #define OFF 1
 
@@ -95,7 +102,7 @@ bool WTF; // to avoid led interrupt trigger by rotary !
 
 char* mainFunctions[12]={
 
-        "test",
+        "Numbers",
         "SD TTS",
         "Singing",
         "Clock","","",""
@@ -116,6 +123,8 @@ int prevAllo;
 // one must change this to unsigned long if future image data becomes larger
 static volatile unsigned short TTS_DATA_IDX;
 
+int potVoice=0;
+String voice;
 
 /*
 
@@ -611,7 +620,7 @@ bool S1V30120_configure_tts(void)
 // bool S1V30120_speech(void)
 bool S1V30120_speech(String text_to_speech, unsigned char flush_enable)
 {
-        Serial.println("speech..");
+
         bool response;
         txt_len = text_to_speech.length();
         msg_len = txt_len + 6;
@@ -630,9 +639,9 @@ bool S1V30120_speech(String text_to_speech, unsigned char flush_enable)
         send_msg[msg_len-1] = '\0'; // null character
 
         S1V30120_send_message(send_msg, msg_len);
-          Sprintln("msg sent");
-        //response = S1V30120_parse_response(ISC_TTS_SPEAK_RESP, 0x0000, 16);
-        Sprintln("go response");
+
+        response = S1V30120_parse_response(ISC_TTS_SPEAK_RESP, 0x0000, 16);
+
         if (send_msg[4] == 0)
         {
           while (!S1V30120_parse_response(ISC_TTS_FINISHED_IND, 0x0000, 16));  // blocking
@@ -678,7 +687,8 @@ void setup() {
 
         attachInterrupt(ROTA, rot, CHANGE);
 
-
+        analogReadResolution(12);
+        analogReadCorrection(14, 2064);
 
 
         // Unmute
@@ -750,7 +760,7 @@ void setup() {
 
         S1V30120_speech("[:n9][:ra 20][:dv ap 50 pr 0] Welcome to the machine",0);
 
-        S1V30120_speech("[:n3] we are the robots",0);
+        //S1V30120_speech("[:n3] we are the robots",0);
         //S1V30120_speech("[:dv ap 100 pr 0][:rate 75][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
         //  S1V30120_speech("[:dv ap 100 pr 0][:rate 600][WIY<500,0>_<100>AA<600,0>R<10>_<100>DH<50>AH<50,0> R OW<200,0> B AA<200,0> T S ] ",0);
 
@@ -831,7 +841,7 @@ void loop() {
         case 0:
         {
                 display.clear();
-                display.println("test");
+                display.println("Random");
 
                 //digitalWrite(10,LOW);
                 //SPI.transfer(0XFF);
@@ -844,18 +854,31 @@ void loop() {
                 do {
                         fin=0;
                         while(digitalRead(GATE)==OFF && digitalRead(PUSH)==OFF);
-                        S1V30120_speech("Testing",0);
+
+                        allo=map(analogRead(A6),0,4095,99,0);
+                        potVoice=map(analogRead(A1),0,4095,8,0);
+                        allo=random(999);
+
+                        itoa(allo,buf,10);
+                        //itoa(potVoice,voice,10);
+                        mytext="[:n" + String(potVoice) + "]";
+                        mytext=mytext+ "[:ra "+String(map(analogRead(P_RATE),0,4095,600,75))+"]";
+                        mytext=mytext+ "[:dv ap "+String(map(analogRead(P_AVPITCH),0,4095,400,10))+" pr "+String(map(analogRead(P_PITCHR),0,4095,100,0))+" br "+String(map(analogRead(P_BREATH),0,4095,100,0))+ "] ";
+
+                        mytext=mytext +buf+ " ";
+                        display.setRow(2);
+                        display.clearToEOL();
+                        display.println(allo);
+                          //Sprintln(mytext);
+                        S1V30120_speech(mytext,0);
+                        //S1V30120_speech(buf,0);
 
 
-                        allo=map(analogRead(A6),0,4095,39,0);
 
 
 
 
-
-
-                        //while(digitalRead(GATE)==ON) ;
-
+                        while(digitalRead(GATE)==ON);
 
 
 
@@ -878,6 +901,7 @@ void loop() {
         {
                 //display.clear();
                 //display.println(mainFunctions[function]);
+                SPI.setDataMode(SPI_MODE3);
                 initSD();
                 root.rewindDirectory();
                 GetFilesList(root,0);
@@ -897,6 +921,21 @@ void loop() {
                 }
                 while(digitalRead(PUSH));
                 delay(400); // ok when have a file
+
+
+                display.clear();
+                display.setCursor(0,12);
+                Sprint("Reading file:");
+                display.println("Reading file:");
+                display.setCursor(0,28); //
+                display.print(myFiles[filePointer]);
+                Sprintln(myFiles[filePointer]);
+
+                String str=myFiles[filePointer];
+                str.remove(str.length()-4);
+
+
+                Sprintln(str);
 
 
 
@@ -945,3 +984,30 @@ void loop() {
 
 
 }// end loop
+
+
+
+/*
+   case 0:
+   {
+        display.clear();
+        display.println("Phon 64");
+
+        do {
+                fin=0;
+
+
+                do {
+                        fin++;
+
+                        //  Sprintln(fin);
+                        if (fin>100000L) break;
+                } while(digitalRead(PUSH)==0);
+
+        } while(fin<100000L);   // long presss
+
+
+   } // end of case
+   break;
+
+ */

@@ -68,15 +68,18 @@
 #define READY 1
 
 char inputChar;
+#define COLS 100
 char* myFiles[20];  // max 20 files
-char song[60][120] {}; // max 60 caracter per lines // 100 lines max
+char song[COLS][120] {}; // max 60 caracter per lines // 100 lines max
 int fileCounter=0; // file index
 int fileNumber=0; // file number
+int lineTable[200];
+char song2[4000];
 int pointer=0;
 int linePointer=0;
 int ligne=0;
 
-char serialtext[60];
+char serialtext[COLS];
 
 uint8_t mode=0;
 
@@ -180,6 +183,11 @@ File root;
      #endif
 //<end>[MK]::LogEnhancement
 
+void justPressed()
+{
+        pressed=true;
+}
+
 int potReadFast(int pot,int readings)
 {
         moy=0;
@@ -189,6 +197,43 @@ int potReadFast(int pot,int readings)
         }
         return moy/readings;
 
+}
+
+void getLine()
+{
+
+        ligne=map(potReadFast(A6,10),0,4095,linePointer-1,0);
+        if (ligne!=prevAllo)
+        {
+                Serial.println(ligne);
+                if (READY) {
+                        Wire.setClock(2500000L);
+                }
+                //display.setRow(2);
+                //display.clearToEOL();
+                //display.println(ligne+1);
+                display.setRow(4);
+                display.set2X();
+                display.clearToEOL();
+                //  display.println(lineLabel[ligne]);
+                //Sprintln(lineLabel[ligne]); // for show
+
+
+                // erase
+                memset( &serialtext, 0, COLS );
+                for (int p= lineTable[ligne]; p<lineTable[ligne+1]; p++)
+                {
+
+                        Serial.write(song2[p]);
+                        display.print(song2[p]);
+                }
+
+
+                display.println("");
+                display.set1X();
+                Wire.setClock(200000L);
+                prevAllo=ligne;
+        }
 }
 
 void readLine()
@@ -211,8 +256,8 @@ void readLine()
 
 
                 // erase
-                memset( &serialtext, 0, 60 );
-                for (int p=0; p<60; p++)
+                memset( &serialtext, 0, COLS );
+                for (int p=0; p<COLS; p++)
 
                 {
                         if (song[ligne][p] !=10)
@@ -239,26 +284,28 @@ void readLine()
         }
 }
 
+
+
 void showArray()
 {
 
         for (int l=0; l<linePointer; l++)
         {
-                for (int p=0; p<40; p++)
+
+
+
+                //Serial.println(lineTable[l]);
+
+                for (int p= lineTable[l]; p<lineTable[l+1]; p++)
                 {
-                        if (song[l][p] !=10)
-                        {
-                                Serial.write(song[l][p]);
-                        }
-                        else
-                        {
-                                //Serial.write(10);
-                                Sprintln("");
-                                break;
-                        }
+
+                        Serial.write(song2[p]);
                 }
 
+                Sprintln("");
+
         }
+
 }
 
 void displayFilesList(int p)
@@ -661,14 +708,14 @@ void S1V30120_send_message(volatile char message[], unsigned char message_length
         // OK, we can proceed
         //if (digitalRead(S1V30120_RDY) == 0)
         //{
-                digitalWrite(S1V30120_CS,LOW);
-                SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
-                SPI.transfer(0xAA); // Start Message Command
-                for (int i = 0; i < message_length; i++)
-                {
-                        SPI.transfer(message[i]);
-                }
-                SPI.endTransaction();
+        digitalWrite(S1V30120_CS,LOW);
+        SPI.beginTransaction(SPISettings(750000, MSBFIRST, SPI_MODE3));
+        SPI.transfer(0xAA);         // Start Message Command
+        for (int i = 0; i < message_length; i++)
+        {
+                SPI.transfer(message[i]);
+        }
+        SPI.endTransaction();
         //}
 }
 
@@ -751,7 +798,7 @@ bool S1V30120_speech(String text_to_speech, unsigned char flush_enable)
 
         if (send_msg[4] == 0)
         {
-                while (!S1V30120_parse_response(ISC_TTS_FINISHED_IND, 0x0000, 16)) ; // blocking
+                while (!S1V30120_parse_response(ISC_TTS_FINISHED_IND, 0x0000, 16));  // blocking
         }
 
         return response;
@@ -793,6 +840,7 @@ void setup() {
         digitalWrite(RED_LED,HIGH);
 
         attachInterrupt(ROTA, rot, CHANGE);
+        attachInterrupt(PUSH, justPressed, FALLING);
 
         analogReadResolution(12);
         analogReadCorrection(14, 2064);
@@ -1048,6 +1096,37 @@ void loop() {
                 Sprintln(str);
 
                 File myfile = SD.open(myFiles[filePointer]);
+
+                pointer=0;
+                linePointer=0;
+                lineTable[0]=0;
+                if (myfile)
+                {
+
+                        while (myfile.available())
+                        {
+
+                                inputChar = myfile.read();
+                                if (inputChar != 10)
+                                {
+                                        song2[pointer]=inputChar;
+                                        Serial.write(inputChar);
+                                        pointer++;
+                                }
+                                else
+                                {
+                                        linePointer++;
+                                        lineTable[linePointer]=pointer;
+                                        Serial.write(inputChar);
+                                        //linePointer++;
+                                }
+
+                        }
+                        Serial.println(linePointer);
+
+/*
+   // save it debut
+
                 pointer=0;
                 linePointer=0;
                 if (myfile)
@@ -1078,6 +1157,8 @@ void loop() {
 
                                 //  delay(10);
                         }
+ */
+// save end
 
                         myfile.close();
 
@@ -1089,6 +1170,8 @@ void loop() {
                         display.clear();
                         display.println(str);
                         prevAllo=-1;// force first display
+                        triggered=false;
+                        pressed=false;
 
 
 
@@ -1109,7 +1192,8 @@ void loop() {
                                 {
                                         //  prevAllo=-1;
                                         pressed=false; //reset flag
-                                        readLine();
+                                        //readLine();
+                                        getLine();
                                         mytext="[:n" + String(potVoice) + "]";
                                         mytext=mytext+ "[:ra "+String(map(analogRead(P_RATE),0,4095,600,75))+"]";
                                         mytext=mytext+ "[:dv ap "+String(map(analogRead(P_AVPITCH),0,4095,400,10))+" pr "+String(map(analogRead(P_PITCHR),0,4095,100,0))+" br "+String(map(analogRead(P_BREATH),0,4095,100,0))+ "] ";

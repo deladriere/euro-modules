@@ -162,6 +162,7 @@ int prevAllo;
 static volatile unsigned short TTS_DATA_IDX;
 
 int potVoice=0;
+int preVoice=-1;
 String voice;
 
 /*
@@ -253,13 +254,17 @@ void getLine()
                                 display.println("");
                                 display.clearToEOL();
                         }
-                        else
+
 
 
                 }
 
 
                 display.println("");
+                if (!ovf)
+                {
+                        display.clearToEOL();
+                }
 
 
                 //display.set1X();
@@ -1211,6 +1216,7 @@ void loop() {
                         prevAllo=-1;// force first display
                         triggered=false;
                         pressed=false;
+                        preVoice=-1;// force first display
 
 
 
@@ -1224,6 +1230,18 @@ void loop() {
                         do {
                                 fin=0;
                                 mode=digitalRead(SW0)+digitalRead(SW1)*2;
+                                potVoice=map(potReadFast(A1,1),0,4095,8,0);
+
+
+                                if (potVoice!=preVoice)
+                                {
+                                        display.setRow(2);
+                                        display.clearToEOL();
+                                        display.println(name[potVoice]);
+                                        preVoice=potVoice;
+                                }
+
+
 
 
                                 if ((pressed | digitalRead(PUSH)==ON | digitalRead(GATE)==ON | mode == MODE_AUTO) && READY && !triggered)
@@ -1233,7 +1251,7 @@ void loop() {
                                         pressed=false; //reset flag
                                         //readLine();
                                         getLine();
-                                        potVoice=map(analogRead(A1),0,4095,8,0);
+                                      //  potVoice=map(analogRead(A1),0,4095,8,0);
                                         mytext="[:n" + String(potVoice) + "]";
                                         mytext=mytext+ "[:ra "+String(map(analogRead(P_RATE),0,4095,600,75))+"]";
                                         mytext=mytext+ "[:dv ap "+String(map(analogRead(P_AVPITCH),0,4095,400,10))+" pr "+String(map(analogRead(P_PITCHR),0,4095,100,0))+" br "+String(map(analogRead(P_BREATH),0,4095,100,0))+ "] ";
@@ -1245,9 +1263,7 @@ void loop() {
                                         Sprintln(mytext);
                                         S1V30120_speech(mytext,1);
 
-                                        display.setRow(2);
-                                        display.clearToEOL();
-                                        display.println(name[potVoice]);
+
 
                                         if (mode!=MODE_AUTO)
                                         {

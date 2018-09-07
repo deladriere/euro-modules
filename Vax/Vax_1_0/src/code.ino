@@ -67,10 +67,12 @@
 
 #define READY 1
 
+#define LPRESS 200000L
+
 char inputChar;
-#define COLS 100
+#define COLS 300
 char* myFiles[20];  // max 20 files
-char song[COLS][120] {}; // max 60 caracter per lines // 100 lines max
+//char song[COLS][120] {}; // max 60 caracter per lines // 100 lines max
 int fileCounter=0; // file index
 int fileNumber=0; // file number
 int lineTable[200];
@@ -87,6 +89,7 @@ int moy;
 
 bool pressed;
 bool triggered;
+long timePressed;
 
 int filePointer=0;
 char fileName[13];
@@ -119,6 +122,7 @@ bool success;
 
 
 bool rd=0; // rotary display
+bool ovf=0;
 
 volatile int interruptCount=0; // The rotary counter
 volatile bool rotF; // because use in rot
@@ -133,6 +137,15 @@ char* mainFunctions[12]={
         "Clock","","",""
 };
 
+char* name[]={"Paul",
+              "Betty",
+              "Harry",
+              "Frank",
+              "Dennis",
+              "Kit",
+              "Ursula",
+              "Rita",
+              "Wendy"};
 
 #define numFunctions 4
 int function;
@@ -185,7 +198,11 @@ File root;
 
 void justPressed()
 {
-        pressed=true;
+        if (millis()-timePressed>400) // debounce button
+        {
+                pressed=true;
+                timePressed=millis();
+        }
 }
 
 int potReadFast(int pot,int readings)
@@ -203,17 +220,16 @@ void getLine()
 {
 
         ligne=map(potReadFast(A6,10),0,4095,linePointer-1,0);
+        //Serial.print(ligne);
         if (ligne!=prevAllo)
         {
-                Serial.println(ligne);
-                if (READY) {
-                        Wire.setClock(2500000L);
-                }
+
+
                 //display.setRow(2);
                 //display.clearToEOL();
                 //display.println(ligne+1);
                 display.setRow(4);
-                display.set2X();
+                display.set1X();
                 display.clearToEOL();
                 //  display.println(lineLabel[ligne]);
                 //Sprintln(lineLabel[ligne]); // for show
@@ -221,30 +237,45 @@ void getLine()
 
                 // erase
                 memset( &serialtext, 0, COLS );
+                pointer=0;
+                ovf=0;
+
                 for (int p= lineTable[ligne]; p<lineTable[ligne+1]; p++)
                 {
 
-                        Serial.write(song2[p]);
+                        //  Serial.write(song2[p]);
                         display.print(song2[p]);
+                        serialtext[pointer]=song2[p];
+                        pointer++;
+                        if (pointer >10 && !ovf)
+                        {
+                                ovf=1;
+                                display.println("");
+                                display.clearToEOL();
+                        }
+                        else
+
+
                 }
 
 
                 display.println("");
-                display.set1X();
-                Wire.setClock(200000L);
+
+
+                //display.set1X();
+
                 prevAllo=ligne;
         }
 }
-
-void readLine()
-{
+/*
+   void readLine()
+   {
 
         ligne=map(potReadFast(A6,10),0,4095,linePointer-1,0);
+
         if (ligne!=prevAllo)
         {
-                if (READY) {
-                        Wire.setClock(2500000L);
-                }
+
                 //display.setRow(2);
                 //display.clearToEOL();
                 //display.println(ligne+1);
@@ -279,13 +310,12 @@ void readLine()
 
 
                 display.set1X();
-                Wire.setClock(200000L);
+
                 prevAllo=ligne;
         }
-}
+   }
 
-
-
+ */
 void showArray()
 {
 
@@ -854,7 +884,7 @@ void setup() {
         //while (!Serial);
 
         display.begin(&Adafruit128x64, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
-
+        Wire.setClock(2500000L);
 
         splashScreen();
 
@@ -965,7 +995,7 @@ void loop() {
         //  S1V30120_speech("[ay<400,17>mhxae<400,22> kray<400,19> ziy<400,15>ao<200,12>lfao<200,14>rdhax<200,15>lah<400,17>vao<200,19>vyu<400,17>ih<200,19>twow<200,20>ntbiy<200,19>ax<200,17>stay<400,22>] ",0);
 
 
-        //Wire.setClock(2500000L);
+
         delay(500);
         interruptCount=0;
         display.clear();
@@ -1055,7 +1085,7 @@ void loop() {
         }
         break;
 
-        case 1: // SD TTS
+        case 1: // @SD TTS
         {
                 //display.clear();
                 //display.println(mainFunctions[function]);
@@ -1162,11 +1192,20 @@ void loop() {
 
                         myfile.close();
 
+                        Serial.println("showArray");
+                        Serial.println("----------------");
+
+
                         showArray(); // to proof keep it
+
+
+                        Serial.println("----------------");
+
+
 
                         // initialize selection
                         SPI.setDataMode(SPI_MODE3);
-                        S1V30120_speech("ready amigo",0);
+                        //S1V30120_speech("ready amigo",0);
                         display.clear();
                         display.println(str);
                         prevAllo=-1;// force first display
@@ -1194,6 +1233,7 @@ void loop() {
                                         pressed=false; //reset flag
                                         //readLine();
                                         getLine();
+                                        potVoice=map(analogRead(A1),0,4095,8,0);
                                         mytext="[:n" + String(potVoice) + "]";
                                         mytext=mytext+ "[:ra "+String(map(analogRead(P_RATE),0,4095,600,75))+"]";
                                         mytext=mytext+ "[:dv ap "+String(map(analogRead(P_AVPITCH),0,4095,400,10))+" pr "+String(map(analogRead(P_PITCHR),0,4095,100,0))+" br "+String(map(analogRead(P_BREATH),0,4095,100,0))+ "] ";
@@ -1201,13 +1241,13 @@ void loop() {
                                         //readParam(); // overkill ?
                                         //Sing(serialtext);
 
-                                        mytext=mytext+ " " + serialtext;
+                                        mytext=mytext+ serialtext;
                                         Sprintln(mytext);
                                         S1V30120_speech(mytext,1);
-                                        potVoice=map(analogRead(A1),0,4095,8,0);
+
                                         display.setRow(2);
                                         display.clearToEOL();
-                                        display.println(potVoice);
+                                        display.println(name[potVoice]);
 
                                         if (mode!=MODE_AUTO)
                                         {
@@ -1223,7 +1263,7 @@ void loop() {
 
                                 if ( digitalRead(GATE)==OFF)
                                 {
-                                        readLine();
+                                        getLine();
                                 }
 
 
@@ -1232,11 +1272,11 @@ void loop() {
                                 do {
                                         fin++;
 
-                                        //  Sprintln(fin);
-                                        if (fin>100000L) break;
+
+                                        if (fin>LPRESS) break;
                                 } while(digitalRead(PUSH)==0);
 
-                        } while(fin<100000L); // long presss
+                        } while(fin<LPRESS); // long presss
                         display.clear();
 
 

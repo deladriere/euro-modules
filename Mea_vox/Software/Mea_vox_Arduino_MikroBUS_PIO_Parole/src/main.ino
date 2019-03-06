@@ -29,6 +29,10 @@
 
 MCP23008 MyMCP(MCP23008_ADDR);
 
+int FD=0;
+int Pl=0; // (cannot use PI)
+bool  whisper=0;
+byte position;   
 /*
    ███████ ██    ██ ███    ██  ██████ ████████ ██  ██████  ███    ██ ███████
    ██      ██    ██ ████   ██ ██         ██    ██ ██    ██ ████   ██ ██
@@ -36,6 +40,145 @@ MCP23008 MyMCP(MCP23008_ADDR);
    ██      ██    ██ ██  ██ ██ ██         ██    ██ ██    ██ ██  ██ ██      ██
    ██       ██████  ██   ████  ██████    ██    ██  ██████  ██   ████ ███████
  */
+
+
+void Speak(int index)
+{
+
+        int start;
+        int end;
+        char c;
+        digitalWrite(AO,0);
+/*
+        Serial.print(index);
+        Serial.print(" ");
+        Serial.print(tPhon[index]);
+        Serial.print(" ");
+*/
+      start = pgm_read_byte(&(phon[index * 2])) * 256 + pgm_read_byte(&(phon[index * 2 + 1]));
+      
+        Serial.print(start,HEX);
+
+       end = start + pgm_read_byte(&(phon[start])) * 256 + pgm_read_byte(&(phon[start + 1])) - 1; // Adresse sur 2 bytes
+
+        Serial.print(" ");
+        Serial.print(end,HEX);
+  //
+
+        switch  (index)
+        {
+
+        case 41:
+                Pl++;
+                Pl=constrain(Pl,0,31);
+                return;
+        case 42:
+                Pl--;
+                Pl=constrain(Pl,0,31);
+
+                return;
+
+        case 43:
+                Pl=0;
+
+                return;
+        case 44:
+                FD++;
+                FD=constrain(FD,0,3);
+                return;
+
+        case 45:
+                FD--;
+                FD=constrain(FD,0,3);
+                return;
+
+
+        case 46:
+                whisper=!whisper;
+                Pl=whisper*16;
+                return;
+
+        }
+
+
+        for (int i=start+4; i<end; i++)
+        {
+
+                TREQ();
+                c = pgm_read_byte(&(phon[i]));
+                if ((i+1)%4==0) // 4th byte
+                {
+
+                        // Pitch increment
+                        c = c & B11100000; // clear PI = Robot voice
+                         c = c + Pl; // 16 = noise = Whisper mode
+
+
+
+                        // Frame duration
+                        c = c & B10011111; // clear Frame duration
+                        c = c + (FD<<5); // Frame duration
+
+                }
+
+
+                MyMCP.writeGPIO(c);
+                STROBE();
+
+               delay(8);// speed fun only if mode is 1F // holding note
+        }
+
+//FIN();// not here  with allophone ta
+}
+
+int find_index(int value)
+{
+        if (value == 32)
+                return (39); // space == silence
+        for (int i = 0; i < sizeof(table) - 1; i++)
+        {
+                if (table[i] == value)
+                {
+                        return (i);
+                }
+        }
+
+        return (39); // if not found send silence
+}
+
+void spell(char *message)
+{
+
+        for (int i = 0; i < strlen(message); i++)
+        {
+
+                Serial.write(message[i]);
+                Serial.print(tPhon[find_index(message[i])]);
+                STOP(0);
+                initialPitch(0x49);
+                Phon(find_index(message[i]));
+                delay(200);
+        }
+}
+
+
+void dire(char *message)
+{       
+            
+  for (int i = 0; i < strlen(message); i++)
+        {
+
+           //     Serial.write(message[i]);
+           //     Serial.print(tPhon[find_index(message[i])]);              
+                position=find_index(message[i]);
+                Serial.print(position);
+                Speak(position);
+                while(1);
+        }
+}
+
+
+
 
 void Say(const unsigned char *str)
 {
@@ -93,12 +236,12 @@ void initialPitch(byte pitch)
         TREQ();
 }
 
-void STOP()
+void STOP(boolean continu)
 
 {
         digitalWrite(AO, 1);
 
-        MyMCP.writeGPIO(0x1B); // Arret lent REQN validée 1B essais 1F pour fun
+        MyMCP.writeGPIO(0x1B+continu); // Arret lent REQN validée 1B essais 1F pour fun
 
         STROBE();
         TREQ();
@@ -131,12 +274,12 @@ void FIN()
         STROBE();
         TREQ();
 
-        STOP();
+        STOP(0);
 }
 
 void INIT()
 {
-        STOP();
+        STOP(0);
         TREQ();
         digitalWrite(AO, 0);
         delay(2); // 2needed
@@ -157,7 +300,6 @@ void STROBE()
         digitalWrite(WN, 1); // was 1
         //delay(2); // delay(2) needed
 }
-
 
 void Phon(int index)
 {
@@ -181,7 +323,7 @@ void Phon(int index)
         Serial.println(end, HEX);
         //
 
-        for (int i = start + 4; i < end; i++)
+        for (int i = start+4; i < end; i++) // skip header ( page 38 / figure 18) 
         {
 
                 TREQ();
@@ -200,15 +342,15 @@ void Phon(int index)
                         // c = c + (FD<<5); // Frame duration
                 }
 
-              // Serial.print(c, HEX);
-              // Serial.print(" ");
+                // Serial.print(c, HEX);
+                // Serial.print(" ");
 
                 MyMCP.writeGPIO(c);
                 STROBE();
 
                 //delay(8);// speed fun only if mode is 1F // holding note
         }
-       // Serial.println("*");
+        // Serial.println("*");
 
         //FIN(); not here  with allophone ta
 }
@@ -236,7 +378,7 @@ void setup()
         Say(spUNE);
         Say(spDEUX);
         Say(spTROIS);
-       // Say(spQUATRE);
+        // Say(spQUATRE);
 }
 /*
    ██       ██████   ██████  ██████
@@ -251,14 +393,27 @@ void loop()
 
         // looping through the phoneme table
 
-        for (int i = 0; i < 5; i++)
-        {       
+        for (int i = 0; i < 0; i++)
+        {
                 Serial.print(tPhon[i]);
                 Serial.print(" ");
-                STOP();
+                STOP(0);
                 initialPitch(0x39);
                 Phon(i);
-                
-                delay(800);
+
+                delay(200);
         }
+
+        //while(1);
+
+        //Serial.println("aeiou");
+        spell("bonjwr"); // spell use phon
+        STOP(1);
+        FD=1;
+        Pl=0;
+        whisper=0;
+        initialPitch(0x39);
+       // dire("aeiou"); // dire use speak
+        Serial.println("");
+        delay(400);
 }

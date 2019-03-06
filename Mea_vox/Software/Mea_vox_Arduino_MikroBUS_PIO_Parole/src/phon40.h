@@ -7,7 +7,10 @@
 - corrected 12-mai-2018 with book not microsystem
 */
 
-const char* tPhon[]  = {"a","e","i","O","u","è","é","eu","ou","an","in","on","oi","b","d","f","g"
+
+char table [] = "aeiou&*EwAIOWbdfgjklmnpRrStvz$N@#%<>0s;. /_=+-?";
+
+const char* tPhon[]  = {"a","e","i","o","u","è","é","eu","ou","an","in","on","oi","b","d","f","g"
                      ,"j","k","l","m","n","p","R","r","S","t","v","z","ch","gn","ail","eil","euil","ien","oin","o","s",
                      "s32","s64"," ","PI up","PI dwn","PI =","FD up","FD dwn","whisper"};
 

@@ -172,10 +172,10 @@ void Phon(int index)
         //Serial.print(tPhon[index]);
         Serial.print(" ");
 
-        start = phon[index * 2] * 256 + phon[index * 2 + 1];
+        start = pgm_read_byte(&(phon[index * 2])) * 256 + pgm_read_byte(&(phon[index * 2 + 1]));
         Serial.print(start, HEX);
 
-        end = start + phon[start] * 256 + phon[start + 1] - 1; // Adresse sur 2 bytes
+        end = start + pgm_read_byte(&(phon[start])) * 256 + pgm_read_byte(&(phon[start + 1])) - 1; // Adresse sur 2 bytes
 
         Serial.print(" ");
         Serial.println(end, HEX);
@@ -185,7 +185,7 @@ void Phon(int index)
         {
 
                 TREQ();
-                c = phon[i];
+                c = pgm_read_byte(&(phon[i]));
 
                 if ((i + 1) % 4 == 0) // 4th byte
 
@@ -251,12 +251,14 @@ void loop()
 
         // looping through the phoneme table
 
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 5; i++)
         {       
+                Serial.print(tPhon[i]);
+                Serial.print(" ");
                 STOP();
                 initialPitch(0x39);
                 Phon(i);
-                //Serial.print(tPhon[i]);
+                
                 delay(800);
         }
 }

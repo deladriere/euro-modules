@@ -33,6 +33,10 @@ int Word = 0;                 //shifting word sent to ltc6903
 
 // TODO: move to real spi https://skyduino.wordpress.com/2013/10/04/arduino-code-de-demo-pour-chipset-ltc6903/
 
+// for interrupt
+volatile byte point;
+volatile byte phon;
+
 /*
    ██████  ██████       ██ ███████  ██████ ████████ ███████
    ██    ██ ██   ██      ██ ██      ██         ██    ██
@@ -94,6 +98,18 @@ void Strobe()
   digitalWrite(RW, HIGH);
 }
 
+void Phon2()
+{
+
+  point++;
+  digitalWrite(RS0, 0);
+  digitalWrite(RS1, 0);
+  digitalWrite(RS2, 0);
+
+  SC02.writeGPIO(hello[point]);
+
+  Strobe();
+}
 void Phoneme(byte value)
 {
   digitalWrite(RS0, 0);
@@ -150,7 +166,6 @@ void setup()
   digitalWrite(AR, HIGH);
   pinMode(AR, INPUT);
 
- 
   delay(1000);
   SC02.writeIODIR(0x0);
   // ctl to ZERo ready = low // busy AR = 1
@@ -163,24 +178,37 @@ void setup()
   Command(4, 240);       // Set Filter frequency to normal (231)
   Command(2, 200);       // Set Speech rate to normal (168)
   Command(1, 127);       // inflection
-
-while(1);
-  
+  delay(100);
+ // point = 0;
+ // Phon2();
 }
 
 void loop()
 {
   // delay(1000);
-
-
+  /*
   for (int y = 0; y < 11; y++)
   {
     // Command(1, map(analogRead(A1), 0, 255, 0, 255));
 
     //Command(1, map(analogRead(A1), 0, 255, 255, 0));
-    ltc6903(10, map(analogRead(A1), 0, 1023, 0, 1023));
+    ltc6903(10, 11);
     Phoneme(hello[y]);
-    //delay(100);
+    delay(200);
   }
+  */
   delay(1500);
+
+  ltc6903(10, 600);
+  attachInterrupt(AR, Phon2, FALLING);
+
+  point = 0;
+
+  Phon2();
+  //delay(5000);
+  do
+  {
+
+  } while (point < 11);
+  detachInterrupt(AR);
 }

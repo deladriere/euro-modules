@@ -2,10 +2,11 @@
 #include "MCP23008.h" //from http://gtbtech.com/?p=875
 #include "Wire.h"
 #include <SPI.h>
+#include "SDU.h"
 
 #define MCP23008_ADDR 0x40
-// TODO: correct address in lib in fact it's 20 
-                          
+// TODO: correct address in lib in fact it's 20
+
 /*
 
    ██   ██  █████  ██████  ██████  ██     ██  █████  ██████  ███████
@@ -34,19 +35,23 @@
 #define AR 9
 #define RW 4
 
-
 // LTC6903
 #define SEN 5            //Serial Enable for LTC6903
-#define SCLK PIN_SPI_SCK  //Serial Clock for clocking in data
-#define SDI  PIN_SPI_MOSI //Serial Data Input, D15 first
+#define SCLK PIN_SPI_SCK //Serial Clock for clocking in data
+#define SDI PIN_SPI_MOSI //Serial Data Input, D15 first
 
-int Word = 0;                 //shifting word sent to ltc6903
+int Word = 0; //shifting word sent to ltc6903
 
 // TODO: move to real spi https://skyduino.wordpress.com/2013/10/04/arduino-code-de-demo-pour-chipset-ltc6903/
 
 // for interrupt
 volatile byte point;
 volatile byte phon;
+
+int16_t previous_pot;
+int16_t pot;
+
+int16_t inflection;
 
 /*
    ██████  ██████       ██ ███████  ██████ ████████ ███████
@@ -116,7 +121,7 @@ void Command(byte registre, byte value)
 
 void Phon2()
 {
-  
+
   point++;
   digitalWrite(RS0, 0);
   digitalWrite(RS1, 0);
@@ -138,8 +143,6 @@ void Phoneme(byte value)
     ;
   Strobe();
 }
-
-
 
 void setup()
 {
@@ -192,14 +195,26 @@ void setup()
 
 void loop()
 {
-  do{
-  Phoneme(map(analogRead(A6),1023,0,0,64));
-  
+  previous_pot = 9999;
+  do
+  {
+
+    pot = random(1023);
+    if (pot != previous_pot)
+    {
+      Phoneme(map(pot, 1023, 0, 0, 64)+((map(analogRead(A3),1003,0,0,3))<<6));
+      previous_pot = pot;
+    }
+
     ltc6903(10, analogRead(A1));
-    Command(4,map(analogRead(A2),1023,0,200,252));
+    Command(4, map(analogRead(A2), 1023, 0, 200, 252));
+    inflection = map(analogRead(A4),1023,0,0,255);
+    Command(1,inflection);
+    //Command(2,B00001111 & inflection);
+    //delay(400);
   }
 
-  while(1);
+  while (1);
   // delay(1000);
   /*
   for (int y = 0; y < 11; y++)
@@ -223,10 +238,9 @@ void loop()
   //delay(5000);
   do
   {
-        ltc6903(10, analogRead(A1));
-       
+    ltc6903(10, analogRead(A1));
+
   } while (point < 10);
-   
 
   detachInterrupt(AR);
 }

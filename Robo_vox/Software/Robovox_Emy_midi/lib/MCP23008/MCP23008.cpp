@@ -34,8 +34,8 @@
 
 MCP23008::MCP23008(byte addr)
 {
- // _ADDR = addr >> 1;
- _ADDR = addr;
+  //_ADDR = addr >> 1;
+  _ADDR = addr;
 }
 
 // writebyte
@@ -100,7 +100,7 @@ uint8_t MCP23008::readbyte(uint8_t Address, uint8_t Register)
   Wire.write(Register);
   Wire.endTransmission();
   Wire.requestFrom((char)Address,1);
-  //Wire.available();
+ // Wire.available();
   return Wire.read();
 }
 

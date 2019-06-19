@@ -1,10 +1,11 @@
 #include <Arduino.h>
 #include "MCP23008.h" //from http://gtbtech.com/?p=875
 #include "Wire.h"
-#include <SPI.h>
 #include "SDU.h"
 
-#define MCP23008_ADDR 0x20
+#include <MIDIUSB.h>
+
+#define MCP23008_ADDR 0x20 
 
 /*
 
@@ -13,7 +14,8 @@
    ███████ ███████ ██████  ██   ██ ██  █  ██ ███████ ██████  █████
    ██   ██ ██   ██ ██   ██ ██   ██ ██ ███ ██ ██   ██ ██   ██ ██
    ██   ██ ██   ██ ██   ██ ██████   ███ ███  ██   ██ ██   ██ ███████
-*/
+
+ */
 
 //                        +-----------------+
 //                      9 |[ ]A/R     OUT[ ]| Audio
@@ -39,18 +41,7 @@
 #define SCLK PIN_SPI_SCK //Serial Clock for clocking in data
 #define SDI PIN_SPI_MOSI //Serial Data Input, D15 first
 
-int Word = 0; //shifting word sent to ltc6903
-
-// TODO: move to real spi https://skyduino.wordpress.com/2013/10/04/arduino-code-de-demo-pour-chipset-ltc6903/
-
-// for interrupt
-volatile byte point;
-volatile byte phon;
-
-int16_t previous_pot;
-int16_t pot;
-
-int16_t inflection;
+int Word = 0;                 //shifting word sent to ltc6903
 
 /*
    ██████  ██████       ██ ███████  ██████ ████████ ███████
@@ -63,7 +54,7 @@ int16_t inflection;
 MCP23008 SC02(MCP23008_ADDR);
 
 int i;
-byte hello[] = {44, 10, 32, 17, 35, 0, 0x23, 0x1C, 0x20, 0}; // 25
+byte hello[] = {44, 10, 32, 17, 35, 0, 0x23, 0x1C, 0x20, 0x25};
 
 void Transfer(word sdi)
 {
@@ -97,12 +88,23 @@ void ltc6903(int oct, unsigned int dac)
   Word |= dac;    //OR it in, leave CN1 and CN0 at zero
   Transfer(Word); //Send word as sdi to ltc6903
 }
-
 void Strobe()
 {
   digitalWrite(RW, LOW);
   delayMicroseconds(1);
   digitalWrite(RW, HIGH);
+}
+
+void Phoneme(byte value)
+{
+  digitalWrite(RS0, 0);
+  digitalWrite(RS1, 0);
+  digitalWrite(RS2, 0);
+
+  SC02.writeGPIO(value);
+  while (digitalRead(AR))
+    ;
+  Strobe();
 }
 
 void Command(byte registre, byte value)
@@ -118,37 +120,28 @@ void Command(byte registre, byte value)
   Strobe();
 }
 
-void Phon2()
+void noteOn(byte channel, byte pitch, byte velocity)
 {
-
-  point++;
-  digitalWrite(RS0, 0);
-  digitalWrite(RS1, 0);
-  digitalWrite(RS2, 0);
-
-  SC02.writeGPIO(hello[point]);
-
-  Strobe();
-}
-void Phoneme(byte value)
-{
-  digitalWrite(RS0, 0);
-  digitalWrite(RS1, 0);
-  digitalWrite(RS2, 0);
-
-  SC02.writeGPIO(value);
-  // was here
-  while (digitalRead(AR))
-    ;
-  Strobe();
+  digitalWrite(LED_BUILTIN, HIGH);
+  //  Command(1, map(analogRead(A1), 0, 255, 0, 255));
+  Phoneme(pitch);
 }
 
+void noteOff(byte channel, byte pitch, byte velocity)
+{
+  digitalWrite(LED_BUILTIN, LOW);
+  Phoneme(0);
+}
+
+void controlChange(byte channel, byte control, byte value)
+{
+  digitalWrite(LED_BUILTIN, LOW);
+}
+
+// the setup function runs once when you press reset or power the board
 void setup()
 {
-  analogReadResolution(10);
   Wire.begin();
-
-  //DS1077_init(56); // 56 = 1.8 MHz // min 53
 
   // Set LTC6903
   pinMode(SEN, OUTPUT);     //define SEN enable
@@ -160,8 +153,7 @@ void setup()
 
   
   ltc6903(10,11); //Set pitch to default value
- 
-
+  
   pinMode(LED_BUILTIN, OUTPUT);
 
   pinMode(RS0, OUTPUT);
@@ -169,16 +161,16 @@ void setup()
   pinMode(RS2, OUTPUT);
 
   pinMode(RW, OUTPUT);
-  pinMode(AR, OUTPUT);
-
-  digitalWrite(RW, HIGH);
-  digitalWrite(AR, HIGH);
   pinMode(AR, INPUT);
+  //pinMode(RST, OUTPUT);
+
+  //digitalWrite(RST, HIGH);
+  digitalWrite(RW, HIGH);
 
   delay(1000);
+  //Reset();
   SC02.writeIODIR(0x0);
-  // ctl to ZERo ready = low // busy AR = 1
-  // toggling control bit
+
   Command(3, 128); //Control bit to 1 (128)
   Command(0, 192); // load DR1 DR2 bit to 1 (to activate A/R request mode) (192)
   Command(3, 0);   // //Control bit to 0
@@ -187,59 +179,48 @@ void setup()
   Command(4, 240);       // Set Filter frequency to normal (231)
   Command(2, 200);       // Set Speech rate to normal (168)
   Command(1, 127);       // inflection
-  delay(100);
-  // point = 0;
-  // Phon2();
-}
 
-void loop()
-{
-  previous_pot = 9999;
-  do
-  {
-
-    pot = random(1023);
-    if (pot != previous_pot)
-    {
-      Phoneme(map(pot, 1023, 0, 0, 64)+((map(analogRead(A3),1003,0,0,3))<<6));
-      previous_pot = pot;
-    }
-
-    ltc6903(10, analogRead(A1));
-    Command(4, map(analogRead(A2), 1023, 0, 200, 252));
-    inflection = map(analogRead(A4),1023,0,0,255);
-    Command(1,inflection);
-    //Command(2,B00001111 & inflection);
-    //delay(400);
-  }
-
-  while (1);
-  // delay(1000);
-  /*
   for (int y = 0; y < 11; y++)
   {
-    // Command(1, map(analogRead(A1), 0, 255, 0, 255));
-
-    //Command(1, map(analogRead(A1), 0, 255, 255, 0));
-    ltc6903(10, 11);
     Phoneme(hello[y]);
-    delay(200);
   }
-  */
-  delay(1500);
+}
 
-  //ltc6903(10, 600);
-  attachInterrupt(AR, Phon2, FALLING);
+// the loop function runs over and over again forever
+void loop()
+{
+  midiEventPacket_t rx = MidiUSB.read();
 
-  point = 0;
-
-  Phon2();
-  //delay(5000);
-  do
+  switch (rx.header)
   {
-    ltc6903(10, analogRead(A1));
+  case 0:
+    break; //No pending events
 
-  } while (point < 10);
+  case 0x9:
+    noteOn(
+        rx.byte1 & 0xF, //channel
+        rx.byte2,       //pitch
+        rx.byte3        //velocity
+    );
+    break;
 
-  detachInterrupt(AR);
+  case 0x8:
+    noteOff(
+        rx.byte1 & 0xF, //channel
+        rx.byte2,       //pitch
+        rx.byte3        //velocity
+    );
+    break;
+
+  case 0xB:
+    controlChange(
+        rx.byte1 & 0xF, //channel
+        rx.byte2,       //control
+        rx.byte3        //value
+    );
+    break;
+
+  default:
+    break;
+  }
 }

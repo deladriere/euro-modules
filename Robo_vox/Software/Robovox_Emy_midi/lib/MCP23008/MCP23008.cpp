@@ -100,7 +100,7 @@ uint8_t MCP23008::readbyte(uint8_t Address, uint8_t Register)
   Wire.write(Register);
   Wire.endTransmission();
   Wire.requestFrom((char)Address,1);
- // Wire.available();
+ //  Wire.available();
   return Wire.read();
 }
 

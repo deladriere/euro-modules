@@ -2,10 +2,12 @@
 #include "MCP23008.h" //from http://gtbtech.com/?p=875
 #include "Wire.h"
 #include "SDU.h"
+#include "SSD1306Ascii.h"
+#include "SSD1306AsciiWire.h"
 
 #include <MIDIUSB.h>
 
-#define MCP23008_ADDR 0x20 
+#define MCP23008_ADDR 0x20
 
 /*
 
@@ -41,7 +43,7 @@
 #define SCLK PIN_SPI_SCK //Serial Clock for clocking in data
 #define SDI PIN_SPI_MOSI //Serial Data Input, D15 first
 
-int Word = 0;                 //shifting word sent to ltc6903
+int Word = 0; //shifting word sent to ltc6903
 
 /*
    ██████  ██████       ██ ███████  ██████ ████████ ███████
@@ -52,7 +54,19 @@ int Word = 0;                 //shifting word sent to ltc6903
  */
 
 MCP23008 SC02(MCP23008_ADDR);
+SSD1306AsciiWire display;
 
+/*
+
+   ██    ██  █████  ██████  ██  █████  ██████  ██      ███████ ███████
+   ██    ██ ██   ██ ██   ██ ██ ██   ██ ██   ██ ██      ██      ██
+   ██    ██ ███████ ██████  ██ ███████ ██████  ██      █████   ███████
+    ██  ██  ██   ██ ██   ██ ██ ██   ██ ██   ██ ██      ██           ██
+     ████   ██   ██ ██   ██ ██ ██   ██ ██████  ███████ ███████ ███████
+
+ */
+const char *Phoneme_label[] = {"U", ":UH", "IU", ":U", "O", "00", ":OH", "AW", ":OH", "AH", ":A", "ER", "E2", "EH", "I", "E", "IE", "YI", "NG", "M", "L1", "N", "R2", "HF", "SH", "J", "SH", "Z", "Ss", "F", "V", "HF", "B", "P", "D", "T", "K", "KV","PA0", "O2", "UH", "AE", "A", "AY", "Y", "HV", "HVC", "HN", "LF", "L", "LB", "TH", "THV", "R", "R1", "W2", "KV", "HFC"};
+uint8_t Phoneme_map[58] = {0x3C, 0x3D, 0x14, 0x16, 0x11, 0x13, 0x3B, 0x10, 0, 0x0E, 0x08, 0x1C, 0x3E, 0x0A, 0x07, 0x01, 0x06, 0x04, 0x39, 0x37, 0x21, 0x38, 0x1F, 0x2C, 0, 0x31, 0x32, 0x2F, 0, 0x34, 0x33, 0x2C, 0x24, 0x27, 0x25, 0x28, 0x29, 0x26, 0, 0, 0x18, 0x0C, 0x08, 0x05, 0x03, 0x2A, 0x2B, 0x2E, 0x22, 0x20, 0x3F, 0x36, 0x35, 0x1D, 0x1E, 0, 0x26, 0x2D};
 int i;
 byte hello[] = {44, 10, 32, 17, 35, 0, 0x23, 0x1C, 0x20, 0x25};
 
@@ -122,14 +136,30 @@ void Command(byte registre, byte value)
 
 void noteOn(byte channel, byte pitch, byte velocity)
 {
-  digitalWrite(LED_BUILTIN, HIGH);
+  pitch = constrain(pitch,36,93);
+  digitalWrite(LED_BUILTIN, LOW);
   //  Command(1, map(analogRead(A1), 0, 255, 0, 255));
-  Phoneme(pitch);
+  Wire.setClock(1500000L); // speed the display to the max
+  display.setCursor(0, 2);
+  display.clearToEOL();
+  display.print(pitch);
+
+  pitch=pitch-36;
+  
+  display.setCursor(30, 2);
+  display.clearToEOL();
+  display.print(Phoneme_map[pitch],HEX);
+   display.setCursor(60, 2);
+  display.clearToEOL();
+  display.print(Phoneme_label[pitch]);
+  Wire.setClock(500000L); //  Restore speed to allow speech
+  Phoneme(Phoneme_map[pitch]);
+  //digitalWrite(LED_BUILTIN, HIGH);
 }
 
 void noteOff(byte channel, byte pitch, byte velocity)
 {
-  digitalWrite(LED_BUILTIN, LOW);
+  digitalWrite(LED_BUILTIN, HIGH);
   Phoneme(0);
 }
 
@@ -151,9 +181,14 @@ void setup()
   digitalWrite(SCLK, HIGH); //set safely high
   digitalWrite(SDI, HIGH);  //set safely high
 
-  
-  ltc6903(10,11); //Set pitch to default value
-  
+  display.begin(&Adafruit128x64, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
+  display.clear();
+  display.set1X();
+  display.setFont(fixed_bold10x15);
+  display.print("Robovox MIDI");
+
+  ltc6903(10, 11); //Set pitch to default value
+
   pinMode(LED_BUILTIN, OUTPUT);
 
   pinMode(RS0, OUTPUT);

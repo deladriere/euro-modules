@@ -30,6 +30,17 @@
 //                        |[ ]GND     GND[ ]| GND
 //                        +________________/
 
+// Emy
+#define BUSY 38
+#define SW0 0
+#define SW1 1
+#define GATE 2
+#define PUSH 3
+#define ROTA 6
+#define ROTB 7
+#define GREEN_LED 12
+#define RED_LED 13
+
 // SC0-02
 #define RS2 30
 #define RS1 31
@@ -65,6 +76,10 @@ SSD1306AsciiWire display;
      ████   ██   ██ ██   ██ ██ ██   ██ ██████  ███████ ███████ ███████
 
  */
+
+# define ON 0
+# define OFF 1
+
 const char *Phoneme_label[] = {"U", ":UH", "IU", ":U", "O", "00", ":OH", "AW", ":OH", "AH", ":A", "ER", "E2", "EH", "I", "E", "IE", "YI", "NG", "M", "L1", "N", "R2", "HF", "SH", "J", "SH", "Z", "Ss", "F", "V", "HF", "B", "P", "D", "T", "K", "KV","PA0", "O2", "UH", "AE", "A", "AY", "Y", "HV", "HVC", "HN", "LF", "L", "LB", "TH", "THV", "R", "R1", "W2", "KV", "HFC"};
 uint8_t Phoneme_map[58] = {0x3C, 0x3D, 0x14, 0x16, 0x11, 0x13, 0x3B, 0x10, 0, 0x0E, 0x08, 0x1C, 0x3E, 0x0A, 0x07, 0x01, 0x06, 0x04, 0x39, 0x37, 0x21, 0x38, 0x1F, 0x2C, 0, 0x31, 0x32, 0x2F, 0, 0x34, 0x33, 0x2C, 0x24, 0x27, 0x25, 0x28, 0x29, 0x26, 0, 0, 0x18, 0x0C, 0x08, 0x05, 0x03, 0x2A, 0x2B, 0x2E, 0x22, 0x20, 0x3F, 0x36, 0x35, 0x1D, 0x1E, 0, 0x26, 0x2D};
 int i;
@@ -137,7 +152,9 @@ void Command(byte registre, byte value)
 void noteOn(byte channel, byte pitch, byte velocity)
 {
   pitch = constrain(pitch,36,93);
-  digitalWrite(LED_BUILTIN, LOW);
+  Phoneme(Phoneme_map[pitch-36]); // let's start speech first to avoid delays from Oled
+  digitalWrite(LED_BUILTIN, ON);
+  digitalWrite(BUSY,ON); // 
   //  Command(1, map(analogRead(A1), 0, 255, 0, 255));
   Wire.setClock(1500000L); // speed the display to the max
   display.setCursor(0, 2);
@@ -153,13 +170,14 @@ void noteOn(byte channel, byte pitch, byte velocity)
   display.clearToEOL();
   display.print(Phoneme_label[pitch]);
   Wire.setClock(500000L); //  Restore speed to allow speech
-  Phoneme(Phoneme_map[pitch]);
+  //Phoneme(Phoneme_map[pitch]);
   //digitalWrite(LED_BUILTIN, HIGH);
 }
 
 void noteOff(byte channel, byte pitch, byte velocity)
 {
-  digitalWrite(LED_BUILTIN, HIGH);
+  digitalWrite(LED_BUILTIN, OFF);
+  digitalWrite(BUSY,OFF);
   Phoneme(0);
 }
 
@@ -201,6 +219,9 @@ void setup()
 
   //digitalWrite(RST, HIGH);
   digitalWrite(RW, HIGH);
+
+  pinMode(BUSY,OUTPUT);
+  digitalWrite(BUSY,OFF);
 
   delay(1000);
   //Reset();

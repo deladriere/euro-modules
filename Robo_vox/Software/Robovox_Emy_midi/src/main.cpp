@@ -77,13 +77,18 @@ SSD1306AsciiWire display;
 
  */
 
-# define ON 0
-# define OFF 1
+#define ON 0
+#define OFF 1
 
-const char *Phoneme_label[] = {"U", ":UH", "IU", ":U", "O", "00", ":OH", "AW", ":OH", "AH", ":A", "ER", "E2", "EH", "I", "E", "IE", "YI", "NG", "M", "L1", "N", "R2", "HF", "SH", "J", "SH", "Z", "Ss", "F", "V", "HF", "B", "P", "D", "T", "K", "KV","PA0", "O2", "UH", "AE", "A", "AY", "Y", "HV", "HVC", "HN", "LF", "L", "LB", "TH", "THV", "R", "R1", "W2", "KV", "HFC"};
+const char *Phoneme_label[] = {"U", ":UH", "IU", ":U", "O", "00", ":OH", "AW", ":OH", "AH", ":A", "ER", "E2", "EH", "I", "E", "IE", "YI", "NG", "M", "L1", "N", "R2", "HF", "SH", "J", "SH", "Z", "Ss", "F", "V", "HF", "B", "P", "D", "T", "K", "KV", "PA0", "O2", "UH", "AE", "A", "AY", "Y", "HV", "HVC", "HN", "LF", "L", "LB", "TH", "THV", "R", "R1", "W2", "KV", "HFC"};
 uint8_t Phoneme_map[58] = {0x3C, 0x3D, 0x14, 0x16, 0x11, 0x13, 0x3B, 0x10, 0, 0x0E, 0x08, 0x1C, 0x3E, 0x0A, 0x07, 0x01, 0x06, 0x04, 0x39, 0x37, 0x21, 0x38, 0x1F, 0x2C, 0, 0x31, 0x32, 0x2F, 0, 0x34, 0x33, 0x2C, 0x24, 0x27, 0x25, 0x28, 0x29, 0x26, 0, 0, 0x18, 0x0C, 0x08, 0x05, 0x03, 0x2A, 0x2B, 0x2E, 0x22, 0x20, 0x3F, 0x36, 0x35, 0x1D, 0x1E, 0, 0x26, 0x2D};
 int i;
 byte hello[] = {44, 10, 32, 17, 35, 0, 0x23, 0x1C, 0x20, 0x25};
+
+void StatusLED()
+{
+  digitalWrite(LED_BUILTIN, !digitalRead(AR));
+}
 
 void Transfer(word sdi)
 {
@@ -130,9 +135,9 @@ void Phoneme(byte value)
   digitalWrite(RS1, 0);
   digitalWrite(RS2, 0);
 
-  SC02.writeGPIO(value);
-  while (digitalRead(AR))
-    ;
+  SC02.writeGPIO(value + B11000000); // B11000000 smallest duration : it minimize the latency !
+  //while (digitalRead(AR))
+  //  ;
   Strobe();
 }
 
@@ -151,34 +156,55 @@ void Command(byte registre, byte value)
 
 void noteOn(byte channel, byte pitch, byte velocity)
 {
-  pitch = constrain(pitch,36,93);
-  Phoneme(Phoneme_map[pitch-36]); // let's start speech first to avoid delays from Oled
-  digitalWrite(LED_BUILTIN, ON);
-  digitalWrite(BUSY,ON); // 
-  //  Command(1, map(analogRead(A1), 0, 255, 0, 255));
-  Wire.setClock(1500000L); // speed the display to the max
-  display.setCursor(0, 2);
-  display.clearToEOL();
-  display.print(pitch);
+  switch (channel)
+  {
+  case 0: // MIDI channel 1 for the Phonemes
+  {
+    pitch = constrain(pitch, 36, 93);
 
-  pitch=pitch-36;
-  
-  display.setCursor(30, 2);
-  display.clearToEOL();
-  display.print(Phoneme_map[pitch],HEX);
-   display.setCursor(60, 2);
-  display.clearToEOL();
-  display.print(Phoneme_label[pitch]);
-  Wire.setClock(500000L); //  Restore speed to allow speech
-  //Phoneme(Phoneme_map[pitch]);
-  //digitalWrite(LED_BUILTIN, HIGH);
+    digitalWrite(LED_BUILTIN, ON);
+    digitalWrite(BUSY, ON);           // to measure latency from MIDI Note On to speech
+    Phoneme(Phoneme_map[pitch - 36]); // let's start speech first to avoid delays from Oled
+
+    //  Command(1, map(analogRead(A1), 0, 255, 0, 255));
+    Wire.setClock(1500000L); // speed the display to the max
+    display.setCursor(0, 2);
+    display.clearToEOL();
+    display.print(pitch);
+
+    pitch = pitch - 36;
+
+    display.setCursor(30, 2);
+    display.clearToEOL();
+    display.print(Phoneme_map[pitch], HEX);
+    display.setCursor(60, 2);
+    display.clearToEOL();
+    display.print(Phoneme_label[pitch]);
+    Wire.setClock(500000L); //  Restore I2C speed to allow speech
+    //Phoneme(Phoneme_map[pitch]);
+    //digitalWrite(LED_BUILTIN, HIGH);
+  }
+  break;
+  case 1: // MIDI channel 2 for the pitch
+  {
+    ltc6903(10, pitch*8);
+  }
+  break;
+  }
 }
 
 void noteOff(byte channel, byte pitch, byte velocity)
 {
-  digitalWrite(LED_BUILTIN, OFF);
-  digitalWrite(BUSY,OFF);
-  Phoneme(0);
+  switch (channel)
+  {
+  case 0: // MIDI channel 1 for the Phonemes
+  {
+    digitalWrite(LED_BUILTIN, OFF);
+    digitalWrite(BUSY, OFF);
+    Phoneme(0); // Stop the sound
+  }
+  break;
+  }
 }
 
 void controlChange(byte channel, byte control, byte value)
@@ -207,7 +233,11 @@ void setup()
 
   ltc6903(10, 11); //Set pitch to default value
 
-  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(RED_LED, OUTPUT);
+  pinMode(GREEN_LED, OUTPUT);
+
+  digitalWrite(GREEN_LED, OFF);
+  digitalWrite(RED_LED, OFF);
 
   pinMode(RS0, OUTPUT);
   pinMode(RS1, OUTPUT);
@@ -215,15 +245,13 @@ void setup()
 
   pinMode(RW, OUTPUT);
   pinMode(AR, INPUT);
-  //pinMode(RST, OUTPUT);
-
-  //digitalWrite(RST, HIGH);
   digitalWrite(RW, HIGH);
 
-  pinMode(BUSY,OUTPUT);
-  digitalWrite(BUSY,OFF);
+  pinMode(BUSY, OUTPUT);
+  digitalWrite(BUSY, OFF);
 
   delay(1000);
+  //attachInterrupt(AR, StatusLED,CHANGE);
   //Reset();
   SC02.writeIODIR(0x0);
 
@@ -239,6 +267,7 @@ void setup()
   for (int y = 0; y < 11; y++)
   {
     Phoneme(hello[y]);
+    delay(100);
   }
 }
 

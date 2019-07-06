@@ -3,6 +3,7 @@ use icon ?
 scan button
 announce real port
 check why divide /2 (at home)
+windows : export as win32 (even if pc run 64)
 */
 import processing.serial.*;
 import controlP5.*;
@@ -157,7 +158,7 @@ void Upload(float theValue) {
         String[] param1 = {"say","uploading file", fileName,portName};
         // exec(param1);
        
-       // String[] param2= {"cmd"," /c","bossac.exe","-e","-w","-v","-R",fileName}; //trying without port on windows
+       //String[] param2= {"cmd"," /c","bossac.exe","-e","-w","-v","-R",fileName}; //without port on Windows
        // 
         String[] param2= {"./bossac","-e","-w","-v","-R","-p",portName,fileName}; // OSX
 

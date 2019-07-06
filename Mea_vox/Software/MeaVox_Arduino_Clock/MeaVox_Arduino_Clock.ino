@@ -23,6 +23,7 @@
          +________________/
 
 + A temporary switch between pin 11 and GND to have it to say the time when pressing the button
++ DS1307 RTC clock on the I2C bus
 
 */
 

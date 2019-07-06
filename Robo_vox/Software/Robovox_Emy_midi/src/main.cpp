@@ -154,6 +154,19 @@ void Command(byte registre, byte value)
   Strobe();
 }
 
+void pitchBend(byte channel, byte octet1, byte octet2)
+{
+  int pitch = (( octet2 << 7 ) | octet1) - 8192;
+ //display.clear();
+ //display.print("pitch ");
+ //display.println(map(pitch,8096,-8092,1023,8));
+
+ // display.print("channel=");
+ // display.println(channel);
+
+  ltc6903(10, map(pitch,8096,-8092,1023,8));
+}
+
 void noteOn(byte channel, byte pitch, byte velocity)
 {
   switch (channel)
@@ -209,7 +222,10 @@ void noteOff(byte channel, byte pitch, byte velocity)
 
 void controlChange(byte channel, byte control, byte value)
 {
-  digitalWrite(LED_BUILTIN, LOW);
+  if (control==1)
+  {
+    Command(4, map(value, 0, 127, 200, 251));
+  }
 }
 
 // the setup function runs once when you press reset or power the board
@@ -231,7 +247,7 @@ void setup()
   display.setFont(fixed_bold10x15);
   display.print("Robovox MIDI");
 
-  ltc6903(10, 11); //Set pitch to default value
+  ltc6903(10, 516); //Set pitch to middle of pitch wheel
 
   pinMode(RED_LED, OUTPUT);
   pinMode(GREEN_LED, OUTPUT);
@@ -256,7 +272,7 @@ void setup()
   SC02.writeIODIR(0x0);
 
   Command(3, 128); //Control bit to 1 (128)
-  Command(0, 192); // load DR1 DR2 bit to 1 (to activate A/R request mode) (192)
+  Command(0,192); // load DR1 DR2 bit to 1 (to activate A/R request mode) (192)
   Command(3, 0);   // //Control bit to 0
 
   Command(3, B01111111); // Set articulation to normal and amplitude to maximum  & CTL to 0
@@ -302,6 +318,15 @@ void loop()
         rx.byte1 & 0xF, //channel
         rx.byte2,       //control
         rx.byte3        //value
+    );
+    break;
+
+    case 0xE:
+    pitchBend(
+        rx.byte1 & 0xF, //channel
+        rx.byte2,       //value
+        rx.byte3        //value
+
     );
     break;
 

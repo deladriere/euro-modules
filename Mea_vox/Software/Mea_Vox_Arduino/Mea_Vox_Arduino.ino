@@ -782,7 +782,8 @@ MCP23008 MyMCP(MCP23008_ADDR);
 
 void setup() {
         Wire.begin();
-
+        Serial.begin(9600);
+        Serial.print("let's go");
         DS1077_init(18); // pitch via clock control 22= 3.2Mhz 18 = 4Mhz 14 = 5Mhz
         MyMCP.writeIODIR(0x0);
         pinMode(REQN,INPUT);

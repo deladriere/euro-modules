@@ -21,8 +21,8 @@
  */
 
 #define REQN 2  //
-#define AO 4   // A0 is digital pin 14 on MikroBUS 1(we cannot use the label A0 taken by the IDE)
-#define WN 3   // A3 is digital pin 17 on MikroBUS 1
+#define AO 14   // A0 is digital pin 14 on MikroBUS 1(we cannot use the label A0 taken by the IDE)
+#define WN 17  // A3 is digital pin 17 on MikroBUS 1
 
 #define MCP23008_ADDR 0x40
 #define CONTINU 1

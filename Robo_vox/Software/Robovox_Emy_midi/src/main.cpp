@@ -177,6 +177,8 @@ void noteOn(byte channel, byte pitch, byte velocity)
 
     digitalWrite(LED_BUILTIN, ON);
     digitalWrite(BUSY, ON);           // to measure latency from MIDI Note On to speech
+    // Apply Velocity but keep articulation to 5 
+    Command(3,map(velocity,0,127,0,15)+B00110000); 
     Phoneme(Phoneme_map[pitch - 36]); // let's start speech first to avoid delays from Oled
 
     //  Command(1, map(analogRead(A1), 0, 255, 0, 255));

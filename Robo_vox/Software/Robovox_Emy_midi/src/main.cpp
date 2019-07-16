@@ -80,10 +80,89 @@ SSD1306AsciiWire display;
 #define ON 0
 #define OFF 1
 
-const char *Phoneme_label[] = {"U", ":UH", "IU", ":U", "O", "00", ":OH", "AW", ":OH", "AH", ":A", "ER", "E2", "EH", "I", "E", "IE", "YI", "NG", "M", "L1", "N", "R2", "HF", "SH", "J", "SH", "Z", "Ss", "F", "V", "HF", "B", "P", "D", "T", "K", "KV", "PA0", "O2", "UH", "AE", "A", "AY", "Y", "HV", "HVC", "HN", "LF", "L", "LB", "TH", "THV", "R", "R1", "W2", "KV", "HFC"};
-uint8_t Phoneme_map[58] = {0x3C, 0x3D, 0x14, 0x16, 0x11, 0x13, 0x3B, 0x10, 0, 0x0E, 0x08, 0x1C, 0x3E, 0x0A, 0x07, 0x01, 0x06, 0x04, 0x39, 0x37, 0x21, 0x38, 0x1F, 0x2C, 0, 0x31, 0x32, 0x2F, 0, 0x34, 0x33, 0x2C, 0x24, 0x27, 0x25, 0x28, 0x29, 0x26, 0, 0, 0x18, 0x0C, 0x08, 0x05, 0x03, 0x2A, 0x2B, 0x2E, 0x22, 0x20, 0x3F, 0x36, 0x35, 0x1D, 0x1E, 0, 0x26, 0x2D};
+struct Phonem {
+  uint8_t sc02_id;
+  const char *label;
+}; 
+
+// Robovox midi->phonem map. 
+// Original mapping has been designed for Votrax VS6. 
+// SC02 phonems have been matched to the VS6 phonem set 
+// (which resulted in duplicate usage of a few phonems) 
+Phonem phonems[] = {
+  { 0x16, "U" }, 
+  { 0x3D, ":UH" },
+  { 0x14, "IU" }, 
+  { 0x3C, ":U" }, 
+  { 0x11, "O" }, 
+  { 0x13, "OO" }, 
+  { 0x3B, ":OH" }, 
+  { 0x10, "AW" },
+  { 0x3B, ":OH" }, 
+  { 0x0E, "AH" },
+  { 0x08, "A" },
+  { 0x1C, "ER" }, 
+  { 0x3E, "E2" }, 
+  { 0x0A, "EH" },
+  { 0x07, "I" }, 
+  { 0x01, "E" }, 
+  { 0x06, "IE" }, 
+  { 0x04, "YI" }, 
+  { 0x39, "NG" }, 
+  { 0x37, "M" },
+  { 0x20, "L" }, 
+  { 0x38, "N" }, 
+  { 0x1F, "R2" },
+  { 0x2C, "HF" },  
+  { 0x2D, "HFC" },  
+  { 0x31, "J" },
+  { 0x32, "SCH" },
+  { 0x2F, "Z" },
+  { 0x30, "S" },
+  { 0x34, "F" }, 
+  { 0x33, "V" },
+  { 0x2C, "HF" },  
+  { 0x24, "B" },
+  { 0x27, "P" },
+  { 0x25, "D" },
+  { 0x28, "T"},
+  { 0x29, "K" }, 
+  { 0x26, "KV" },
+  { 0x00, "PA0" },
+  { 0x12, "OU" },  
+  { 0x18, "UH" }, 
+  { 0x0C, "AE" }, 
+  { 0x3A, ":A" }, 
+  { 0x05, "AY" }, 
+  { 0x03, "Y" },
+  { 0x2A, "HV" }, 
+  { 0x2B, "HVC" },
+  { 0x2E, "HN" },  
+  { 0x22, "LF" },
+  { 0x21, "L1" },
+  { 0x3F, "LB" }, 
+  { 0x36, "TH" },  
+  { 0x35, "THV" }, 
+  { 0x1D, "R" },
+  { 0x1E, "R1" },
+  { 0x23, "W" }, 
+  { 0x26, "KV" },
+  { 0x2B, "HVC" },
+  { 0x02, "E1" }, 
+  { 0x09, "AI" },  
+  { 0x0B, "EH1" }, 
+  { 0x0D, "AE1" }, 
+  { 0x0F, "AH1" }, 
+  { 0x15, "IU1" }, 
+  { 0x17, "U1" }, 
+  { 0x19, "UH1" }, 
+  { 0x1A, "UH2" }, 
+  { 0x1B, "UH3" } 
+};
+
 int i;
 byte hello[] = {44, 10, 32, 17, 35, 0, 0x23, 0x1C, 0x20, 0x25};
+byte last_note_on = 0;
 
 void StatusLED()
 {
@@ -173,13 +252,15 @@ void noteOn(byte channel, byte pitch, byte velocity)
   {
   case 0: // MIDI channel 1 for the Phonemes
   {
+    last_note_on = pitch;
     pitch = constrain(pitch, 36, 93);
 
     digitalWrite(LED_BUILTIN, ON);
     digitalWrite(BUSY, ON);           // to measure latency from MIDI Note On to speech
     // Apply Velocity but keep articulation to 5 
     Command(3,map(velocity,0,127,0,15)+B00110000); 
-    Phoneme(Phoneme_map[pitch - 36]); // let's start speech first to avoid delays from Oled
+    const Phonem* const phonem = &phonems[pitch - 36];
+    Phoneme(phonem->sc02_id); // let's start speech first to avoid delays from Oled
 
     //  Command(1, map(analogRead(A1), 0, 255, 0, 255));
     Wire.setClock(1500000L); // speed the display to the max
@@ -187,16 +268,13 @@ void noteOn(byte channel, byte pitch, byte velocity)
     display.clearToEOL();
     display.print(pitch);
 
-    pitch = pitch - 36;
-
     display.setCursor(30, 2);
     display.clearToEOL();
-    display.print(Phoneme_map[pitch], HEX);
+    display.print(phonem->sc02_id, HEX);
     display.setCursor(60, 2);
     display.clearToEOL();
-    display.print(Phoneme_label[pitch]);
+    display.print(phonem->label);
     Wire.setClock(500000L); //  Restore I2C speed to allow speech
-    //Phoneme(Phoneme_map[pitch]);
     //digitalWrite(LED_BUILTIN, HIGH);
   }
   break;
@@ -214,9 +292,11 @@ void noteOff(byte channel, byte pitch, byte velocity)
   {
   case 0: // MIDI channel 1 for the Phonemes
   {
-    digitalWrite(LED_BUILTIN, OFF);
-    digitalWrite(BUSY, OFF);
-    Phoneme(0); // Stop the sound
+    if (last_note_on == pitch) {
+      digitalWrite(LED_BUILTIN, OFF);
+      digitalWrite(BUSY, OFF);
+      Phoneme(0); // Stop the sound
+    }
   }
   break;
   }

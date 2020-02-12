@@ -373,8 +373,8 @@ void handleNoteOff(byte channel, byte pitch, byte velocity)
 void setup()
 {
 
- // USBDevice.setManufacturerDescriptor("Polaxis");
- // USBDevice.setProductDescriptor("Robovox");
+ USBDevice.setManufacturerDescriptor("Polaxis");
+ USBDevice.setProductDescriptor("Robovox");
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(SW1, INPUT_PULLUP);

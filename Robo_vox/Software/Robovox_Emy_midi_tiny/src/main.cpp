@@ -377,6 +377,8 @@ void setup()
  // USBDevice.setProductDescriptor("Robovox");
 
   pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(SW1, INPUT_PULLUP);
+  pinMode(MISO, OUTPUT);
 
   // Initialize MIDI, and listen to all MIDI channels
   // This will also call usb_midi's begin()
@@ -419,7 +421,7 @@ void setup()
   display.clear();
   display.set1X();
   display.setFont(fixed_bold10x15);
-  display.print("Robovox MIDI");
+  display.print("RobovoxtMIDI");
 
   ltc6903(10, 516); //Set pitch to middle of pitch wheel
 
@@ -465,4 +467,5 @@ void loop()
 {
   // read any new MIDI messages
   MIDI.read();
+  digitalWrite(MISO,digitalRead(SW1));
 }

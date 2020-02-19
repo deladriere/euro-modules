@@ -95,6 +95,15 @@ MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usb_midi, MIDI);
 #define ON 0
 #define OFF 1
 
+//#define DEBUG_TRACE
+
+#ifdef DEBUG_TRACE
+#define Sprintln(MSG) Serial.println(MSG)
+#define Sprint(MSG) Serial.print(MSG)
+#else
+#define Sprintln(MSG)
+#define Sprint(MSG)
+#endif
 
 struct Phonem
 {
@@ -287,19 +296,18 @@ void Clock()
 void Start()
 {
   DivClock = 0;
-  Serial.println("Start");
+  Sprintln("Start");
 }
 
 void Stop()
 {
-  Serial.println("Stop");
+  Sprint("Stop");
 }
 
 void pitchBend(byte channel, int bend)
 {
 
-  Serial.print(bend);
-  Serial.println();
+  Sprintln(bend);
 
   ltc6903(10, map(bend, 8191, -8192, 1023, 8));
 }
@@ -336,9 +344,11 @@ void handleNoteOn(byte channel, byte pitch, byte velocity)
     display.setCursor(60, 2);
     display.clearToEOL();
     display.print(phonem->label);
-    Wire.setClock(500000L); //  Restore I2C speed to allow speech
-
-    //digitalWrite(LED_BUILTIN, HIGH);
+    Wire.setClock(500000L); //Restore I2C speed to allow speech
+    if (phonem->sc02_id)    // to filter out the PA0 (id = 0)
+    {
+      Serial.println(phonem->label);
+    }
   }
   break;
   case 2: // MIDI channel 2 for the pitch
@@ -352,8 +362,8 @@ void handleNoteOn(byte channel, byte pitch, byte velocity)
 void handleNoteOff(byte channel, byte pitch, byte velocity)
 {
   // Log when a note is released.
-  Serial.printf("Note off: channel = %d, pitch = %d, velocity - %d", channel, pitch, velocity);
-  Serial.println();
+  //Serial.printf("Note off: channel = %d, pitch = %d, velocity - %d", channel, pitch, velocity);
+  //Serial.println();
 
   switch (channel)
   {
@@ -373,12 +383,14 @@ void handleNoteOff(byte channel, byte pitch, byte velocity)
 void setup()
 {
 
- USBDevice.setManufacturerDescriptor("Polaxis");
- USBDevice.setProductDescriptor("Robovox");
+  USBDevice.setManufacturerDescriptor("Polaxis");
+  USBDevice.setProductDescriptor("Robovox");
 
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(SW1, INPUT_PULLUP);
   pinMode(MISO, OUTPUT);
+
+  digitalWrite(MISO, HIGH);
 
   // Initialize MIDI, and listen to all MIDI channels
   // This will also call usb_midi's begin()
@@ -421,7 +433,7 @@ void setup()
   display.clear();
   display.set1X();
   display.setFont(fixed_bold10x15);
-  display.print("RobovoxtMIDI");
+  display.print("Robovox MIDI");
 
   ltc6903(10, 516); //Set pitch to middle of pitch wheel
 
@@ -467,5 +479,5 @@ void loop()
 {
   // read any new MIDI messages
   MIDI.read();
-  digitalWrite(MISO,digitalRead(SW1));
+  digitalWrite(MISO, digitalRead(SW1));
 }

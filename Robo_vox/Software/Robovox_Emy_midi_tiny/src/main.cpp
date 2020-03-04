@@ -62,6 +62,7 @@
 #define SDI PIN_SPI_MOSI //Serial Data Input, D15 first
 
 int Word = 0; //shifting word sent to ltc6903
+bool dispStatus = 0; // to switch of display
 
 /*
    ██████  ██████       ██ ███████  ██████ ████████ ███████
@@ -200,6 +201,14 @@ byte DivClock = 0; // To ouptut the MIDI clock
 ╚═╝      ╚═════╝  ╚═════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
                                                                           
 */
+
+void toggleDisplay()
+{
+  // TODO: add very long press to disable display
+  dispStatus=!dispStatus;
+  display.ssd1306WriteCmd(SSD1306_CHARGEPUMP);
+  display.ssd1306WriteCmd(0X10+(dispStatus<<3));
+}
 
 void StatusLED()
 {
@@ -390,7 +399,7 @@ void setup()
   pinMode(SW1, INPUT_PULLUP);
   pinMode(MISO, OUTPUT);
 
-  digitalWrite(MISO, HIGH);
+  digitalWrite(MISO, LOW);
 
   // Initialize MIDI, and listen to all MIDI channels
   // This will also call usb_midi's begin()
@@ -435,6 +444,7 @@ void setup()
   display.setFont(fixed_bold10x15);
   display.print("Robovox MIDI");
 
+
   ltc6903(10, 516); //Set pitch to middle of pitch wheel
 
   pinMode(RED_LED, OUTPUT);
@@ -452,10 +462,11 @@ void setup()
   digitalWrite(RW, HIGH);
 
   pinMode(BUSY, OUTPUT);
+  pinMode(PUSH, INPUT);
   digitalWrite(BUSY, OFF);
 
   delay(1000);
-  //attachInterrupt(AR, StatusLED,CHANGE);
+  attachInterrupt(PUSH, toggleDisplay, FALLING);
   //Reset();
   SC02.writeIODIR(0x0);
 

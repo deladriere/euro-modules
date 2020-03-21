@@ -13,6 +13,7 @@
 #include "SDU.h"
 #include "SSD1306Ascii.h"
 #include "SSD1306AsciiWire.h"
+#include "SDU.h" // to allow updates from SD card
 
 #define MCP23008_ADDR 0x20
 
@@ -61,6 +62,9 @@
 #define SCLK PIN_SPI_SCK //Serial Clock for clocking in data
 #define SDI PIN_SPI_MOSI //Serial Data Input, D15 first
 
+#define DEBOUNCE 200
+long lastSW1=0; // to debounce SW1
+
 int Word = 0; //shifting word sent to ltc6903
 bool dispStatus = 0; // to switch of display
 
@@ -92,7 +96,7 @@ MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usb_midi, MIDI);
 
  */
 
-#define VERSION 0.02
+#define VERSION "USB 0.03"
 #define ON 0
 #define OFF 1
 
@@ -202,9 +206,19 @@ byte DivClock = 0; // To ouptut the MIDI clock
                                                                           
 */
 
+void toggleCarrier()
+{
+  if (millis()-lastSW1>DEBOUNCE)
+  {
+  // TODO:  needs debouncing
+  digitalWrite(MISO, digitalRead(SW1));
+  lastSW1=millis();
+  }
+}
 void toggleDisplay()
 {
   // TODO: add very long press to disable display
+  // TODO: may need debouncing
   dispStatus=!dispStatus;
   display.ssd1306WriteCmd(SSD1306_CHARGEPUMP);
   display.ssd1306WriteCmd(0X10+(dispStatus<<3));
@@ -281,10 +295,19 @@ void Command(byte registre, byte value)
 
 void controlChange(byte channel, byte number, byte value)
 {
-  if (number == 1)
+  switch (number)
+
   {
-    Command(4, map(value, 0, 127, 200, 251));
+    case 1: // modulation
+     Command(4, map(value, 0, 127, 200, 251));
+     break;
+
+     case 64:
+     digitalWrite(MISO, value>>6);
+     break; 
   }
+
+
 }
 
 void Clock()
@@ -324,8 +347,8 @@ void pitchBend(byte channel, int bend)
 void handleNoteOn(byte channel, byte pitch, byte velocity)
 {
   // Log when a note is pressed.
-  Serial.printf("Note on: channel = %d, pitch = %d, velocity - %d", channel, pitch, velocity);
-  Serial.println();
+  //Serial.printf("Note on: channel = %d, pitch = %d, velocity - %d", channel, pitch, velocity);
+  //Serial.println();
 
   switch (channel)
   {
@@ -354,10 +377,10 @@ void handleNoteOn(byte channel, byte pitch, byte velocity)
     display.clearToEOL();
     display.print(phonem->label);
     Wire.setClock(500000L); //Restore I2C speed to allow speech
-    if (phonem->sc02_id)    // to filter out the PA0 (id = 0)
-    {
+   // if (phonem->sc02_id)    // to filter out the PA0 (id = 0)
+   // {
       Serial.println(phonem->label);
-    }
+   // }
   }
   break;
   case 2: // MIDI channel 2 for the pitch
@@ -383,6 +406,7 @@ void handleNoteOff(byte channel, byte pitch, byte velocity)
       digitalWrite(LED_BUILTIN, OFF);
       //   digitalWrite(BUSY, OFF);
       Phoneme(0); // Stop the sound
+      Serial.println("PA0");
     }
   }
   break;
@@ -442,7 +466,11 @@ void setup()
   display.clear();
   display.set1X();
   display.setFont(fixed_bold10x15);
-  display.print("Robovox MIDI");
+  display.println("Robovox MIDI");
+  display.setRow(2);
+  display.println("Version");
+  display.setRow(5);
+  display.println(VERSION);
 
 
   ltc6903(10, 516); //Set pitch to middle of pitch wheel
@@ -467,6 +495,7 @@ void setup()
 
   delay(1000);
   attachInterrupt(PUSH, toggleDisplay, FALLING);
+  attachInterrupt(SW1, toggleCarrier, CHANGE);
   //Reset();
   SC02.writeIODIR(0x0);
 
@@ -490,5 +519,5 @@ void loop()
 {
   // read any new MIDI messages
   MIDI.read();
-  digitalWrite(MISO, digitalRead(SW1));
+  //digitalWrite(MISO, digitalRead(SW1));
 }

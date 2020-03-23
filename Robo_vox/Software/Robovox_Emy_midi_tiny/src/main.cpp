@@ -63,9 +63,9 @@
 #define SDI PIN_SPI_MOSI //Serial Data Input, D15 first
 
 #define DEBOUNCE 200
-long lastSW1=0; // to debounce SW1
+long lastSW1 = 0; // to debounce SW1
 
-int Word = 0; //shifting word sent to ltc6903
+int Word = 0;        //shifting word sent to ltc6903
 bool dispStatus = 0; // to switch of display
 
 /*
@@ -208,20 +208,20 @@ byte DivClock = 0; // To ouptut the MIDI clock
 
 void toggleCarrier()
 {
-  if (millis()-lastSW1>DEBOUNCE)
+  if (millis() - lastSW1 > DEBOUNCE)
   {
-  // TODO:  needs debouncing
-  digitalWrite(MISO, digitalRead(SW1));
-  lastSW1=millis();
+    // TODO:  needs debouncing
+    digitalWrite(MISO, digitalRead(SW1));
+    lastSW1 = millis();
   }
 }
 void toggleDisplay()
 {
   // TODO: add very long press to disable display
   // TODO: may need debouncing
-  dispStatus=!dispStatus;
+  dispStatus = !dispStatus;
   display.ssd1306WriteCmd(SSD1306_CHARGEPUMP);
-  display.ssd1306WriteCmd(0X10+(dispStatus<<3));
+  display.ssd1306WriteCmd(0X10 + (dispStatus << 3));
 }
 
 void StatusLED()
@@ -298,16 +298,14 @@ void controlChange(byte channel, byte number, byte value)
   switch (number)
 
   {
-    case 1: // modulation
-     Command(4, map(value, 0, 127, 200, 251));
-     break;
+  case 1: // modulation
+    Command(4, map(value, 0, 127, 200, 251));
+    break;
 
-     case 64:
-     digitalWrite(MISO, value>>6);
-     break; 
+  case 64:
+    digitalWrite(MISO, value >> 6);
+    break;
   }
-
-
 }
 
 void Clock()
@@ -377,10 +375,10 @@ void handleNoteOn(byte channel, byte pitch, byte velocity)
     display.clearToEOL();
     display.print(phonem->label);
     Wire.setClock(500000L); //Restore I2C speed to allow speech
-   // if (phonem->sc02_id)    // to filter out the PA0 (id = 0)
-   // {
-      Serial.println(phonem->label);
-   // }
+                            // if (phonem->sc02_id)    // to filter out the PA0 (id = 0)
+                            // {
+    Serial.println(phonem->label);
+    // }
   }
   break;
   case 2: // MIDI channel 2 for the pitch
@@ -471,7 +469,6 @@ void setup()
   display.println("Version");
   display.setRow(5);
   display.println(VERSION);
-
 
   ltc6903(10, 516); //Set pitch to middle of pitch wheel
 

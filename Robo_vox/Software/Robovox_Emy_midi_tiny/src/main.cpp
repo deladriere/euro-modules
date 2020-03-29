@@ -268,18 +268,6 @@ void Strobe()
   digitalWrite(RW, HIGH);
 }
 
-void Phoneme(byte value)
-{
-  digitalWrite(RS0, 0);
-  digitalWrite(RS1, 0);
-  digitalWrite(RS2, 0);
-
-  SC02.writeGPIO(value + B11000000); // B11000000 smallest duration : it minimize the latency !
-  //while (digitalRead(AR))
-  //  ;
-  Strobe();
-}
-
 void Command(byte registre, byte value)
 {
 
@@ -291,6 +279,28 @@ void Command(byte registre, byte value)
   delayMicroseconds(1);
 
   Strobe();
+}
+
+void Phoneme(byte value)
+{
+  // Hack to avoid occasional carrier noise when external carrier is used. 
+  // Switching to the internal carrier seem to silence the noise floor. 
+  static bool reactivate_ext_input = false;
+  if (reactivate_ext_input && value != 0) {
+      digitalWrite(MISO, digitalRead(SW1));
+      reactivate_ext_input = false;
+  }
+
+  Command(0, value + B11000000);
+
+  if (digitalRead(SW1) && value == 0) {
+      delay(10);
+      digitalWrite(MISO, 0);
+      reactivate_ext_input = true;
+  }
+
+  //while (digitalRead(AR))
+  //  ;
 }
 
 void controlChange(byte channel, byte number, byte value)
@@ -504,6 +514,9 @@ void setup()
   Command(4, 240);       // Set Filter frequency to normal (231)
   Command(2, 200);       // Set Speech rate to normal (168)
   Command(1, 127);       // inflection
+
+  // Set initial carrier mode. 
+  toggleCarrier();
 
   for (int y = 0; y < 10; y++)
   {

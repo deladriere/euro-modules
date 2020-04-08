@@ -44,8 +44,8 @@
 #define SW1 1
 #define GATE 2
 #define PUSH 3
-#define ROTA 6
-#define ROTB 7
+#define ROTA 6 // Rotary pin a
+#define ROTB 7 // Rotary pin b
 #define GREEN_LED 12
 #define RED_LED 13
 
@@ -96,7 +96,7 @@ MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usb_midi, MIDI);
 
  */
 
-#define VERSION "USB 0.03"
+#define VERSION "USB 0.04"
 #define ON 0
 #define OFF 1
 
@@ -194,16 +194,22 @@ int i;
 byte hello[] = {44, 10, 32, 17, 35, 0, 0x23, 0x1C, 0x20, 0x25};
 byte last_note_on = 0;
 
-struct SC02Config {
-   byte filter_freq = 0;
-   byte inflection = 0;
-   byte rate = 0;
+struct SC02Config
+{
+  byte filter_freq = 0;
+  byte inflection = 0;
+  byte rate = 0;
 } sc02_config;
 
 bool cv_control_enabled = true;
 bool trigger_sc02_reset = false;
 
 byte DivClock = 0; // To ouptut the MIDI clock
+
+volatile int interruptCount = 0; // The rotary counter
+volatile bool rotF;              // to know that the rotary was rotated              // because use in rot
+
+byte SetChannel = 1; // to store the MIDI channel
 
 /*
 ███████╗██╗   ██╗ ██████╗███╗   ██╗████████╗██╗ ██████╗ ███╗   ██╗███████╗
@@ -215,7 +221,38 @@ byte DivClock = 0; // To ouptut the MIDI clock
                                                                           
 */
 
+void updateChannel()
+{
+  if (rotF)
+  {
+    Wire.setClock(1500000L); // speed the display to the max
+    display.setCursor(0, 6);
+    display.clearToEOL();
+    display.print("Channel ");
+    display.println(interruptCount);
+    Wire.setClock(500000L);
+  }
+  rotF = 0;
+  SetChannel = interruptCount;
+}
+void rot()
+{
 
+  if (digitalRead(ROTA))
+  {
+    if (digitalRead(ROTB))
+    {
+      interruptCount--;
+    }
+    else
+    {
+      interruptCount++;
+    }
+    // set rotflag on
+    rotF = 1;
+  }
+  interruptCount = constrain(interruptCount, 1, 16); // to remove later when using the rotary for something else
+}
 
 void toggleCarrier()
 {
@@ -292,40 +329,46 @@ void Command(byte registre, byte value)
   Strobe();
 }
 
-void resetSC02Config() {
+void resetSC02Config()
+{
   Command(3, B01111111); // Set articulation to normal and amplitude to maximum  & CTL to 0
-  Command(4, B11110000);       // Set Filter frequency to normal (231)
-  Command(2, B11001000);       // Set Speech rate to normal (168)
-  Command(1, B01111111);       // inflection
+  Command(4, B11110000); // Set Filter frequency to normal (231)
+  Command(2, B11001000); // Set Speech rate to normal (168)
+  Command(1, B01111111); // inflection
 
-  sc02_config.filter_freq=B11110000;
-  sc02_config.inflection=B01111111;
-  sc02_config.rate=B1100;
+  sc02_config.filter_freq = B11110000;
+  sc02_config.inflection = B01111111;
+  sc02_config.rate = B1100;
+  ltc6903(10, 516); //Set pitch to middle of pitch wheel
 }
 
-void toggleCVControl() {
+void toggleCVControl()
+{
   cv_control_enabled = !cv_control_enabled;
-  if (!cv_control_enabled) {
+  if (!cv_control_enabled)
+  {
     trigger_sc02_reset = true;
   }
 }
 
 void Phoneme(byte value)
 {
-  // Hack to avoid occasional carrier noise when external carrier is used. 
-  // Switching to the internal carrier seem to silence the noise floor. 
+  // Hack to avoid occasional carrier noise when external carrier is used.
+  // Switching to the internal carrier seem to silence the noise floor.
   static bool reactivate_ext_input = false;
-  if (reactivate_ext_input && value != 0) {
-      digitalWrite(MISO, digitalRead(SW1));
-      reactivate_ext_input = false;
+  if (reactivate_ext_input && value != 0)
+  {
+    digitalWrite(MISO, digitalRead(SW1));
+    reactivate_ext_input = false;
   }
 
   Command(0, value + B11000000);
 
-  if (digitalRead(SW1) && value == 0) {
-      delay(10);
-      digitalWrite(MISO, 0);
-      reactivate_ext_input = true;
+  if (digitalRead(SW1) && value == 0)
+  {
+    delay(10);
+    digitalWrite(MISO, 0);
+    reactivate_ext_input = true;
   }
 
   //while (digitalRead(AR))
@@ -387,10 +430,9 @@ void handleNoteOn(byte channel, byte pitch, byte velocity)
   //Serial.printf("Note on: channel = %d, pitch = %d, velocity - %d", channel, pitch, velocity);
   //Serial.println();
 
-  switch (channel)
+  if (channel == SetChannel)
   {
-  case 1: // MIDI channel 1 for the Phonemes
-  {
+
     last_note_on = pitch;
     pitch = constrain(pitch, 36, 93);
 
@@ -419,13 +461,6 @@ void handleNoteOn(byte channel, byte pitch, byte velocity)
     Serial.println(phonem->label);
     // }
   }
-  break;
-  case 2: // MIDI channel 2 for the pitch
-  {
-    ltc6903(10, pitch * 8);
-  }
-  break;
-  }
 }
 
 void handleNoteOff(byte channel, byte pitch, byte velocity)
@@ -434,9 +469,7 @@ void handleNoteOff(byte channel, byte pitch, byte velocity)
   //Serial.printf("Note off: channel = %d, pitch = %d, velocity - %d", channel, pitch, velocity);
   //Serial.println();
 
-  switch (channel)
-  {
-  case 1: // MIDI channel 1 for the Phonemes
+  if (channel == SetChannel)
   {
     if (last_note_on == pitch)
     {
@@ -445,8 +478,6 @@ void handleNoteOff(byte channel, byte pitch, byte velocity)
       Phoneme(0); // Stop the sound
       Serial.println("PA0");
     }
-  }
-  break;
   }
 }
 
@@ -459,6 +490,9 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(SW1, INPUT_PULLUP);
   pinMode(MISO, OUTPUT);
+
+  pinMode(ROTA, INPUT_PULLUP);
+  pinMode(ROTB, INPUT_PULLUP);
 
   digitalWrite(MISO, LOW);
 
@@ -504,9 +538,9 @@ void setup()
   display.set1X();
   display.setFont(fixed_bold10x15);
   display.println("Robovox MIDI");
-  display.setRow(2);
+  display.setRow(4);
   display.println("Version");
-  display.setRow(5);
+  display.setRow(6);
   display.println(VERSION);
 
   ltc6903(10, 516); //Set pitch to middle of pitch wheel
@@ -532,6 +566,8 @@ void setup()
   delay(1000);
   attachInterrupt(PUSH, toggleCVControl, FALLING);
   attachInterrupt(SW1, toggleCarrier, CHANGE);
+  attachInterrupt(ROTA, rot, CHANGE);
+
   //Reset();
   SC02.writeIODIR(0x0);
 
@@ -539,9 +575,9 @@ void setup()
   Command(0, 192); // load DR1 DR2 bit to 1 (to activate A/R request mode) (192)
   Command(3, 0);   // //Control bit to 0
 
-   resetSC02Config();
+  resetSC02Config();
 
-  // Set initial carrier mode. 
+  // Set initial carrier mode.
   toggleCarrier();
 
   for (int y = 0; y < 10; y++)
@@ -551,39 +587,48 @@ void setup()
   }
 }
 
-void updateSC02() {
-  if (trigger_sc02_reset) {
+void updateSC02()
+{
+  if (trigger_sc02_reset)
+  {
     resetSC02Config();
     trigger_sc02_reset = false;
   }
-  
+
   static bool last_cv_control_enabled = false;
-  if (cv_control_enabled!=last_cv_control_enabled) {
+  if (cv_control_enabled != last_cv_control_enabled)
+  {
     Wire.setClock(1500000L); // speed the display to the max
-    display.setCursor(0, 5);
+    display.setCursor(0, 4);
     display.clearToEOL();
-    display.println(cv_control_enabled?"CV On":"CV Off");
+    display.println(cv_control_enabled ? "CV On" : "CV Off");
     Wire.setClock(500000L); //Restore I2C speed to allow speech
     last_cv_control_enabled = cv_control_enabled;
   }
 
-  if (!cv_control_enabled) {
+  if (!cv_control_enabled)
+  {
     return;
   }
+  // Pitch control via master clock
+  ltc6903(10, map(analogRead(A1), 0, 0x03FF, 0x03FF, 0));
 
-  byte inflection = map(analogRead(A1), 0, 0x03FF, 0xFF, 0);
-  if (inflection!=sc02_config.inflection) {
-    Command(1,inflection);
+  byte inflection = map(analogRead(A2), 0, 0x03FF, 0xFF, 0);
+  if (inflection != sc02_config.inflection)
+  {
+    Command(1, inflection);
     sc02_config.inflection = inflection;
   }
-  byte filter_freq = map(analogRead(A2), 0, 0x03FF, 0, 0xFF);
-  if (filter_freq!=sc02_config.filter_freq) {
-    Command(4,filter_freq);
+  byte filter_freq = map(analogRead(A3), 0, 0x03FF, 0, 0xFF);
+  if (filter_freq != sc02_config.filter_freq)
+  {
+    Command(4, filter_freq);
     sc02_config.filter_freq = filter_freq;
   }
-  byte rate = map(analogRead(A3), 0, 0x03FF, 0, 0x0F);
-  if (rate!=sc02_config.rate) {
-    Command(2,(rate<<4)+B1000);
+  byte rate = map(analogRead(A4), 0, 0x03FF, 0, 0x0F);
+  if (rate != sc02_config.rate)
+  {
+    Command(2, (rate << 4) + B1000);
     sc02_config.rate = rate;
   }
 }
@@ -594,4 +639,5 @@ void loop()
   MIDI.read();
   //digitalWrite(MISO, digitalRead(SW1));
   updateSC02();
+  updateChannel();
 }

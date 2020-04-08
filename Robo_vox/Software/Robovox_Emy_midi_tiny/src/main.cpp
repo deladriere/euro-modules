@@ -194,6 +194,15 @@ int i;
 byte hello[] = {44, 10, 32, 17, 35, 0, 0x23, 0x1C, 0x20, 0x25};
 byte last_note_on = 0;
 
+struct SC02Config {
+   byte filter_freq = 0;
+   byte inflection = 0;
+   byte rate = 0;
+} sc02_config;
+
+bool cv_control_enabled = true;
+bool trigger_sc02_reset = false;
+
 byte DivClock = 0; // To ouptut the MIDI clock
 
 /*
@@ -205,6 +214,8 @@ byte DivClock = 0; // To ouptut the MIDI clock
 ╚═╝      ╚═════╝  ╚═════╝╚═╝  ╚═══╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
                                                                           
 */
+
+
 
 void toggleCarrier()
 {
@@ -279,6 +290,24 @@ void Command(byte registre, byte value)
   delayMicroseconds(1);
 
   Strobe();
+}
+
+void resetSC02Config() {
+  Command(3, B01111111); // Set articulation to normal and amplitude to maximum  & CTL to 0
+  Command(4, B11110000);       // Set Filter frequency to normal (231)
+  Command(2, B11001000);       // Set Speech rate to normal (168)
+  Command(1, B01111111);       // inflection
+
+  sc02_config.filter_freq=B11110000;
+  sc02_config.inflection=B01111111;
+  sc02_config.rate=B1100;
+}
+
+void toggleCVControl() {
+  cv_control_enabled = !cv_control_enabled;
+  if (!cv_control_enabled) {
+    trigger_sc02_reset = true;
+  }
 }
 
 void Phoneme(byte value)
@@ -367,7 +396,7 @@ void handleNoteOn(byte channel, byte pitch, byte velocity)
 
     digitalWrite(LED_BUILTIN, ON);
     // digitalWrite(BUSY, ON); // to measure latency from MIDI Note On to speech
-    // Apply Velocity but keep articulation to 5
+    // Apply Velocity.
     Command(3, map(velocity, 0, 127, 0, 15) + B00110000);
     const Phonem *const phonem = &phonems[pitch - 36];
     Phoneme(phonem->sc02_id); // let's start speech first to avoid delays from Oled
@@ -501,7 +530,7 @@ void setup()
   digitalWrite(BUSY, OFF);
 
   delay(1000);
-  attachInterrupt(PUSH, toggleDisplay, FALLING);
+  attachInterrupt(PUSH, toggleCVControl, FALLING);
   attachInterrupt(SW1, toggleCarrier, CHANGE);
   //Reset();
   SC02.writeIODIR(0x0);
@@ -510,10 +539,7 @@ void setup()
   Command(0, 192); // load DR1 DR2 bit to 1 (to activate A/R request mode) (192)
   Command(3, 0);   // //Control bit to 0
 
-  Command(3, B01111111); // Set articulation to normal and amplitude to maximum  & CTL to 0
-  Command(4, 240);       // Set Filter frequency to normal (231)
-  Command(2, 200);       // Set Speech rate to normal (168)
-  Command(1, 127);       // inflection
+   resetSC02Config();
 
   // Set initial carrier mode. 
   toggleCarrier();
@@ -525,9 +551,47 @@ void setup()
   }
 }
 
+void updateSC02() {
+  if (trigger_sc02_reset) {
+    resetSC02Config();
+    trigger_sc02_reset = false;
+  }
+  
+  static bool last_cv_control_enabled = false;
+  if (cv_control_enabled!=last_cv_control_enabled) {
+    Wire.setClock(1500000L); // speed the display to the max
+    display.setCursor(0, 5);
+    display.clearToEOL();
+    display.println(cv_control_enabled?"CV On":"CV Off");
+    Wire.setClock(500000L); //Restore I2C speed to allow speech
+    last_cv_control_enabled = cv_control_enabled;
+  }
+
+  if (!cv_control_enabled) {
+    return;
+  }
+
+  byte inflection = map(analogRead(A1), 0, 0x03FF, 0xFF, 0);
+  if (inflection!=sc02_config.inflection) {
+    Command(1,inflection);
+    sc02_config.inflection = inflection;
+  }
+  byte filter_freq = map(analogRead(A2), 0, 0x03FF, 0, 0xFF);
+  if (filter_freq!=sc02_config.filter_freq) {
+    Command(4,filter_freq);
+    sc02_config.filter_freq = filter_freq;
+  }
+  byte rate = map(analogRead(A3), 0, 0x03FF, 0, 0x0F);
+  if (rate!=sc02_config.rate) {
+    Command(2,(rate<<4)+B1000);
+    sc02_config.rate = rate;
+  }
+}
+
 void loop()
 {
   // read any new MIDI messages
   MIDI.read();
   //digitalWrite(MISO, digitalRead(SW1));
+  updateSC02();
 }

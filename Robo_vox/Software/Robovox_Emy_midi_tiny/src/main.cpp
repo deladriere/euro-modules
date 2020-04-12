@@ -4,6 +4,8 @@
  *   https://github.com/FortySevenEffects/arduino_midi_library
  */
 
+//#define SERIAL_MIDI
+
 #include <Arduino.h>
 #include <Adafruit_TinyUSB.h>
 #include <MIDI.h>
@@ -79,12 +81,18 @@ bool dispStatus = 0; // to switch of display
 MCP23008 SC02(MCP23008_ADDR);
 SSD1306AsciiWire display;
 
+#ifndef SERIAL_MIDI
 // USB MIDI object
 Adafruit_USBD_MIDI usb_midi;
+#endif
 
 // Create a new instance of the Arduino MIDI Library,
 // and attach usb_midi as the transport.
+#ifdef SERIAL_MIDI
+ MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
+#else
 MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usb_midi, MIDI);
+#endif
 
 /*
 
@@ -201,7 +209,7 @@ struct SC02Config
   byte rate = 0;
 } sc02_config;
 
-bool cv_control_enabled = true;
+bool cv_control_enabled = false;
 bool trigger_sc02_reset = false;
 
 byte DivClock = 0; // To ouptut the MIDI clock
@@ -521,9 +529,10 @@ void setup()
 
   Serial.begin(115200);
 
-  // wait until device mounted
-  while (!USBDevice.mounted())
-    delay(1);
+  // wait until device mounted 
+  // not needed ?
+ // while (!USBDevice.mounted())
+ //   delay(1);
 
   Wire.begin();
 

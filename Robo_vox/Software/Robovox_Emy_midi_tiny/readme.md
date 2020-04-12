@@ -14,6 +14,7 @@ Busy Jack
 Initial release
 
 # Todo
+- CV control for articulation on P5
 - CV control for phonemes input via the Sound pot
 - use the same code for the Serial MIDI mode (via DEFINE)
 

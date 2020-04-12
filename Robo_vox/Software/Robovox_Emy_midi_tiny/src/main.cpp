@@ -206,10 +206,12 @@ bool trigger_sc02_reset = false;
 
 byte DivClock = 0; // To ouptut the MIDI clock
 
-volatile int interruptCount = 0; // The rotary counter
-volatile bool rotF;              // to know that the rotary was rotated              // because use in rot
+volatile int interruptCount = 1; // The rotary counter
+volatile bool rotF=0;           // to know that the rotary was rotated 
+                               // because use in rot 
+                               // 1 to force first channel update
 
-byte SetChannel = 1; // to store the MIDI channel
+byte SetChannel = 1; // to store the MIDI channel : set to 1 to start
 
 /*
 ███████╗██╗   ██╗ ██████╗███╗   ██╗████████╗██╗ ██████╗ ███╗   ██╗███████╗

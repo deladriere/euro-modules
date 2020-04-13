@@ -9,6 +9,7 @@
 #include <Arduino.h>
 #include <Adafruit_TinyUSB.h>
 #include <MIDI.h>
+#include <limits>
 
 #include "MCP23008.h" //from http://gtbtech.com/?p=875
 #include "Wire.h"
@@ -128,7 +129,7 @@ struct Phonem
 // Original mapping has been designed for Votrax VS6.
 // SC02 phonems have been matched to the VS6 phonem set
 // (which resulted in duplicate usage of a few phonems)
-Phonem phonems[] = {
+static const Phonem phonems[] = {
     {0x16, "U"},
     {0x3D, ":UH"},
     {0x14, "IU"},
@@ -198,6 +199,9 @@ Phonem phonems[] = {
     {0x1A, "UH2"},
     {0x1B, "UH3"}};
 
+static const size_t kNumPhonems = sizeof(phonems) / sizeof(Phonem); 
+static const size_t kPA0PhonemIdx = 38;
+
 int i;
 byte hello[] = {44, 10, 32, 17, 35, 0, 0x23, 0x1C, 0x20, 0x25};
 byte last_note_on = 0;
@@ -207,10 +211,13 @@ struct SC02Config
   byte filter_freq = 0;
   byte inflection = 0;
   byte rate = 0;
+  float randomization = 0.0f;
 } sc02_config;
 
 bool cv_control_enabled = false;
 bool trigger_sc02_reset = false;
+bool trigger_cv_phoneme = false;
+bool trigger_pa0_phoneme = false;
 
 byte DivClock = 0; // To ouptut the MIDI clock
 
@@ -361,7 +368,7 @@ void toggleCVControl()
   }
 }
 
-void Phoneme(byte value)
+void WritePhonemToSc02(byte value)
 {
   // Hack to avoid occasional carrier noise when external carrier is used.
   // Switching to the internal carrier seem to silence the noise floor.
@@ -434,6 +441,31 @@ void pitchBend(byte channel, int bend)
   ltc6903(10, map(bend, 8191, -8192, 1023, 8));
 }
 
+void TriggerPhonem(const size_t phonem_idx) {
+    digitalWrite(LED_BUILTIN, ON);
+    size_t idx = phonem_idx;
+    const float randf = static_cast<float>(rand())/static_cast<float>(RAND_MAX);
+    if (phonem_idx != kPA0PhonemIdx &&
+        randf<sc02_config.randomization) {
+       idx = rand()%(kNumPhonems-1);
+    }
+    const Phonem& phonem = phonems[idx];
+    WritePhonemToSc02(phonem.sc02_id); // let's start speech first to avoid delays from Oled
+
+    //  Command(1, map(analogRead(A1), 0, 255, 0, 255));
+    Wire.setClock(1500000L); // speed the display to the max
+    display.setCursor(30, 2);
+    display.clearToEOL();
+    display.print(phonem.sc02_id, HEX);
+    display.setCursor(60, 2);
+    display.clearToEOL();
+    display.print(phonem.label);
+    Wire.setClock(500000L); //Restore I2C speed to allow speech
+                            // if (phonem->sc02_id)    // to filter out the PA0 (id = 0)
+                            // {
+    Serial.println(phonem.label);
+}
+
 void handleNoteOn(byte channel, byte pitch, byte velocity)
 {
   // Log when a note is pressed.
@@ -446,29 +478,10 @@ void handleNoteOn(byte channel, byte pitch, byte velocity)
     last_note_on = pitch;
     pitch = constrain(pitch, 36, 93);
 
-    digitalWrite(LED_BUILTIN, ON);
     // digitalWrite(BUSY, ON); // to measure latency from MIDI Note On to speech
     // Apply Velocity.
     Command(3, map(velocity, 0, 127, 0, 15) + B00110000);
-    const Phonem *const phonem = &phonems[pitch - 36];
-    Phoneme(phonem->sc02_id); // let's start speech first to avoid delays from Oled
-
-    //  Command(1, map(analogRead(A1), 0, 255, 0, 255));
-    Wire.setClock(1500000L); // speed the display to the max
-    display.setCursor(0, 2);
-    display.clearToEOL();
-    display.print(pitch);
-
-    display.setCursor(30, 2);
-    display.clearToEOL();
-    display.print(phonem->sc02_id, HEX);
-    display.setCursor(60, 2);
-    display.clearToEOL();
-    display.print(phonem->label);
-    Wire.setClock(500000L); //Restore I2C speed to allow speech
-                            // if (phonem->sc02_id)    // to filter out the PA0 (id = 0)
-                            // {
-    Serial.println(phonem->label);
+    TriggerPhonem(pitch - 36);
     // }
   }
 }
@@ -485,10 +498,18 @@ void handleNoteOff(byte channel, byte pitch, byte velocity)
     {
       digitalWrite(LED_BUILTIN, OFF);
       //   digitalWrite(BUSY, OFF);
-      Phoneme(0); // Stop the sound
-      Serial.println("PA0");
+      TriggerPhonem(kPA0PhonemIdx);
     }
   }
+}
+
+void cvTrigger() {
+  if (!digitalRead(GATE)) {
+     trigger_cv_phoneme = true;
+     return;
+  } 
+  trigger_cv_phoneme = false;
+  trigger_pa0_phoneme = true;
 }
 
 void setup()
@@ -503,6 +524,8 @@ void setup()
 
   pinMode(ROTA, INPUT_PULLUP);
   pinMode(ROTB, INPUT_PULLUP);
+
+  pinMode(GATE, INPUT);
 
   digitalWrite(MISO, LOW);
 
@@ -593,9 +616,11 @@ void setup()
 
   for (int y = 0; y < 10; y++)
   {
-    Phoneme(hello[y]);
+    WritePhonemToSc02(hello[y]);
     delay(100);
   }
+
+  attachInterrupt(GATE, cvTrigger, CHANGE);
 }
 
 void updateSC02()
@@ -616,6 +641,22 @@ void updateSC02()
     Wire.setClock(500000L); //Restore I2C speed to allow speech
     last_cv_control_enabled = cv_control_enabled;
   }
+
+  if (trigger_cv_phoneme) {
+    const size_t cv_phonem_idx = map(analogRead(A6), 0, 0x03FF, 0, kNumPhonems - 1);
+    Command(3, B00111111); // Max. velocity. 
+    TriggerPhonem(cv_phonem_idx);  
+    trigger_cv_phoneme = false;
+  }
+  
+  if (trigger_pa0_phoneme) {
+    Command(3, B00111111); // Max. velocity. 
+    TriggerPhonem(kPA0PhonemIdx);  // PA0 phonem
+    trigger_pa0_phoneme = false; 
+  }  
+
+  sc02_config.randomization = 1.0f - 
+     static_cast<float>(analogRead(A5))/ static_cast<float>(0x03FF);                      
 
   if (!cv_control_enabled)
   {

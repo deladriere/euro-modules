@@ -90,7 +90,7 @@ Adafruit_USBD_MIDI usb_midi;
 // Create a new instance of the Arduino MIDI Library,
 // and attach usb_midi as the transport.
 #ifdef SERIAL_MIDI
- MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
 #else
 MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usb_midi, MIDI);
 #endif
@@ -104,8 +104,11 @@ MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usb_midi, MIDI);
      ████   ██   ██ ██   ██ ██ ██   ██ ██████  ███████ ███████ ███████
 
  */
-
-#define VERSION "USB 0.04"
+#ifdef SERIAL_MIDI
+#define VERSION "SERIAL MODE"
+#else
+#define VERSION "USB MODE"
+#endif
 #define ON 0
 #define OFF 1
 
@@ -199,7 +202,7 @@ static const Phonem phonems[] = {
     {0x1A, "UH2"},
     {0x1B, "UH3"}};
 
-static const size_t kNumPhonems = sizeof(phonems) / sizeof(Phonem); 
+static const size_t kNumPhonems = sizeof(phonems) / sizeof(Phonem);
 static const size_t kPA0PhonemIdx = 38;
 
 int i;
@@ -222,9 +225,9 @@ bool trigger_pa0_phoneme = false;
 byte DivClock = 0; // To ouptut the MIDI clock
 
 volatile int interruptCount = 1; // The rotary counter
-volatile bool rotF=0;           // to know that the rotary was rotated 
-                               // because use in rot 
-                               // 1 to force first channel update
+volatile bool rotF = 0;          // to know that the rotary was rotated
+                                 // because use in rot
+                                 // 1 to force first channel update
 
 byte SetChannel = 1; // to store the MIDI channel : set to 1 to start
 
@@ -401,6 +404,13 @@ void controlChange(byte channel, byte number, byte value)
     Command(4, map(value, 0, 127, 200, 251));
     break;
 
+  case 2:  // breath control used to control Inflection
+    Word = value << 5;  // inflection is 12 bits
+    Command(2,0b11000000+((Word>>11)<<3));   // convert to 12 bits ; using temp variable; keeping Rate untouched
+    Command(1, (Word & 0b011111111000)>>3);
+
+    break;
+
   case 64:
     digitalWrite(MISO, value >> 6);
     break;
@@ -441,29 +451,31 @@ void pitchBend(byte channel, int bend)
   ltc6903(10, map(bend, 8191, -8192, 1023, 8));
 }
 
-void TriggerPhonem(const size_t phonem_idx) {
-    digitalWrite(LED_BUILTIN, ON);
-    size_t idx = phonem_idx;
-    const float randf = static_cast<float>(rand())/static_cast<float>(RAND_MAX);
-    if (phonem_idx != kPA0PhonemIdx &&
-        randf<sc02_config.randomization) {
-       idx = rand()%(kNumPhonems-1);
-    }
-    const Phonem& phonem = phonems[idx];
-    WritePhonemToSc02(phonem.sc02_id); // let's start speech first to avoid delays from Oled
+void TriggerPhonem(const size_t phonem_idx)
+{
+  digitalWrite(LED_BUILTIN, ON);
+  size_t idx = phonem_idx;
+  const float randf = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+  if (phonem_idx != kPA0PhonemIdx &&
+      randf < sc02_config.randomization)
+  {
+    idx = rand() % (kNumPhonems - 1);
+  }
+  const Phonem &phonem = phonems[idx];
+  WritePhonemToSc02(phonem.sc02_id); // let's start speech first to avoid delays from Oled
 
-    //  Command(1, map(analogRead(A1), 0, 255, 0, 255));
-    Wire.setClock(1500000L); // speed the display to the max
-    display.setCursor(30, 2);
-    display.clearToEOL();
-    display.print(phonem.sc02_id, HEX);
-    display.setCursor(60, 2);
-    display.clearToEOL();
-    display.print(phonem.label);
-    Wire.setClock(500000L); //Restore I2C speed to allow speech
-                            // if (phonem->sc02_id)    // to filter out the PA0 (id = 0)
-                            // {
-    Serial.println(phonem.label);
+  //  Command(1, map(analogRead(A1), 0, 255, 0, 255));
+  Wire.setClock(1500000L); // speed the display to the max
+  display.setCursor(30, 2);
+  display.clearToEOL();
+  display.print(phonem.sc02_id, HEX);
+  display.setCursor(60, 2);
+  display.clearToEOL();
+  display.print(phonem.label);
+  Wire.setClock(500000L); //Restore I2C speed to allow speech
+                          // if (phonem->sc02_id)    // to filter out the PA0 (id = 0)
+                          // {
+  Serial.println(phonem.label);
 }
 
 void handleNoteOn(byte channel, byte pitch, byte velocity)
@@ -503,11 +515,13 @@ void handleNoteOff(byte channel, byte pitch, byte velocity)
   }
 }
 
-void cvTrigger() {
-  if (!digitalRead(GATE)) {
-     trigger_cv_phoneme = true;
-     return;
-  } 
+void cvTrigger()
+{
+  if (!digitalRead(GATE))
+  {
+    trigger_cv_phoneme = true;
+    return;
+  }
   trigger_cv_phoneme = false;
   trigger_pa0_phoneme = true;
 }
@@ -552,10 +566,10 @@ void setup()
 
   Serial.begin(115200);
 
-  // wait until device mounted 
+  // wait until device mounted
   // not needed ?
- // while (!USBDevice.mounted())
- //   delay(1);
+  // while (!USBDevice.mounted())
+  //   delay(1);
 
   Wire.begin();
 
@@ -573,7 +587,7 @@ void setup()
   display.setFont(fixed_bold10x15);
   display.println("Robovox MIDI");
   display.setRow(4);
-  display.println("Version");
+  display.println("Ver. 0.04");
   display.setRow(6);
   display.println(VERSION);
 
@@ -642,21 +656,23 @@ void updateSC02()
     last_cv_control_enabled = cv_control_enabled;
   }
 
-  if (trigger_cv_phoneme) {
+  if (trigger_cv_phoneme)
+  {
     const size_t cv_phonem_idx = map(analogRead(A6), 0, 0x03FF, 0, kNumPhonems - 1);
-    Command(3, B00111111); // Max. velocity. 
-    TriggerPhonem(cv_phonem_idx);  
+    Command(3, B00111111); // Max. velocity.
+    TriggerPhonem(cv_phonem_idx);
     trigger_cv_phoneme = false;
   }
-  
-  if (trigger_pa0_phoneme) {
-    Command(3, B00111111); // Max. velocity. 
-    TriggerPhonem(kPA0PhonemIdx);  // PA0 phonem
-    trigger_pa0_phoneme = false; 
-  }  
 
-  sc02_config.randomization = 1.0f - 
-     static_cast<float>(analogRead(A5))/ static_cast<float>(0x03FF);                      
+  if (trigger_pa0_phoneme)
+  {
+    Command(3, B00111111);        // Max. velocity.
+    TriggerPhonem(kPA0PhonemIdx); // PA0 phonem
+    trigger_pa0_phoneme = false;
+  }
+
+  sc02_config.randomization = 1.0f -
+                              static_cast<float>(analogRead(A5)) / static_cast<float>(0x03FF);
 
   if (!cv_control_enabled)
   {

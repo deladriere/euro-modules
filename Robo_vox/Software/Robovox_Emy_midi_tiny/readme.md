@@ -16,7 +16,7 @@ Initial release
 # Todo
 - CV control for articulation on P5
 - CV control for phonemes input via the Sound pot
-- use the same code for the Serial MIDI mode (via DEFINE)
+- [x] use the same code for the Serial MIDI mode (via DEFINE)
 
 
 # MIDI controls
@@ -28,6 +28,8 @@ Initial release
 
 The MIDI clock is available on the Busy jack
 
+# Gate
+Trigger the phonem
 
 # CV controls
 
@@ -44,8 +46,10 @@ Filter frequency
 Rate
 
 ## P5
+Phonem randomization 
 
 ## SOUND
+Phonem
 
 # Rotary
 ## Push

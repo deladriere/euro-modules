@@ -404,11 +404,14 @@ void controlChange(byte channel, byte number, byte value)
     Command(4, map(value, 0, 127, 200, 251));
     break;
 
-  case 2:  // breath control used to control Inflection
-    Word = value << 5;  // inflection is 12 bits
-    Command(2,0b11000000+((Word>>11)<<3));   // convert to 12 bits ; using temp variable; keeping Rate untouched
-    Command(1, (Word & 0b011111111000)>>3);
-
+  case 2:
+    /* it should be                                    // breath control used to control Inflection
+    Word = value << 5;                            // convert to 12 bits  using temp variable;
+    Command(2, 0b11000000 + ((Word >> 11) << 3)); // keeping Rate untouched
+    Command(1, (Word & 0b011111111000) >> 3);
+    but the next command seems to work ?
+  */ 
+   Command(1, (value<<1));
     break;
 
   case 64:
@@ -587,7 +590,7 @@ void setup()
   display.setFont(fixed_bold10x15);
   display.println("Robovox MIDI");
   display.setRow(4);
-  display.println("Ver. 0.04");
+  display.println("Ver. 0.05");
   display.setRow(6);
   display.println(VERSION);
 

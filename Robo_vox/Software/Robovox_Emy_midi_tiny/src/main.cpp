@@ -590,7 +590,7 @@ void setup()
   display.setFont(fixed_bold10x15);
   display.println("Robovox MIDI");
   display.setRow(4);
-  display.println("Ver. 0.05");
+  display.println("Ver. 0.06");
   display.setRow(6);
   display.println(VERSION);
 

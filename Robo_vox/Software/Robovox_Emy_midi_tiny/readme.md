@@ -1,5 +1,7 @@
 # Releases 
 
+- 24-07-2020    V0.06
+Added MIDI CC #2 to control Inflection/Pitch
 - 08-04-2020    V0.05
  Added CV controls : P1 master clock / P2 Inflection / P3 filter frequency / P4 rate
  Added MIDI channel chooser via the rotary knob

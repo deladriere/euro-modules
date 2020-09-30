@@ -63,6 +63,22 @@ int lastPitch = 99;
 
 int speaker[7] = {3, 51, 52, 53, 54, 55};
 
+char *mainFunctions[] = {
+
+    "Numbers",
+    "SD TTS",
+    "Clock",
+    "Keyboard",
+    "Code",
+};
+
+int numFunctions = (sizeof(mainFunctions) / sizeof(mainFunctions[0]));
+int function;
+int fin = 0; /// pour pression longue
+
+volatile int interruptCount = 0; // The rotary counter
+volatile bool rotF;              // because use in rot
+
 /*
 ███████╗██╗   ██╗███╗   ██╗ ██████╗████████╗██╗ ██████╗ ███╗   ██╗███████╗
 ██╔════╝██║   ██║████╗  ██║██╔════╝╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
@@ -72,9 +88,39 @@ int speaker[7] = {3, 51, 52, 53, 54, 55};
 ╚═╝      ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
 */
 
+void rot()
+{
+
+  if (digitalRead(ROTA))
+  {
+    if (digitalRead(ROTB))
+    {
+      interruptCount--;
+    }
+    else
+    {
+      interruptCount++;
+    }
+    rotF = 1;
+  }
+}
+
+void displayFunctionList(int p)
+{
+
+  for (int i = 0; i < 4; i++)
+  { // nbr of lines to display
+
+    display.setCursor(13, i * 8); //
+    String str2 = mainFunctions[i + p];
+    display.clearToEOL();
+    display.println(str2);
+  }
+}
+
 void showBusy()
 {
-        digitalWrite(RED_LED, !digitalRead(RDY));      
+  digitalWrite(RED_LED, !digitalRead(RDY));
 }
 
 void getPot()
@@ -86,16 +132,16 @@ void getPot()
   // display.setFont(Arial14);
   if (speed != lastSpeed)
   {
-    display.setRow(2);
+    display.setRow(6);
     display.clearToEOL();
     display.print("Speed ");
     display.println(speed);
     lastSpeed = speed;
-    lastVolume = 99; // to force volume display
+    
   }
   if (pitch != lastPitch)
   {
-    display.setRow(4);
+    display.setRow(6);
     display.clearToEOL();
     display.print("Pitch ");
     display.println(pitch);
@@ -111,9 +157,9 @@ void getPot()
   }
   if (volume != lastVolume)
   {
-    display.setCursor(95, 2);
+    display.setRow(6);
     display.clearToEOL();
-    display.print("V");
+    display.print("Volume ");
     display.println(volume);
     lastVolume = volume;
   }
@@ -194,100 +240,13 @@ void setup()
 
   // Interrupts
   attachInterrupt(RDY, showBusy, CHANGE);
+  attachInterrupt(ROTA, rot, CHANGE);
 
-  sprintf(buf, "[d]");
+  sprintf(buf, "[d][h2]");
   speak(buf);
   waitForSpeech();
 
-  do
-  {
-    for (int i = 101; i < 126; i++)
-    { // message pitchs
-
-      sprintf(buf, "[x1]sound%d", i);
-      Serial.println(i);
-      speak(buf);
-      waitForSpeech();
-      Serial.println("");
-      delay(500);
-    }
-    delay(3000);
-
-    for (int i = 201; i < 226; i++)
-    { // ring pitchs
-      sprintf(buf, "[x1]sound%d", i);
-      Serial.println(i);
-      speak(buf);
-      waitForSpeech();
-      Serial.println("");
-      delay(500);
-    }
-
-    delay(3000);
-    for (int i = 301; i < 331; i++)
-    { // alarm pitchs
-      sprintf(buf, "[x1]sound%d", i);
-      Serial.println(i);
-      speak(buf);
-      waitForSpeech();
-      Serial.println("");
-      delay(500);
-    }
-
-    delay(3000);
-  } while (1);
-  do
-  {
-
-    sprintf(buf, "[i0][x1]sound219");
-    speak(buf);
-    waitForSpeech();
-
-    //getPot();
-    sprintf(buf, "[t%d][s%d][m%d][v%d][h2][i1]jing1chang2xi3shou3[p500]", pitch, speed, voice, volume);
-    speak(buf);
-    waitForSpeech();
-    //delay(500);
-
-    //getPot();
-    sprintf(buf, "[t%d][s%d][m%d][v%d][h2][i0]wash your hands often[p1000]", pitch, speed, voice, volume);
-    speak(buf);
-    waitForSpeech();
-
-    //getPot();
-    sprintf(buf, "[t%d][s%d][m%d][v%d][h2][i1]bi4mian3mi4qie4jie1chu4[p500]", pitch, speed, voice, volume);
-    speak(buf);
-    waitForSpeech();
-
-    //getPot();
-    sprintf(buf, "[t%d][s%d][m%d][v%d][h2][i0]Avoid close contact[p1000]", pitch, speed, voice, volume);
-    speak(buf);
-    waitForSpeech();
-
-    //getPot();
-    sprintf(buf, "[t%d][s%d][m%d][v%d][h2][i1]wei2zhebier2en2zhe1zhu4kou3bi2[p500]", pitch, speed, voice, volume);
-    speak(buf);
-    waitForSpeech();
-
-    //getPot();
-    sprintf(buf, "[t%d][s%d][m%d][v%d][h2][i0]Cover your mouth and nose with a mask when around others[p1000]", pitch, speed, voice, volume);
-    speak(buf);
-    waitForSpeech();
-
-    //getPot();
-    sprintf(buf, "[t%d][s%d][m%d][v%d][h2][i1]qing1jie2he2xiao1du2[p500]", pitch, speed, voice, volume);
-    speak(buf);
-    waitForSpeech();
-
-    //getPot();
-    sprintf(buf, "[t%d][s%d][m%d][v%d][h2][i0]Clean and disinfect[p1000]", pitch, speed, voice, volume);
-    speak(buf);
-    waitForSpeech();
-
-    delay(2000);
-
-  } while (1);
-  sprintf(buf, "[h][i0]Welcometoothemacheene");
+  sprintf(buf, "Welcometoothemacheene");
   speak(buf);
   waitForSpeech();
 }
@@ -304,72 +263,55 @@ void setup()
 
 void loop()
 {
-  /*
-  for (int i = 101; i < 126; i++)
-  { // message pitchs
-    sprintf(buf, "[x1]sound%d", i);
-    speak(buf);
-    waitForSpeech();
-  }
-  
-  for (int i = 201; i < 226; i++) { // ring pitchs
-    sprintf(buf, "[x1]sound%d", i);
-    speak(buf);
-    waitForSpeech();
-  }
-  for (int i = 301; i < 331; i++) { // alarm pitchs
-    sprintf(buf, "[x1]sound%d", i);
-    speak(buf);
-    waitForSpeech();
-  }
-  */
-
-  while (true)
+  interruptCount = 0;
+  display.clear();
+  delay(300);
+  display.set1X();
+  display.setFont(fixed_bold10x15);
+  display.setCursor(0, 12);
+  display.println(">");
+  rotF = 1;
+  //rd = 0;
+  do
   {
-    /*sprintf( buf, "[m51][t1][n2][s4]Check %d. Battery is %d percent charged.", count, random(1, 100));
-    speak(buf);
-    waitForSpeech();
-    sprintf( buf, "[m52][t10][n2][s5]A robot may not injure a human being or, through inaction");
-   
-    speak(buf);
-    waitForSpeech();
 
-*/
-    getPot();
-    sprintf(buf, "[m5%d][t%d][s%d][v%d]We are charging our battery", voice, pitch, speed, volume);
-    speak(buf);
-    waitForSpeech();
+    if (rotF)
+    {
+      interruptCount = constrain(interruptCount, 0, numFunctions - 1);
+      function = interruptCount;
+      displayFunctionList(function);
+      rotF = 0;
+    }
 
-    getPot();
-    sprintf(buf, "[m5%d][t%d][s%d][v%d]And now we are full of energy", voice, pitch, speed, volume);
-    speak(buf);
-    waitForSpeech();
+  } while (digitalRead(PUSH));
+  delay(400);
+  switch (function)
+  {
+  case 0:
+  {
+    display.clear();
+    display.println("Numbers");
 
-    getPot();
-    sprintf(buf, "[m5%d][t%d][s%d][v%d]We are the robots", voice, pitch, speed, volume);
-    speak(buf);
-    waitForSpeech();
+    do
+    {
+      fin = 0;
+      getPot();
+      
 
-    getPot();
-    sprintf(buf, "[m5%d][t%d][s%d][v%d]We are functioning automatic", voice, pitch, speed, volume);
-    speak(buf);
-    waitForSpeech();
 
-    getPot();
-    sprintf(buf, "[m5%d][t%d][s%d][v%d]And we are dancing mehkanic", voice, pitch, speed, volume);
-    speak(buf);
-    waitForSpeech();
 
-    getPot();
-    sprintf(buf, "[m5%d][t%d][s%d][v%d]Ja tvoi sluga", voice, pitch, speed, volume);
-    speak(buf);
-    waitForSpeech();
+      do
+      {
+        fin++;
 
-    getPot();
-    sprintf(buf, "[m5%d][t%d][s%d][v%d]Ja tvoi rabotnik", voice, pitch, speed, volume);
-    speak(buf);
-    waitForSpeech();
+        //  Sprintln(fin);
+        if (fin > 100000L)
+          break;
+      } while (digitalRead(PUSH) == 0);
 
-    delay(1000);
+    } while (fin < 100000L); // long presss
+
+  } // end of case
+  break;
   }
 }

@@ -12,7 +12,8 @@
 ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝  ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
 */
 // chip
-#define RDY 11
+#define BSY 11
+#define RST 4
 
 // Emy
 
@@ -50,16 +51,24 @@ auto &ss = Serial5;
                                                                     
 */
 
+#define ON 0
+#define OFF 1
+
 char buf[100];
 int speed = 0;
 int volume = 0;
 int voice = 0;
-int pitch = 0; // tone is reserved
+int pitch = 0; // tone  word is reserved
+int sound = 0;
+
+byte mode = 0;
+byte lastmode = 9;
 
 int lastSpeed = 99;
 int lastVolume = 99;
 int lastVoice = 99;
 int lastPitch = 99;
+int lastSound = -1;
 
 int speaker[7] = {3, 51, 52, 53, 54, 55};
 
@@ -70,6 +79,12 @@ char *mainFunctions[] = {
     "Clock",
     "Keyboard",
     "Code",
+};
+
+char *SWlabel[] = {
+    "Loop",
+    "Random",
+    "Normal",
 };
 
 int numFunctions = (sizeof(mainFunctions) / sizeof(mainFunctions[0]));
@@ -87,6 +102,14 @@ volatile bool rotF;              // because use in rot
 ██║     ╚██████╔╝██║ ╚████║╚██████╗   ██║   ██║╚██████╔╝██║ ╚████║███████║
 ╚═╝      ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
 */
+
+void Reset()
+{
+  digitalWrite(RST, LOW);
+  delay(50);
+  digitalWrite(RST, HIGH);
+  delay(500);
+}
 
 void rot()
 {
@@ -120,15 +143,34 @@ void displayFunctionList(int p)
 
 void showBusy()
 {
-  digitalWrite(RED_LED, !digitalRead(RDY));
+  digitalWrite(RED_LED, !digitalRead(BSY));
 }
 
-void getPot()
+void getUser()
 {
+  mode = digitalRead(SW0) + digitalRead(SW1) * 2;
   speed = map(analogRead(A1), 1023, 0, 0, 10);
   pitch = map(analogRead(A2), 1023, 0, 0, 10);
   voice = map(analogRead(A3), 1010, 5, 0, 5);
   volume = map(analogRead(A4), 1023, 0, 0, 10);
+  sound = map(analogRead(A6), 1023, 0, 0, 99);
+  if (sound != lastSound)
+  {
+    display.setRow(4);
+    display.clearToEOL();
+    display.println(sound);
+    lastSound = sound;
+  }
+
+  if (mode != lastmode)
+  {
+    display.setRow(6);
+    display.clearToEOL();
+    display.print("Mode ");
+    display.println(SWlabel[mode - 1]);
+
+    lastmode = mode;
+  }
   // display.setFont(Arial14);
   if (speed != lastSpeed)
   {
@@ -137,7 +179,6 @@ void getPot()
     display.print("Speed ");
     display.println(speed);
     lastSpeed = speed;
-    
   }
   if (pitch != lastPitch)
   {
@@ -182,7 +223,7 @@ void waitForSpeech(unsigned long timeout = 60000)
   bool done = false;
   while (!done && (millis() - start) < timeout)
   {
-    getPot();
+    getUser();
     while (ss.available())
     {
       if (ss.read() == 0x4F)
@@ -206,12 +247,13 @@ void waitForSpeech(unsigned long timeout = 60000)
 void setup()
 {
   Serial.begin(115200);
-  ss.begin(9600);
+  ss.begin(115200);
 
   // GPIOs
 
-  pinMode(RDY, INPUT_PULLUP);
-
+  pinMode(BSY, INPUT_PULLUP);
+  pinMode(RST, OUTPUT);
+  Reset();
   pinMode(SW0, INPUT_PULLUP);
   pinMode(SW1, INPUT_PULLUP);
   pinMode(ROTA, INPUT_PULLUP);
@@ -222,7 +264,7 @@ void setup()
   pinMode(RED_LED, OUTPUT);
   pinMode(REG_DAC_DATABUF, OUTPUT);
 
-  // turn transistorized outputs low ;
+  // Set GPIO;
   digitalWrite(GREEN_LED, HIGH);
   digitalWrite(RED_LED, HIGH);
 
@@ -239,7 +281,7 @@ void setup()
   //display.println(VERSION);
 
   // Interrupts
-  attachInterrupt(RDY, showBusy, CHANGE);
+  attachInterrupt(BSY, showBusy, CHANGE);
   attachInterrupt(ROTA, rot, CHANGE);
 
   sprintf(buf, "[d][h2]");
@@ -289,16 +331,22 @@ void loop()
   {
   case 0:
   {
+    printf(buf, "[d][h2]");
+    speak(buf);
+    waitForSpeech();
     display.clear();
     display.println("Numbers");
 
     do
     {
       fin = 0;
-      getPot();
-      
-
-
+      getUser();
+      if (digitalRead(GATE) == ON && !digitalRead(BSY))
+      {
+        sprintf(buf, "[t%d][s%d][m%d][v%d]%d", pitch, speed, voice, volume, sound);
+        speak(buf);
+        waitForSpeech();
+      }
 
       do
       {

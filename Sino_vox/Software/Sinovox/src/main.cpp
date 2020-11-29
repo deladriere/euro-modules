@@ -2,6 +2,7 @@
 #include "SSD1306Ascii.h"
 #include "SSD1306AsciiWire.h"
 #include "SDU.h"
+#include "avdweb_AnalogReadFast.h"
 
 /*
 ██╗  ██╗ █████╗ ██████╗ ██████╗ ██╗    ██╗ █████╗ ██████╗ ███████╗
@@ -69,6 +70,8 @@ int lastVolume = 99;
 int lastVoice = 99;
 int lastPitch = 99;
 int lastSound = -1;
+long lastchanged;
+bool displayCleared;
 
 int speaker[7] = {3, 51, 52, 53, 54, 55};
 
@@ -87,12 +90,19 @@ char *SWlabel[] = {
     "Normal",
 };
 
+char getit;
+
 int numFunctions = (sizeof(mainFunctions) / sizeof(mainFunctions[0]));
 int function;
 int fin = 0; /// pour pression longue
 
 volatile int interruptCount = 0; // The rotary counter
 volatile bool rotF;              // because use in rot
+
+int moy;
+
+bool pressed;
+bool triggered;
 
 /*
 ███████╗██╗   ██╗███╗   ██╗ ██████╗████████╗██╗ ██████╗ ███╗   ██╗███████╗
@@ -102,6 +112,33 @@ volatile bool rotF;              // because use in rot
 ██║     ╚██████╔╝██║ ╚████║╚██████╗   ██║   ██║╚██████╔╝██║ ╚████║███████║
 ╚═╝      ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
 */
+
+int potReadFast(int pot, int readings)
+{
+  moy = 0;
+  for (int i = 0; i < readings; i++)
+  {
+    moy = moy + analogReadFast(pot);
+    //  moy=moy +analogReadFast(pot,2);
+  }
+  return moy / readings;
+}
+
+void speak(char *msg)
+{
+  ss.write(0xFD);
+  ss.write((byte)0x00);
+  ss.write(2 + strlen(msg));
+  ss.write(0x01);
+  ss.write((byte)0x0);
+  ss.write(msg);
+}
+
+void gateUp()
+{
+  triggered = true;
+ // speak(buf);
+}
 
 void Reset()
 {
@@ -149,11 +186,11 @@ void showBusy()
 void getUser()
 {
   mode = digitalRead(SW0) + digitalRead(SW1) * 2;
-  speed = map(analogRead(A1), 1023, 0, 0, 10);
-  pitch = map(analogRead(A2), 1023, 0, 0, 10);
-  voice = map(analogRead(A3), 1010, 5, 0, 5);
-  volume = map(analogRead(A4), 1023, 0, 0, 10);
-  sound = map(analogRead(A6), 1023, 0, 0, 99);
+  speed = map(potReadFast(A1, 30), 4095, 0, 0, 10);
+  pitch = map(potReadFast(A2, 20), 4095, 0, 0, 10);
+  voice = map(potReadFast(A3, 20), 4095, 5, 0, 5);
+  volume = map(potReadFast(A4, 20), 4095, 0, 0, 10);
+  sound = map(potReadFast(A6, 20), 4095, 10, 0, 99);
   if (sound != lastSound)
   {
     display.setRow(4);
@@ -170,6 +207,8 @@ void getUser()
     display.println(SWlabel[mode - 1]);
 
     lastmode = mode;
+    lastchanged = millis();
+    displayCleared=false;
   }
   // display.setFont(Arial14);
   if (speed != lastSpeed)
@@ -179,6 +218,8 @@ void getUser()
     display.print("Speed ");
     display.println(speed);
     lastSpeed = speed;
+    lastchanged = millis();
+    displayCleared=false;
   }
   if (pitch != lastPitch)
   {
@@ -187,6 +228,8 @@ void getUser()
     display.print("Pitch ");
     display.println(pitch);
     lastPitch = pitch;
+    lastchanged = millis();
+    displayCleared=false;
   }
   if (voice != lastVoice)
   {
@@ -195,6 +238,8 @@ void getUser()
     display.print("Voice ");
     display.println(voice);
     lastVoice = voice;
+    lastchanged = millis();
+    displayCleared=false;
   }
   if (volume != lastVolume)
   {
@@ -203,18 +248,33 @@ void getUser()
     display.print("Volume ");
     display.println(volume);
     lastVolume = volume;
+    lastchanged = millis();
+    displayCleared=false;
   }
   voice = speaker[voice];
+  if (millis() - lastchanged > 2000 && !displayCleared) // clear display after 2 seconds
+  {
+    display.setRow(6);
+    display.clearToEOL();
+    displayCleared=true;
+  }
 }
 
-void speak(char *msg)
+
+
+void waitForSpeechGPIO(unsigned long timeout = 60000)
 {
-  ss.write(0xFD);
-  ss.write((byte)0x00);
-  ss.write(2 + strlen(msg));
-  ss.write(0x01);
-  ss.write((byte)0x0);
-  ss.write(msg);
+  unsigned long start = millis();
+  bool done = false;
+  while (!done && (millis() - start) < timeout)
+  {
+    getUser();
+    while (digitalRead(BSY))
+    {
+    }
+    done = true;
+    break;
+  }
 }
 
 void waitForSpeech(unsigned long timeout = 60000)
@@ -223,7 +283,7 @@ void waitForSpeech(unsigned long timeout = 60000)
   bool done = false;
   while (!done && (millis() - start) < timeout)
   {
-    getUser();
+    // getUser();
     while (ss.available())
     {
       if (ss.read() == 0x4F)
@@ -268,6 +328,8 @@ void setup()
   digitalWrite(GREEN_LED, HIGH);
   digitalWrite(RED_LED, HIGH);
 
+  analogReadResolution(12);
+
   Wire.begin();
   Wire.setClock(1500000L);              // speed the display to the max
   display.begin(&Adafruit128x64, 0x3C); // initialize with the I2C addr 0x3D (for the 128x64)
@@ -283,14 +345,15 @@ void setup()
   // Interrupts
   attachInterrupt(BSY, showBusy, CHANGE);
   attachInterrupt(ROTA, rot, CHANGE);
+  attachInterrupt(GATE, gateUp, FALLING);
 
   sprintf(buf, "[d][h2]");
   speak(buf);
   waitForSpeech();
-
   sprintf(buf, "Welcometoothemacheene");
   speak(buf);
   waitForSpeech();
+  delay(1000);
 }
 
 /*
@@ -331,21 +394,25 @@ void loop()
   {
   case 0:
   {
-    printf(buf, "[d][h2]");
-    speak(buf);
-    waitForSpeech();
+    //  printf(buf, "[d][h2]");
+    //  speak(buf);
+    //  waitForSpeech();
     display.clear();
     display.println("Numbers");
-
+    lastSound = -1; // to force first display
+   
     do
     {
       fin = 0;
       getUser();
-      if (digitalRead(GATE) == ON && !digitalRead(BSY))
+     
+     if (digitalRead(GATE) == ON && !digitalRead(BSY) && triggered)
       {
-        sprintf(buf, "[t%d][s%d][m%d][v%d]%d", pitch, speed, voice, volume, sound);
+        triggered = 0;
+
+        sprintf(buf, "[h1][t%d][s%d][m%d][v%d] %d", pitch, speed, voice, volume, sound);
         speak(buf);
-        waitForSpeech();
+       
       }
 
       do

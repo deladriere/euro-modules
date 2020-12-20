@@ -61,7 +61,11 @@ int volume = 0;
 int voice = 0;
 int pitch = 0; // tone  word is reserved
 int sound = 0;
+int interval = 0;
+int chime = 0;
+int language = 1;
 
+byte counter = 0;
 byte mode = 0;
 byte lastmode = 9;
 
@@ -70,8 +74,13 @@ int lastVolume = 99;
 int lastVoice = 99;
 int lastPitch = 99;
 int lastSound = -1;
+int lastInterval = -1;
+int lastChime = -1;
+int lastLanguage = -1;
 long lastchanged;
 bool displayCleared;
+
+long debouceRot = 0;
 
 int speaker[7] = {3, 51, 52, 53, 54, 55};
 
@@ -97,12 +106,16 @@ int function;
 int fin = 0; /// pour pression longue
 
 volatile int interruptCount = 0; // The rotary counter
+volatile int endRange;           // because use in rot
 volatile bool rotF;              // because use in rot
 
+int endNumbers[4] = {1, 9, 99, 999};
 int moy;
 
 bool pressed;
 bool triggered;
+
+bool rd = 0; // rotary display
 
 /*
 ███████╗██╗   ██╗███╗   ██╗ ██████╗████████╗██╗ ██████╗ ███╗   ██╗███████╗
@@ -137,7 +150,7 @@ void speak(char *msg)
 void gateUp()
 {
   triggered = true;
- // speak(buf);
+  // speak(buf);
 }
 
 void Reset()
@@ -150,7 +163,11 @@ void Reset()
 
 void rot()
 {
-
+  if ((millis() - debouceRot) < 5)
+  {
+    return;
+  }
+  debouceRot = millis();
   if (digitalRead(ROTA))
   {
     if (digitalRead(ROTB))
@@ -162,6 +179,16 @@ void rot()
       interruptCount++;
     }
     rotF = 1;
+  }
+  if (rd)
+  {
+    switch (function)
+    {
+    case 0:
+      interruptCount = constrain(interruptCount, 0, 3);
+      endRange = endNumbers[interruptCount];
+      break;
+    }
   }
 }
 
@@ -188,9 +215,29 @@ void getUser()
   mode = digitalRead(SW0) + digitalRead(SW1) * 2;
   speed = map(potReadFast(A1, 30), 4095, 0, 0, 10);
   pitch = map(potReadFast(A2, 20), 4095, 0, 0, 10);
-  voice = map(potReadFast(A3, 20), 4095, 5, 0, 5);
+  voice = map(potReadFast(A3, 10), 4095, 5, 0, 5);
   volume = map(potReadFast(A4, 20), 4095, 0, 0, 10);
-  sound = map(potReadFast(A6, 20), 4095, 10, 0, 99);
+  language = map(potReadFast(A5, 2), 4095, 0, 1, 3);
+
+  Serial.println(language);
+  if (language != lastLanguage)
+  {
+
+    display.setRow(6);
+    display.clearToEOL();
+    if (language == 1)
+    {
+      display.println("Chinese");
+    }
+    else
+    {
+      display.println("English");
+    }
+
+    lastLanguage = language;
+    lastchanged = millis();
+    displayCleared = false;
+  }
   if (sound != lastSound)
   {
     display.setRow(4);
@@ -208,7 +255,7 @@ void getUser()
 
     lastmode = mode;
     lastchanged = millis();
-    displayCleared=false;
+    displayCleared = false;
   }
   // display.setFont(Arial14);
   if (speed != lastSpeed)
@@ -219,7 +266,7 @@ void getUser()
     display.println(speed);
     lastSpeed = speed;
     lastchanged = millis();
-    displayCleared=false;
+    displayCleared = false;
   }
   if (pitch != lastPitch)
   {
@@ -229,7 +276,7 @@ void getUser()
     display.println(pitch);
     lastPitch = pitch;
     lastchanged = millis();
-    displayCleared=false;
+    displayCleared = false;
   }
   if (voice != lastVoice)
   {
@@ -239,7 +286,7 @@ void getUser()
     display.println(voice);
     lastVoice = voice;
     lastchanged = millis();
-    displayCleared=false;
+    displayCleared = false;
   }
   if (volume != lastVolume)
   {
@@ -249,18 +296,17 @@ void getUser()
     display.println(volume);
     lastVolume = volume;
     lastchanged = millis();
-    displayCleared=false;
+    displayCleared = false;
   }
+
   voice = speaker[voice];
   if (millis() - lastchanged > 2000 && !displayCleared) // clear display after 2 seconds
   {
     display.setRow(6);
     display.clearToEOL();
-    displayCleared=true;
+    displayCleared = true;
   }
 }
-
-
 
 void waitForSpeechGPIO(unsigned long timeout = 60000)
 {
@@ -398,21 +444,59 @@ void loop()
     //  speak(buf);
     //  waitForSpeech();
     display.clear();
-    display.println("Numbers");
+    display.println("Shuzi");
+    display.println(">0-");
     lastSound = -1; // to force first display
-   
+    rotF = 1;       // to force first display
+    endRange = 1;
+    rd = 1;
+
     do
     {
       fin = 0;
       getUser();
-     
-     if (digitalRead(GATE) == ON && !digitalRead(BSY) && triggered)
+      if (rotF)
+      {
+        display.setCursor(35, 2);
+        display.clearToEOL();
+        display.println(endRange);
+        rotF = 0;
+      }
+
+      if (digitalRead(GATE) == ON && !digitalRead(BSY) && triggered)
       {
         triggered = 0;
 
-        sprintf(buf, "[h1][t%d][s%d][m%d][v%d] %d", pitch, speed, voice, volume, sound);
+        switch (mode)
+        {
+        case 2:
+          sound = random(endRange + 1);
+          break;
+        case 1:
+          sound++;
+          break;
+        case 3:
+          if (endRange > 1)
+          {
+            sound = map(potReadFast(A6, 20), 4095, 10, 0, endRange);
+          }
+          else
+          {
+            if (potReadFast(6, 10) < 2048)
+            {
+              sound = 1;
+            }
+            else
+            {
+              sound = 0;
+            }
+          }
+          break;
+        }
+        sound = sound % (endRange + 1);
+
+        sprintf(buf, "[g%d][h2][t%d][s%d][m%d][v%d] %d", language, pitch, speed, voice, volume, sound);
         speak(buf);
-       
       }
 
       do
@@ -425,7 +509,7 @@ void loop()
       } while (digitalRead(PUSH) == 0);
 
     } while (fin < 100000L); // long presss
-
+    rd = 0;
   } // end of case
   break;
   }

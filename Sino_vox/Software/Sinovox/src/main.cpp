@@ -55,7 +55,7 @@ auto &ss = Serial5;
 #define ON 0
 #define OFF 1
 
-char buf[100];
+char buf[256];
 int speed = 0;
 int volume = 0;
 int voice = 0;
@@ -87,8 +87,8 @@ int speaker[7] = {3, 51, 52, 53, 54, 55};
 char *mainFunctions[] = {
 
     "Numbers",
+    "USB TTS",
     "SD TTS",
-    "Clock",
     "Keyboard",
     "Code",
 };
@@ -117,6 +117,11 @@ bool triggered;
 
 bool rd = 0; // rotary display
 
+// USB TTS
+#define COLS 100
+char serialtext[COLS];
+int serialPointer = 0;
+
 /*
 ███████╗██╗   ██╗███╗   ██╗ ██████╗████████╗██╗ ██████╗ ███╗   ██╗███████╗
 ██╔════╝██║   ██║████╗  ██║██╔════╝╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
@@ -125,6 +130,70 @@ bool rd = 0; // rotary display
 ██║     ╚██████╔╝██║ ╚████║╚██████╗   ██║   ██║╚██████╔╝██║ ╚████║███████║
 ╚═╝      ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
 */
+
+void readSerial()
+
+{
+
+  if (Serial.available())
+  {
+    int inByte = Serial.read();
+
+    switch (inByte)
+
+    {
+
+    case 27:
+    {
+
+      serialPointer = 0;
+      memset(&serialtext, 0, 40);
+      //Sprintln("Clear");
+      display.setCursor(0, 3);
+      display.set1X();
+      display.clearToEOL();
+      Serial.println("");
+
+      break;
+    }
+
+    case 8:
+
+      serialPointer--;
+      display.setCursor(display.col() - 11, 3); // delete last character 7+2x2 pixel =11
+      display.clearToEOL();
+      if (serialPointer < 0)
+      {
+        serialPointer = 0;
+      }
+      serialtext[serialPointer] = 0;
+      Serial.write(inByte);
+      Serial.print("\033[K");
+      break;
+
+    case 10:
+      break;
+
+    case 13:
+    {
+      triggered = true;
+      break;
+    }
+
+    default:
+    {
+      serialtext[serialPointer] = char(inByte);
+      serialPointer++;
+      display.setRow(3);
+      display.set1X();
+      display.print(char(inByte));
+      Serial.write(inByte);
+
+      break;
+    }
+    }
+  }
+}
 
 int potReadFast(int pot, int readings)
 {
@@ -217,28 +286,42 @@ void getUser()
   pitch = map(potReadFast(A2, 20), 4095, 0, 0, 10);
   voice = map(potReadFast(A3, 10), 4095, 5, 0, 5);
   volume = map(potReadFast(A4, 20), 4095, 0, 0, 10);
-  language = map(potReadFast(A5, 2), 4095, 0, 1, 3);
+  
 
-  Serial.println(language);
-  if (language != lastLanguage)
+  switch (function)
   {
-
-    display.setRow(6);
-    display.clearToEOL();
-    if (language == 1)
+  case 0:
+    if (mode != lastmode)
     {
-      display.println("Chinese");
-    }
-    else
-    {
-      display.println("English");
-    }
+      display.setRow(6);
+      display.clearToEOL();
+      display.print("Mode ");
+      display.println(SWlabel[mode - 1]);
 
-    lastLanguage = language;
-    lastchanged = millis();
-    displayCleared = false;
-  }
-  if (sound != lastSound)
+      lastmode = mode;
+      lastchanged = millis();
+      displayCleared = false;
+    }
+    language = map(potReadFast(A5, 2), 4095, 0, 1, 3);
+    if (language != lastLanguage)
+    {
+
+      display.setRow(6);
+      display.clearToEOL();
+      if (language == 1)
+      {
+        display.println("Chinese");
+      }
+      else
+      {
+        display.println("English");
+      }
+
+      lastLanguage = language;
+      lastchanged = millis();
+      displayCleared = false;
+    }
+     if (sound != lastSound)
   {
     display.setRow(4);
     display.clearToEOL();
@@ -246,17 +329,33 @@ void getUser()
     lastSound = sound;
   }
 
-  if (mode != lastmode)
-  {
-    display.setRow(6);
-    display.clearToEOL();
-    display.print("Mode ");
-    display.println(SWlabel[mode - 1]);
+    break;
+  case 1:
+  language = map(potReadFast(A5, 2), 0, 4095, 0, 2);
+  language=constrain(language,0,1);
+  if (language != lastLanguage)
+    {
 
-    lastmode = mode;
-    lastchanged = millis();
-    displayCleared = false;
+      display.setRow(6);
+      display.clearToEOL();
+      if (language == 1)
+      {
+        display.println("Pinyin");
+      }
+      else
+      {
+        display.println("English");
+      }
+
+      lastLanguage = language;
+      lastchanged = millis();
+      displayCleared = false;
+    }
+    break;
   }
+
+ 
+
   // display.setFont(Arial14);
   if (speed != lastSpeed)
   {
@@ -494,7 +593,7 @@ void loop()
           break;
         }
         sound = sound % (endRange + 1);
-
+        Serial.println(sound);
         sprintf(buf, "[g%d][h2][t%d][s%d][m%d][v%d] %d", language, pitch, speed, voice, volume, sound);
         speak(buf);
       }
@@ -512,5 +611,64 @@ void loop()
     rd = 0;
   } // end of case
   break;
+  case 1:
+  {
+    sprintf(buf, "[d][h2]");
+    speak(buf);
+    waitForSpeech();
+    display.clear();
+    display.println("USB TTS");
+    // display.println("com: 115.2 kBd 8n1");
+    Serial.print("\033\143");   // ANSI   clear screen
+    memset(&serialtext, 0, 40); // or COLS ?
+    rd = 0;                     // no need for extra rotary functions
+    triggered = false;
+    pressed = false;
+    do
+    { // main
+      fin = 0;
+      getUser();
+      readSerial();
+      if (!digitalRead(BSY) && triggered)
+      {
+        triggered = 0;
+       
+        getUser();
+        sprintf(buf, "[i%d][h2][t%d][s%d][m%d][v%d] %s", language,pitch, speed, voice, volume, serialtext);
+        speak(buf);
+      }
+      do
+      {
+        fin++;
+
+        if (fin > 100000L)
+          break;
+      } while (digitalRead(PUSH) == 0);
+    } while (fin < 100000L);
+    display.clear();
+  } // end of case
+  break;
   }
 }
+/*
+case 1:
+  {
+    display.clear();
+    display.println("USB TTS");
+    display.println("com: 115.2 kBd 8n1");
+
+    do
+    { // main
+      fin = 0;
+      do
+      {
+        fin++;
+
+        if (fin > 100000L)
+          break;
+      } while (digitalRead(PUSH) == 0);
+    } while (fin < 100000L);
+    display.clear();
+  } // end of case
+  break;
+  }*/

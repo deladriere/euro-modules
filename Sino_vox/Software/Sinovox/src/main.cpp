@@ -3,6 +3,7 @@
 #include "SSD1306AsciiWire.h"
 #include "SDU.h"
 #include "avdweb_AnalogReadFast.h"
+#include <SD.h> // 868
 
 /*
 ██╗  ██╗ █████╗ ██████╗ ██████╗ ██╗    ██╗ █████╗ ██████╗ ███████╗
@@ -42,6 +43,7 @@
 
 SSD1306AsciiWire display;
 auto &ss = Serial5;
+File root;
 /*
 ██╗   ██╗ █████╗ ██████╗ ██╗ █████╗ ██████╗ ██╗     ███████╗███████╗
 ██║   ██║██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗██║     ██╔════╝██╔════╝
@@ -80,6 +82,21 @@ int lastLanguage = -1;
 long lastchanged;
 bool displayCleared;
 
+// handling files
+
+int filePointer = 0;
+int fileCounter = 0; // file index
+int fileNumber = 0;  // file number
+int lineTable[200];  // max line
+char song2[4000];
+int pointer = 0;
+int linePointer = 0;
+int ligne = 0;
+char *myFiles[20]; //
+char inputChar;    // char reader
+
+char *filetype[4] = {".txt", ".spk", ".tts", ".bin"};
+
 long debouceRot = 0;
 
 int speaker[7] = {3, 51, 52, 53, 54, 55};
@@ -88,7 +105,7 @@ char *mainFunctions[] = {
 
     "Numbers",
     "USB TTS",
-    "SD TTS",
+    "SD READER",
     "Keyboard",
     "Code",
 };
@@ -130,6 +147,106 @@ int serialPointer = 0;
 ██║     ╚██████╔╝██║ ╚████║╚██████╗   ██║   ██║╚██████╔╝██║ ╚████║███████║
 ╚═╝      ╚═════╝ ╚═╝  ╚═══╝ ╚═════╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
 */
+
+//<start>[MK]::LogEnhancement v0.0.1 toggle 'Sprintln()' and 'Serial.print()'
+//       on/off with preprocessor variable 'DEBUG_TRACE' (https://forum.arduino.cc/index.php?topic=46900.0)
+#ifdef DEBUG_TRACE
+#define Sprintln(MSG) Serial.println(MSG)
+#define Sprint(MSG) Serial.print(MSG)
+#else
+#define Sprintln(MSG)
+#define Sprint(MSG)
+#endif
+//<end>[MK]::LogEnhancement
+void displayFilesList(int p)
+{
+
+  for (int i = 0; i < 4; i++)
+  {
+
+    display.setCursor(13, i * 8); //
+    String str2 = myFiles[i + p];
+    str2.remove(str2.length() - 4);
+    display.clearToEOL();
+    display.println(str2);
+  }
+}
+
+bool isTxtFile(char *filename, int type)
+{
+  bool result;
+  Sprint(type);
+  Sprint(" ");
+  Sprintln(filetype[type]);
+  if (strstr(strlwr(filename), filetype[type]) && !strstr(strlwr(filename), "_")) // filtering out just ".txt" file not containing "_"
+  {
+    result = true;
+  }
+  else
+  {
+    result = false;
+  }
+  return result;
+}
+
+void GetFilesList(File dir, int type)
+{
+  fileNumber = 0;
+  fileCounter = 0;
+  for (int8_t i = 0; i < 20; i++)
+  {
+    myFiles[i] = ""; // to emty the list
+  }
+
+  while (true)
+  {
+
+    File entry = dir.openNextFile(); // was dir
+    if (!entry)
+    {
+      // no more files
+      break;
+    }
+
+    if (isTxtFile(entry.name(), type)) //check if it's a .txt file
+    {
+
+      String str = entry.name();
+      //  str.remove(str.length()-4);
+
+      // Length (with one extra character for the null terminator)
+      int str_len = str.length() + 1;
+
+      // Prepare the character array (the buffer)
+      char char_array[str_len];
+
+      // Copy it over
+      str.toCharArray(char_array, str_len);
+      //Sprintln(char_array);
+
+      myFiles[fileCounter] = strdup(char_array); //WTF is strdup ?
+      fileCounter++;
+    }
+    entry.close();
+  }
+  fileNumber = fileCounter;
+}
+
+void initSD()
+{
+
+  if (!SD.begin(10))
+  {
+    display.clear();
+    display.println("Error");
+    display.println("SD card");
+    display.println("failed to ");
+    display.println("initialize");
+    while (1)
+      ;
+  }
+  root = SD.open("/");
+}
 
 void readSerial()
 
@@ -286,7 +403,6 @@ void getUser()
   pitch = map(potReadFast(A2, 20), 4095, 0, 0, 10);
   voice = map(potReadFast(A3, 10), 4095, 5, 0, 5);
   volume = map(potReadFast(A4, 20), 4095, 0, 0, 10);
-  
 
   switch (function)
   {
@@ -321,19 +437,19 @@ void getUser()
       lastchanged = millis();
       displayCleared = false;
     }
-     if (sound != lastSound)
-  {
-    display.setRow(4);
-    display.clearToEOL();
-    display.println(sound);
-    lastSound = sound;
-  }
+    if (sound != lastSound)
+    {
+      display.setRow(4);
+      display.clearToEOL();
+      display.println(sound);
+      lastSound = sound;
+    }
 
     break;
   case 1:
-  language = map(potReadFast(A5, 2), 0, 4095, 0, 2);
-  language=constrain(language,0,1);
-  if (language != lastLanguage)
+    language = map(potReadFast(A5, 2), 0, 4095, 0, 2);
+    language = constrain(language, 0, 1);
+    if (language != lastLanguage)
     {
 
       display.setRow(6);
@@ -353,8 +469,6 @@ void getUser()
     }
     break;
   }
-
- 
 
   // display.setFont(Arial14);
   if (speed != lastSpeed)
@@ -428,7 +542,7 @@ void waitForSpeech(unsigned long timeout = 60000)
   bool done = false;
   while (!done && (millis() - start) < timeout)
   {
-    // getUser();
+    getUser();
     while (ss.available())
     {
       if (ss.read() == 0x4F)
@@ -632,9 +746,9 @@ void loop()
       if (!digitalRead(BSY) && triggered)
       {
         triggered = 0;
-       
+
         getUser();
-        sprintf(buf, "[i%d][h2][t%d][s%d][m%d][v%d] %s", language,pitch, speed, voice, volume, serialtext);
+        sprintf(buf, "[i%d][h2][t%d][s%d][m%d][v%d] %s", language, pitch, speed, voice, volume, serialtext);
         speak(buf);
       }
       do
@@ -646,10 +760,87 @@ void loop()
       } while (digitalRead(PUSH) == 0);
     } while (fin < 100000L);
     display.clear();
-  } // end of case
+  } // end of case 1
   break;
-  }
-}
+  case 2: //@ SD READER
+  {
+
+    initSD();
+    root = SD.open("/");
+    root.rewindDirectory();
+    GetFilesList(root, 0);
+    interruptCount = 0;
+    rotF = 1;
+    rd = 0;
+
+    do
+    {
+      // choose the file
+      if (rotF)
+      {
+        interruptCount = constrain(interruptCount, 0, fileNumber - 1);
+        filePointer = interruptCount;
+        displayFilesList(filePointer);
+        rotF = 0;
+      }
+    } while (digitalRead(PUSH));
+    delay(400); // ok when have a file
+
+    display.clear();
+    display.setCursor(0, 12);
+    Sprint("Reading file:");
+    display.println("Reading ...");
+    display.setCursor(0, 28); //
+    display.println(myFiles[filePointer]);
+
+    String str = myFiles[filePointer];
+    str.remove(str.length() - 4);
+
+    Sprintln(str);
+
+    File myfile = SD.open(myFiles[filePointer]);
+
+    pointer = 0;
+    linePointer = 0;
+    sprintf(buf, "[d][h2]");
+    speak(buf);
+    do
+    {
+      while (myfile.available() && digitalRead(PUSH))
+      {
+        do
+        {
+          getUser();
+        } while (digitalRead(BSY));
+
+        inputChar = myfile.read();
+        
+        sprintf(buf, "[i0][h2][t%d][s%d][m%d][v%d] %c", pitch, speed, voice, volume, inputChar);
+       // Serial.print(" ");
+       // Serial.println(buf);
+        speak(buf);
+        Serial.println(inputChar);
+        waitForSpeech();
+        delay(10);
+      }
+      fin = 0;
+
+      do
+      {
+        fin++;
+
+        if (fin > 100000L)
+          break;
+      } while (digitalRead(PUSH) == 0);
+
+    } while (fin < 100000L);
+    myfile.close();
+    display.clear();
+
+  } // end of case 2
+  break;
+  } // end fo case
+} // end of loop
 /*
 case 1:
   {

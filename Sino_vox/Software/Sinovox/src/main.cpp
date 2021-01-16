@@ -116,6 +116,12 @@ char *SWlabel[] = {
     "Normal",
 };
 
+char *SW2abel[] = {
+    "Manual",
+    "Auto",
+    "Gated",
+};
+
 char getit;
 
 int numFunctions = (sizeof(mainFunctions) / sizeof(mainFunctions[0]));
@@ -138,6 +144,9 @@ bool rd = 0; // rotary display
 #define COLS 100
 char serialtext[COLS];
 int serialPointer = 0;
+
+// waiting for speech
+bool done = false;
 
 /*
 ███████╗██╗   ██╗███╗   ██╗ ██████╗████████╗██╗ ██████╗ ███╗   ██╗███████╗
@@ -339,6 +348,12 @@ void gateUp()
   // speak(buf);
 }
 
+void PushDown()
+{
+  pressed = true;
+  // speak(buf);
+}
+
 void Reset()
 {
   digitalWrite(RST, LOW);
@@ -468,6 +483,19 @@ void getUser()
       displayCleared = false;
     }
     break;
+  case 2:
+    if (mode != lastmode)
+    {
+      display.setRow(6);
+      display.clearToEOL();
+      display.print("Read ");
+      display.println(SW2abel[mode - 1]);
+
+      lastmode = mode;
+      lastchanged = millis();
+      displayCleared = false;
+    }
+    break;
   }
 
   // display.setFont(Arial14);
@@ -542,7 +570,7 @@ void waitForSpeech(unsigned long timeout = 60000)
   bool done = false;
   while (!done && (millis() - start) < timeout)
   {
-    getUser();
+
     while (ss.available())
     {
       if (ss.read() == 0x4F)
@@ -550,6 +578,17 @@ void waitForSpeech(unsigned long timeout = 60000)
         done = true;
         break;
       }
+    }
+  }
+}
+
+void CheckForSpeechFlag()
+{
+  if (ss.available())
+  {
+    if (ss.read() == 0x4F)
+    {
+      done = true;
     }
   }
 }
@@ -605,11 +644,12 @@ void setup()
   attachInterrupt(BSY, showBusy, CHANGE);
   attachInterrupt(ROTA, rot, CHANGE);
   attachInterrupt(GATE, gateUp, FALLING);
+  attachInterrupt(PUSH, PushDown, FALLING);
 
-  sprintf(buf, "[d][h2]");
+  sprintf(buf, "[d][h2][i1]");
   speak(buf);
   waitForSpeech();
-  sprintf(buf, "Welcometoothemacheene");
+  sprintf(buf, "Huan1ying2lai2dao4ji1qi4");
   speak(buf);
   waitForSpeech();
   delay(1000);
@@ -804,26 +844,30 @@ void loop()
     linePointer = 0;
     sprintf(buf, "[d][h2]");
     speak(buf);
+    triggered = false;
     do
     {
+      fin = 0;
       while (myfile.available() && digitalRead(PUSH))
       {
-        do
-        {
-          getUser();
-        } while (digitalRead(BSY));
 
-        inputChar = myfile.read();
-        
-        sprintf(buf, "[i0][h2][t%d][s%d][m%d][v%d] %c", pitch, speed, voice, volume, inputChar);
-       // Serial.print(" ");
-       // Serial.println(buf);
-        speak(buf);
-        Serial.println(inputChar);
-        waitForSpeech();
-        delay(10);
+        getUser();
+
+        if (!digitalRead(BSY) && (mode == 2 || (mode == 3 && triggered) || (mode == 1 && pressed)))
+        {
+          triggered = false;
+          pressed=false;
+          fin=0;
+          inputChar = myfile.read();
+
+          sprintf(buf, "[i0][h2][t%d][s%d][m%d][v%d] %c", pitch, speed, voice, volume, inputChar);
+          // Serial.print(" ");
+          // Serial.println(buf);
+          speak(buf);
+          Serial.println(inputChar);
+        }
+        delay(5); // to allow BSY gpio to reflect busy state
       }
-      fin = 0;
 
       do
       {

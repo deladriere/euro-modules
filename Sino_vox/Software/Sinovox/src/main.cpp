@@ -66,6 +66,7 @@ int sound = 0;
 int interval = 0;
 int chime = 0;
 int language = 1;
+int spell = 0;
 
 byte counter = 0;
 byte mode = 0;
@@ -76,6 +77,7 @@ int lastVolume = 99;
 int lastVoice = 99;
 int lastPitch = 99;
 int lastSound = -1;
+int lastSpell = -1;
 int lastInterval = -1;
 int lastChime = -1;
 int lastLanguage = -1;
@@ -98,6 +100,7 @@ char inputChar;    // char reader
 char *filetype[4] = {".txt", ".spk", ".tts", ".bin"};
 
 long debouceRot = 0;
+long deboucePush = 0;
 
 int speaker[7] = {3, 51, 52, 53, 54, 55};
 
@@ -120,6 +123,16 @@ char *SW2abel[] = {
     "Manual",
     "Auto",
     "Gated",
+};
+
+char *SW3abel[] = {
+    "Char.",
+    "Space",
+    "Line",
+};
+char *SW4abel[] = {
+    "Letter",
+    "Word",
 };
 
 char getit;
@@ -350,7 +363,14 @@ void gateUp()
 
 void PushDown()
 {
+  fin = 0;
+  if ((millis() - deboucePush) < 200)
+  {
+    return;
+  }
   pressed = true;
+  deboucePush = millis();
+
   // speak(buf);
 }
 
@@ -484,6 +504,19 @@ void getUser()
     }
     break;
   case 2:
+    spell = map(potReadFast(A5, 2), 0,1500, 1, 2);
+    spell = constrain(spell, 1, 2);
+    if (spell != lastSpell)
+    {
+      display.setRow(6);
+      display.clearToEOL();
+      display.print("Spell ");
+      display.println(SW4abel[spell - 1]);
+
+      lastSpell = spell;
+      lastchanged = millis();
+      displayCleared = false;
+    }
     if (mode != lastmode)
     {
       display.setRow(6);
@@ -492,6 +525,21 @@ void getUser()
       display.println(SW2abel[mode - 1]);
 
       lastmode = mode;
+      lastchanged = millis();
+      displayCleared = false;
+    }
+    sound = map(potReadFast(A6, 10), 4095, 10, 3, 0);
+    if (sound < 1)
+    {
+      sound = 1;
+    } // FIXME for a smoother display
+    if (sound != lastSound)
+    {
+      display.setRow(6);
+      display.clearToEOL();
+      display.print("Trig. ");
+      display.println(SW3abel[sound - 1]);
+      lastSound = sound;
       lastchanged = millis();
       displayCleared = false;
     }
@@ -845,10 +893,13 @@ void loop()
     sprintf(buf, "[d][h2]");
     speak(buf);
     triggered = false;
+    pressed = false;
+    memset(&serialtext, 0, COLS);
+    serialPointer = 0;
     do
     {
-      fin = 0;
-      while (myfile.available() && digitalRead(PUSH))
+
+      if (myfile.available())
       {
 
         getUser();
@@ -856,28 +907,60 @@ void loop()
         if (!digitalRead(BSY) && (mode == 2 || (mode == 3 && triggered) || (mode == 1 && pressed)))
         {
           triggered = false;
-          pressed=false;
-          fin=0;
-          inputChar = myfile.read();
+          pressed = false;
 
-          sprintf(buf, "[i0][h2][t%d][s%d][m%d][v%d] %c", pitch, speed, voice, volume, inputChar);
-          // Serial.print(" ");
-          // Serial.println(buf);
+          switch (sound)
+          {
+          case 1:
+            inputChar = myfile.read();
+            serialtext[0] = inputChar;
+            break;
+          case 2:
+            do
+            {
+              inputChar = myfile.read();
+              if (inputChar != 10)
+              {
+                serialtext[serialPointer] = inputChar;
+                serialPointer++;
+              }
+            } while (myfile.available() && inputChar != 32 && inputChar != 10);
+            break;
+          case 3:
+            do
+            {
+              inputChar = myfile.read();
+              if (inputChar != 10)
+              {
+                serialtext[serialPointer] = inputChar;
+                serialPointer++;
+              }
+            } while (myfile.available() && inputChar != 10);
+            break;
+          default:
+            break;
+          }
+
+          sprintf(buf, "[i0][h%d][t%d][s%d][m%d][v%d] %s", spell,pitch, speed, voice, volume, serialtext);
+
           speak(buf);
-          Serial.println(inputChar);
+          Serial.println(serialtext);
+          memset(&serialtext, 0, COLS);
+          serialPointer = 0;
         }
         delay(5); // to allow BSY gpio to reflect busy state
       }
 
-      do
+      if (digitalRead(PUSH) == 0)
       {
         fin++;
+      }
+      else
+      {
+        fin = 0;
+      }
 
-        if (fin > 100000L)
-          break;
-      } while (digitalRead(PUSH) == 0);
-
-    } while (fin < 100000L);
+    } while (fin < 150L);
     myfile.close();
     display.clear();
 

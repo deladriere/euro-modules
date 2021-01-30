@@ -5,6 +5,10 @@
 #include "avdweb_AnalogReadFast.h"
 #include <SD.h> // 868
 
+#include "SAMD_AnalogCorrection.h"
+#include "avdweb_AnalogReadFast.h"
+#include <FlashAsEEPROM.h> //1192
+
 /*
 ██╗  ██╗ █████╗ ██████╗ ██████╗ ██╗    ██╗ █████╗ ██████╗ ███████╗
 ██║  ██║██╔══██╗██╔══██╗██╔══██╗██║    ██║██╔══██╗██╔══██╗██╔════╝
@@ -72,6 +76,8 @@ byte counter = 0;
 byte mode = 0;
 byte lastmode = 9;
 
+#define LPRESS 200000L
+
 int lastSpeed = 99;
 int lastVolume = 99;
 int lastVoice = 99;
@@ -109,7 +115,6 @@ char *mainFunctions[] = {
     "Numbers",
     "USB TTS",
     "SD READER",
-    "Keyboard",
     "Code",
 };
 
@@ -180,6 +185,16 @@ bool done = false;
 #define Sprint(MSG)
 #endif
 //<end>[MK]::LogEnhancement
+void Exit()
+{
+  digitalWrite(RED_LED,ON);
+
+  digitalWrite(GREEN_LED,ON);
+  delay(500);
+  digitalWrite(GREEN_LED, OFF);
+  digitalWrite(RED_LED, OFF);
+}
+
 void displayFilesList(int p)
 {
 
@@ -504,7 +519,7 @@ void getUser()
     }
     break;
   case 2:
-    spell = map(potReadFast(A5, 2), 0,1500, 1, 2);
+    spell = map(potReadFast(A5, 2), 0, 1500, 1, 2);
     spell = constrain(spell, 1, 2);
     if (spell != lastSpell)
     {
@@ -717,7 +732,8 @@ void loop()
 {
   interruptCount = 0;
   display.clear();
-  delay(300);
+  Exit();
+ // delay(400);
   display.set1X();
   display.setFont(fixed_bold10x15);
   display.setCursor(0, 12);
@@ -896,10 +912,11 @@ void loop()
     pressed = false;
     memset(&serialtext, 0, COLS);
     serialPointer = 0;
+    fin=0;
     do
     {
-
-      if (myfile.available())
+      myfile.seek(0);
+      while (myfile.available() && fin < LPRESS)
       {
 
         getUser();
@@ -941,26 +958,30 @@ void loop()
             break;
           }
 
-          sprintf(buf, "[i0][h%d][t%d][s%d][m%d][v%d] %s", spell,pitch, speed, voice, volume, serialtext);
+          sprintf(buf, "[i0][h%d][t%d][s%d][m%d][v%d] %s", spell, pitch, speed, voice, volume, serialtext);
 
           speak(buf);
           Serial.println(serialtext);
+          display.setRow(4);
+          display.clearToEOL();
+          display.println(serialtext);
           memset(&serialtext, 0, COLS);
           serialPointer = 0;
         }
         delay(5); // to allow BSY gpio to reflect busy state
-      }
 
-      if (digitalRead(PUSH) == 0)
-      {
-        fin++;
-      }
-      else
-      {
         fin = 0;
+
+        do
+        {
+          fin++;
+
+          if (fin > LPRESS)
+            break;
+        } while (digitalRead(PUSH) == 0);
       }
 
-    } while (fin < 150L);
+    } while (fin < LPRESS);
     myfile.close();
     display.clear();
 

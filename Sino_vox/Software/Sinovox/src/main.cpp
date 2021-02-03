@@ -32,8 +32,31 @@
 #define GREEN_LED 12
 #define RED_LED 13
 #define AUX 38
+/*
 
-// pots
+ ██████╗ █████╗ ██╗     ██╗██████╗ ██████╗  █████╗ ████████╗███████╗
+██╔════╝██╔══██╗██║     ██║██╔══██╗██╔══██╗██╔══██╗╚══██╔══╝██╔════╝
+██║     ███████║██║     ██║██████╔╝██████╔╝███████║   ██║   █████╗  
+██║     ██╔══██║██║     ██║██╔══██╗██╔══██╗██╔══██║   ██║   ██╔══╝  
+╚██████╗██║  ██║███████╗██║██████╔╝██║  ██║██║  ██║   ██║   ███████╗
+ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
+ */                                                                  
+
+
+#define ADC_GND_PIN A4
+#define ADC_3V3_PIN A6
+
+#define ADC_READS_SHIFT 8
+#define ADC_READS_COUNT (1 << ADC_READS_SHIFT)
+
+#define ADC_MIN_GAIN 0x0400
+#define ADC_UNITY_GAIN 0x0800
+#define ADC_MAX_GAIN (0x1000 - 1)
+#define ADC_RESOLUTION_BITS 12
+#define ADC_RANGE (1 << ADC_RESOLUTION_BITS)
+#define ADC_TOP_VALUE (ADC_RANGE - 1)
+
+#define MAX_TOP_VALUE_READS 10
 
 /*
     ██████╗ ██████╗      ██╗███████╗ ██████╗████████╗███████╗
@@ -48,6 +71,10 @@
 SSD1306AsciiWire display;
 auto &ss = Serial5;
 File root;
+
+FlashStorage(offset_store, int);
+FlashStorage(gain_store, int);
+
 /*
 ██╗   ██╗ █████╗ ██████╗ ██╗ █████╗ ██████╗ ██╗     ███████╗███████╗
 ██║   ██║██╔══██╗██╔══██╗██║██╔══██╗██╔══██╗██║     ██╔════╝██╔════╝
@@ -57,7 +84,8 @@ File root;
   ╚═══╝  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝╚══════╝
                                                                     
 */
-
+#define CALIB
+#define VERSION 0.2
 #define ON 0
 #define OFF 1
 
@@ -166,6 +194,17 @@ int serialPointer = 0;
 // waiting for speech
 bool done = false;
 
+struct menuCode
+{
+  char *label;
+};
+
+menuCode Code[]{
+    ">Version",
+    ">Calibrate",
+    ">Flash",
+};
+
 /*
 ███████╗██╗   ██╗███╗   ██╗ ██████╗████████╗██╗ ██████╗ ███╗   ██╗███████╗
 ██╔════╝██║   ██║████╗  ██║██╔════╝╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
@@ -185,11 +224,230 @@ bool done = false;
 #define Sprint(MSG)
 #endif
 //<end>[MK]::LogEnhancement
+
+uint16_t readGndLevel()
+{
+  uint32_t readAccumulator = 0;
+
+  for (int i = 0; i < ADC_READS_COUNT; ++i)
+    readAccumulator += analogRead(ADC_GND_PIN);
+
+  uint16_t readValue = readAccumulator >> ADC_READS_SHIFT;
+
+  //  display.print("CW A1(GND) = ");
+  //  display.println(readValue);
+
+  return readValue;
+}
+
+uint16_t read3V3Level()
+{
+  uint32_t readAccumulator = 0;
+
+  for (int i = 0; i < ADC_READS_COUNT; ++i)
+    readAccumulator += analogRead(ADC_3V3_PIN);
+
+  uint16_t readValue = readAccumulator >> ADC_READS_SHIFT;
+
+  if (readValue < (ADC_RANGE >> 1))
+    readValue += ADC_RANGE;
+
+  //  display.print("CCW A2(3.3V) = ");
+  //  display.println(readValue);
+
+  return readValue;
+}
+
+void calibration()
+{
+  display.println("Calibration");
+  display.setRow(2);
+  display.print(offset_store.read());
+  display.print(",");
+  display.print(gain_store.read());
+
+  delay(1000);
+  display.clear();
+
+  do
+  {
+    /* code */
+
+    display.setRow(0);
+    display.println("Turn pots :");
+    display.println("SOUND <=CCW");
+    display.println("P4 => CW");
+    display.println(",then push.");
+
+  } while (digitalRead(PUSH));
+  delay(400);
+  digitalWrite(RED_LED, LOW);
+  display.clear();
+  display.setRow(3);
+  display.set2X();
+  display.println("Wait");
+  display.set1X();
+
+  int offsetCorrectionValue = 0;
+  uint16_t gainCorrectionValue = ADC_UNITY_GAIN;
+
+  Sprint("\r\nOffset correction (@gain = ");
+  Sprint(gainCorrectionValue);
+  Sprintln(" (unity gain))");
+
+  // Set default correction values and enable correction
+  analogReadCorrection(offsetCorrectionValue, gainCorrectionValue);
+
+  for (int offset = 0; offset < (int)(ADC_OFFSETCORR_MASK >> 1); ++offset)
+  {
+    analogReadCorrection(offset, gainCorrectionValue);
+
+    Sprint("   Offset = ");
+    Sprint(offset);
+    Sprint(", ");
+
+    if (readGndLevel() == 0)
+    {
+      offsetCorrectionValue = offset;
+      break;
+    }
+  }
+
+  Sprintln("\r\nGain correction");
+
+  uint8_t topValueReadsCount = 0U;
+
+  uint16_t minGain = 0U,
+           maxGain = 0U;
+
+  analogReadCorrection(offsetCorrectionValue, gainCorrectionValue);
+  Sprint("   Gain = ");
+  Sprint(gainCorrectionValue);
+  Sprint(", ");
+  uint16_t highLevelRead = read3V3Level();
+
+  if (highLevelRead < ADC_TOP_VALUE)
+  {
+    for (uint16_t gain = ADC_UNITY_GAIN + 1; gain <= ADC_MAX_GAIN; ++gain)
+    {
+      analogReadCorrection(offsetCorrectionValue, gain);
+
+      Sprint("   Gain = ");
+      Sprint(gain);
+      Sprint(", ");
+      highLevelRead = read3V3Level();
+
+      if (highLevelRead == ADC_TOP_VALUE)
+      {
+        if (minGain == 0U)
+          minGain = gain;
+
+        if (++topValueReadsCount >= MAX_TOP_VALUE_READS)
+        {
+          maxGain = minGain;
+          break;
+        }
+
+        maxGain = gain;
+      }
+
+      if (highLevelRead > ADC_TOP_VALUE)
+        break;
+    }
+  }
+  else if (highLevelRead >= ADC_TOP_VALUE)
+  {
+    if (highLevelRead == ADC_TOP_VALUE)
+      maxGain = ADC_UNITY_GAIN;
+
+    for (uint16_t gain = ADC_UNITY_GAIN - 1; gain >= ADC_MIN_GAIN; --gain)
+    {
+      analogReadCorrection(offsetCorrectionValue, gain);
+
+      Sprint("   Gain = ");
+      Sprint(gain);
+      Sprint(", ");
+      highLevelRead = read3V3Level();
+
+      if (highLevelRead == ADC_TOP_VALUE)
+      {
+        if (maxGain == 0U)
+          maxGain = gain;
+
+        minGain = gain;
+      }
+
+      if (highLevelRead < ADC_TOP_VALUE)
+        break;
+    }
+  }
+
+  gainCorrectionValue = (minGain + maxGain) >> 1;
+
+  analogReadCorrection(offsetCorrectionValue, gainCorrectionValue);
+
+  Sprintln("\r\nReadings after corrections");
+  Sprint("   ");
+  readGndLevel();
+  Sprint("   ");
+  read3V3Level();
+
+  Sprintln("\r\n==================");
+  Sprintln("\r\nCorrection values:");
+  Sprint("   Offset = ");
+  Sprintln(offsetCorrectionValue);
+  Sprint("   Gain = ");
+  Sprintln(gainCorrectionValue);
+  Sprintln("\r\nAdd the next line to your sketch:");
+  Sprint("   analogReadCorrection(");
+  Sprint(offsetCorrectionValue);
+  Sprint(", ");
+  Sprint(gainCorrectionValue);
+  Sprintln(");");
+  Sprintln("\r\n==================");
+
+  digitalWrite(RED_LED, HIGH);
+
+  display.clear();
+  display.setRow(0);
+  display.println("Apply cal.");
+  display.print(offsetCorrectionValue);
+  display.print(" , ");
+  display.println(gainCorrectionValue);
+  display.println("Press to \napply");
+
+  while (digitalRead(PUSH))
+    ;
+  offset_store.write(offsetCorrectionValue);
+  gain_store.write(gainCorrectionValue);
+
+  analogReadCorrection(offsetCorrectionValue, gainCorrectionValue);
+}
+
+void splashScreen()
+{
+  display.clear();
+  display.setFont(fixed_bold10x15);
+  display.set1X();
+  display.setRow(0);
+  digitalWrite(RED_LED, HIGH);
+  display.clear();
+  display.setRow(0);
+  display.println("Code");
+  display.setRow(2);
+  display.println("Version");
+  display.setRow(4);
+  display.println("SINO");
+  display.setRow(6);
+  display.println(VERSION);
+  delay(1000);
+}
+
 void Exit()
 {
-  digitalWrite(RED_LED,ON);
+  digitalWrite(RED_LED, ON);
 
-  digitalWrite(GREEN_LED,ON);
+  digitalWrite(GREEN_LED, ON);
   delay(500);
   digitalWrite(GREEN_LED, OFF);
   digitalWrite(RED_LED, OFF);
@@ -697,11 +955,20 @@ void setup()
   display.clear();
   display.set1X();
   display.setFont(fixed_bold10x15);
-  display.println("Sino Vox");
-  display.setRow(4);
-  display.println("Ver. 0.01");
-  display.setRow(6);
-  //display.println(VERSION);
+  display.setRow(0);
+
+  if ((digitalRead(PUSH) == 0) | (gain_store.read() == 0))
+  {
+#ifdef CALIB
+    calibration();
+#endif
+  }
+  else
+  { // apply correction
+    analogReadCorrection(offset_store.read(), gain_store.read());
+  }
+
+  splashScreen();
 
   // Interrupts
   attachInterrupt(BSY, showBusy, CHANGE);
@@ -733,7 +1000,7 @@ void loop()
   interruptCount = 0;
   display.clear();
   Exit();
- // delay(400);
+  // delay(400);
   display.set1X();
   display.setFont(fixed_bold10x15);
   display.setCursor(0, 12);
@@ -755,7 +1022,7 @@ void loop()
   delay(400);
   switch (function)
   {
-  case 0:
+  case 0: //@ Numbers
   {
     //  printf(buf, "[d][h2]");
     //  speak(buf);
@@ -829,7 +1096,7 @@ void loop()
     rd = 0;
   } // end of case
   break;
-  case 1:
+  case 1: //@ USB TTS
   {
     sprintf(buf, "[d][h2]");
     speak(buf);
@@ -912,7 +1179,7 @@ void loop()
     pressed = false;
     memset(&serialtext, 0, COLS);
     serialPointer = 0;
-    fin=0;
+    fin = 0;
     do
     {
       myfile.seek(0);
@@ -987,7 +1254,10 @@ void loop()
 
   } // end of case 2
   break;
-  } // end fo case
+
+  
+
+  } // end fo cases
 } // end of loop
 /*
 case 1:

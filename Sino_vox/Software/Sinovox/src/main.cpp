@@ -40,8 +40,7 @@
 ██║     ██╔══██║██║     ██║██╔══██╗██╔══██╗██╔══██║   ██║   ██╔══╝  
 ╚██████╗██║  ██║███████╗██║██████╔╝██║  ██║██║  ██║   ██║   ███████╗
  ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
- */                                                                  
-
+ */
 
 #define ADC_GND_PIN A4
 #define ADC_3V3_PIN A6
@@ -224,6 +223,161 @@ menuCode Code[]{
 #define Sprint(MSG)
 #endif
 //<end>[MK]::LogEnhancement
+
+bool isTxtFile(char *filename, int type)
+{
+  bool result;
+  Sprint(type);
+  Sprint(" ");
+  Sprintln(filetype[type]);
+  if (strstr(strlwr(filename), filetype[type]) && !strstr(strlwr(filename), "_")) // filtering out just ".txt" file not containing "_"
+  {
+    result = true;
+  }
+  else
+  {
+    result = false;
+  }
+  return result;
+}
+
+void initSD()
+{
+
+  if (!SD.begin(10))
+  {
+    display.clear();
+    display.println("Error");
+    display.println("SD card");
+    display.println("failed to ");
+    display.println("initialize");
+    while (1)
+      ;
+  }
+  root = SD.open("/");
+}
+
+void displayFilesList(int p)
+{
+
+  for (int i = 0; i < 4; i++)
+  {
+
+    display.setCursor(13, i * 8); //
+    String str2 = myFiles[i + p];
+    str2.remove(str2.length() - 4);
+    display.clearToEOL();
+    display.println(str2);
+  }
+}
+
+void GetFilesList(File dir, int type)
+{
+  fileNumber = 0;
+  fileCounter = 0;
+  for (int8_t i = 0; i < 20; i++)
+  {
+    myFiles[i] = ""; // to emty the list
+  }
+
+  while (true)
+  {
+
+    File entry = dir.openNextFile(); // was dir
+    if (!entry)
+    {
+      // no more files
+      break;
+    }
+
+    if (isTxtFile(entry.name(), type)) //check if it's a .txt file
+    {
+
+      String str = entry.name();
+      //  str.remove(str.length()-4);
+
+      // Length (with one extra character for the null terminator)
+      int str_len = str.length() + 1;
+
+      // Prepare the character array (the buffer)
+      char char_array[str_len];
+
+      // Copy it over
+      str.toCharArray(char_array, str_len);
+      //Sprintln(char_array);
+
+      myFiles[fileCounter] = strdup(char_array); //WTF is strdup ?
+      fileCounter++;
+    }
+    entry.close();
+  }
+  fileNumber = fileCounter;
+}
+
+void flashFirmare()
+{
+  display.clear();
+  display.println(">");
+  initSD();
+  root = SD.open("/");
+  root.rewindDirectory();
+  SD.remove("firmware.bin"); //TODO:maybe not needed ?
+  GetFilesList(root, 3);
+  interruptCount = 0;
+  rotF = 1;
+  rd = 0; // to avoid interruptCount constrain
+  do
+  {
+    // choose the file
+    if (rotF)
+    {
+      interruptCount = constrain(interruptCount, 0, fileNumber - 1);
+      filePointer = interruptCount;
+      displayFilesList(filePointer);
+      rotF = 0;
+    }
+  } while (digitalRead(PUSH));
+  delay(400); // ok when have a file
+  display.clear();
+  display.setCursor(0, 12);
+  Sprint("Reading file:");
+  display.println("Reading:");
+  display.setCursor(0, 28); //
+
+  display.println(myFiles[filePointer]);
+
+  //  while (digitalRead(PUSH))
+  //          ;
+
+  File myFileIn = SD.open(myFiles[filePointer]);
+  File myFileOut = SD.open("firmware.bin", FILE_WRITE);
+  int cnt = 0;
+  float full = myFileIn.size();
+  display.println(full);
+  Serial.println(full);
+  int lastpercent = 0;
+  int percent;
+  size_t n;
+  uint8_t buf[128];
+  display.setCursor(0, 6);
+  while ((n = myFileIn.read(buf, sizeof(buf))) > 0)
+  {
+    cnt++;
+    percent = cnt * 128 * 128 / full; // 128=100%
+    if (lastpercent != percent)
+    {
+      display.ssd1306WriteRam(255);
+      lastpercent = percent;
+    }
+    myFileOut.write(buf, n);
+  }
+
+  myFileIn.close();
+  Serial.println("closing");
+  myFileOut.close();
+  display.clear();
+  NVIC_SystemReset(); // bye bye
+}
 
 uint16_t readGndLevel()
 {
@@ -453,96 +607,6 @@ void Exit()
   digitalWrite(RED_LED, OFF);
 }
 
-void displayFilesList(int p)
-{
-
-  for (int i = 0; i < 4; i++)
-  {
-
-    display.setCursor(13, i * 8); //
-    String str2 = myFiles[i + p];
-    str2.remove(str2.length() - 4);
-    display.clearToEOL();
-    display.println(str2);
-  }
-}
-
-bool isTxtFile(char *filename, int type)
-{
-  bool result;
-  Sprint(type);
-  Sprint(" ");
-  Sprintln(filetype[type]);
-  if (strstr(strlwr(filename), filetype[type]) && !strstr(strlwr(filename), "_")) // filtering out just ".txt" file not containing "_"
-  {
-    result = true;
-  }
-  else
-  {
-    result = false;
-  }
-  return result;
-}
-
-void GetFilesList(File dir, int type)
-{
-  fileNumber = 0;
-  fileCounter = 0;
-  for (int8_t i = 0; i < 20; i++)
-  {
-    myFiles[i] = ""; // to emty the list
-  }
-
-  while (true)
-  {
-
-    File entry = dir.openNextFile(); // was dir
-    if (!entry)
-    {
-      // no more files
-      break;
-    }
-
-    if (isTxtFile(entry.name(), type)) //check if it's a .txt file
-    {
-
-      String str = entry.name();
-      //  str.remove(str.length()-4);
-
-      // Length (with one extra character for the null terminator)
-      int str_len = str.length() + 1;
-
-      // Prepare the character array (the buffer)
-      char char_array[str_len];
-
-      // Copy it over
-      str.toCharArray(char_array, str_len);
-      //Sprintln(char_array);
-
-      myFiles[fileCounter] = strdup(char_array); //WTF is strdup ?
-      fileCounter++;
-    }
-    entry.close();
-  }
-  fileNumber = fileCounter;
-}
-
-void initSD()
-{
-
-  if (!SD.begin(10))
-  {
-    display.clear();
-    display.println("Error");
-    display.println("SD card");
-    display.println("failed to ");
-    display.println("initialize");
-    while (1)
-      ;
-  }
-  root = SD.open("/");
-}
-
 void readSerial()
 
 {
@@ -678,9 +742,12 @@ void rot()
   {
     switch (function)
     {
-    case 0:
+    case 0: // Numbers
       interruptCount = constrain(interruptCount, 0, 3);
       endRange = endNumbers[interruptCount];
+      break;
+    case 3: // @code
+      interruptCount = constrain(interruptCount, 0, 2);
       break;
     }
   }
@@ -1252,12 +1319,75 @@ void loop()
     myfile.close();
     display.clear();
 
-  } // end of case 2
+  } // end of case 2 SD reader
   break;
+  case 3: //@Code
+  {
+    display.clear();
+    display.println("Code");
+    rd = 1;
+    rotF = 1;
+    interruptCount = 0;
 
-  
+    do
+    {
+      fin = 0;
 
-  } // end fo cases
+      do
+      {
+
+        if (rotF)
+        {
+
+          display.setRow(2);
+          display.clearToEOL();
+          display.println(Code[interruptCount].label);
+          rotF = 0;
+        }
+
+      } while (digitalRead(PUSH));
+
+      switch (interruptCount)
+      {
+      case 0:
+        splashScreen();
+
+        while (digitalRead(PUSH))
+          ;
+
+        fin = 200000L;
+
+        break;
+
+      case 1:
+        display.clear();
+        calibration();
+        fin = 200000L;
+
+        break;
+
+      case 2:
+        interruptCount = 0;
+        flashFirmare();
+        fin = 200000L;
+        break;
+      }
+
+      do
+      {
+        fin++;
+
+        if (fin > LPRESS)
+          break;
+      } while (digitalRead(PUSH) == 0);
+
+    } while (fin < LPRESS); // long presss
+
+  } // end of case
+    display.clear();
+    break;
+
+  } // end of switch
 } // end of loop
 /*
 case 1:

@@ -84,7 +84,7 @@ FlashStorage(gain_store, int);
                                                                     
 */
 #define CALIB
-#define VERSION 0.2
+#define VERSION 0.21
 #define ON 0
 #define OFF 1
 
@@ -186,7 +186,7 @@ bool triggered;
 bool rd = 0; // rotary display
 
 // USB TTS
-#define COLS 100
+#define COLS 256
 char serialtext[COLS];
 int serialPointer = 0;
 
@@ -321,7 +321,7 @@ void flashFirmare()
   initSD();
   root = SD.open("/");
   root.rewindDirectory();
-  SD.remove("firmware.bin"); //TODO:maybe not needed ?
+  SD.remove("firmware.bin"); 
   GetFilesList(root, 3);
   interruptCount = 0;
   rotF = 1;
@@ -623,7 +623,7 @@ void readSerial()
     {
 
       serialPointer = 0;
-      memset(&serialtext, 0, 40);
+      memset(&serialtext, 0, COLS);
       //Sprintln("Clear");
       display.setCursor(0, 3);
       display.set1X();
@@ -872,7 +872,7 @@ void getUser()
     if (sound < 1)
     {
       sound = 1;
-    } // FIXME for a smoother display
+    } // FIXME for a smoother display ?
     if (sound != lastSound)
     {
       display.setRow(6);
@@ -1046,7 +1046,7 @@ void setup()
   sprintf(buf, "[d][h2][i1]");
   speak(buf);
   waitForSpeech();
-  sprintf(buf, "Huan1ying2lai2dao4ji1qi4");
+  sprintf(buf, "suo3you3xi4tong3dou1zhun3bei4jiu4xu4");
   speak(buf);
   waitForSpeech();
   delay(1000);
@@ -1172,7 +1172,7 @@ void loop()
     display.println("USB TTS");
     // display.println("com: 115.2 kBd 8n1");
     Serial.print("\033\143");   // ANSI   clear screen
-    memset(&serialtext, 0, 40); // or COLS ?
+    memset(&serialtext, 0, COLS); // or COLS ?
     rd = 0;                     // no need for extra rotary functions
     triggered = false;
     pressed = false;
@@ -1240,7 +1240,7 @@ void loop()
 
     pointer = 0;
     linePointer = 0;
-    sprintf(buf, "[d][h2]");
+    sprintf(buf, "[d][h2][g2]"); // TODO: attention remove g2 ? force number to be read in English
     speak(buf);
     triggered = false;
     pressed = false;

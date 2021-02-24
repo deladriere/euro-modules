@@ -1,6 +1,6 @@
 
 
-#define SERIAL_MIDI
+//#define SERIAL_MIDI
 
 #include <Arduino.h>
 
@@ -403,6 +403,10 @@ void controlChange(byte channel, byte number, byte value)
   */
     Command(1, (value << 1));
     break;
+  case 3:
+    value = value >> 3;
+    Command(2, (value << 4) + B1000);
+    break;
 
   case 64:
     digitalWrite(MISO, value >> 6);
@@ -502,7 +506,7 @@ void handleNoteOff(byte channel, byte pitch, byte velocity)
   {
     if (last_note_on == pitch)
     {
-     // analogWrite(RED_LED, 255);
+      // analogWrite(RED_LED, 255);
       pinMode(RED_LED, OUTPUT); // to allow switching the led off see : https://forum.arduino.cc/index.php?topic=156413.15
       digitalWrite(RED_LED, OFF);
       //   digitalWrite(BUSY, OFF);
@@ -584,7 +588,7 @@ void setup()
   display.setFont(fixed_bold10x15);
   display.println("Robovox MIDI");
   display.setRow(4);
-  display.println("Ver. 0.06b");
+  display.println("Ver. 0.07");
   display.setRow(6);
   display.println(VERSION);
 

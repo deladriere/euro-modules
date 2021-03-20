@@ -10,6 +10,33 @@
 #include <FlashAsEEPROM.h> //1192
 
 /*
+███╗   ███╗██╗██████╗ ██╗
+████╗ ████║██║██╔══██╗██║
+██╔████╔██║██║██║  ██║██║
+██║╚██╔╝██║██║██║  ██║██║
+██║ ╚═╝ ██║██║██████╔╝██║
+╚═╝     ╚═╝╚═╝╚═════╝ ╚═╝
+*/
+
+//#define SERIAL_MIDI
+
+#ifdef SERIAL_MIDI
+#include <MIDI.h>
+MIDI_CREATE_INSTANCE(HardwareSerial, Serial1, MIDI);
+#else
+#include <USB-MIDI.h>
+USBMIDI_CREATE_DEFAULT_INSTANCE();
+#endif
+
+#ifdef SERIAL_MIDI
+#define VERSION "SERIAL MODE"
+#else
+#define VERSION "USB MODE"
+#endif
+
+byte DivClock = 0; // To ouptut the MIDI clock
+
+/*
 ██╗  ██╗ █████╗ ██████╗ ██████╗ ██╗    ██╗ █████╗ ██████╗ ███████╗
 ██║  ██║██╔══██╗██╔══██╗██╔══██╗██║    ██║██╔══██╗██╔══██╗██╔════╝
 ███████║███████║██████╔╝██║  ██║██║ █╗ ██║███████║██████╔╝█████╗  
@@ -22,7 +49,7 @@
 #define RST 4
 
 // Emy
-
+#define BUSY 38
 #define SW0 0
 #define SW1 1
 #define GATE 2
@@ -83,8 +110,10 @@ FlashStorage(gain_store, int);
   ╚═══╝  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝╚══════╝
                                                                     
 */
-#define CALIB
-#define VERSION 0.21
+//#define CALIB
+//#define DEBUG_TRACE
+
+#define VERSION 0.22
 #define ON 0
 #define OFF 1
 
@@ -93,6 +122,8 @@ int speed = 0;
 int volume = 0;
 int voice = 0;
 int pitch = 0; // tone  word is reserved
+int midipitch = 0;
+boolean trackuserpitch = 0;
 int sound = 0;
 int interval = 0;
 int chime = 0;
@@ -127,7 +158,7 @@ char song2[4000];
 int pointer = 0;
 int linePointer = 0;
 int ligne = 0;
-char *myFiles[20]; //
+char *myFiles[25]; //
 char inputChar;    // char reader
 
 char *filetype[4] = {".txt", ".spk", ".tts", ".bin"};
@@ -143,6 +174,7 @@ char *mainFunctions[] = {
     "USB TTS",
     "SD READER",
     "Code",
+    "MIDI",
 };
 
 char *SWlabel[] = {
@@ -223,6 +255,78 @@ menuCode Code[]{
 #define Sprint(MSG)
 #endif
 //<end>[MK]::LogEnhancement
+
+void handleNoteOn(byte channel, byte pitch, byte velocity)
+{
+  analogWrite(RED_LED, 255 - (velocity << 1));
+  // Sprintln(pitch);
+  switch (pitch)
+  {
+  case 46:
+    triggered = 1;
+
+    //display.setCursor(0, 3);
+    //display.set1X();
+    //display.clearToEOL();
+    Serial.println("");
+    break;
+
+  default:
+    serialtext[serialPointer] = char(pitch);
+    serialPointer++;
+    //display.setRow(3);
+    //display.set1X();
+    //display.print(char(pitch));
+    Serial.write(pitch);
+    break;
+  }
+}
+
+void handleNoteOff(byte channel, byte pitch, byte velocity)
+{
+  pinMode(RED_LED, OUTPUT); // to allow switching the led off see : https://forum.arduino.cc/index.php?topic=156413.15
+  digitalWrite(RED_LED, OFF);
+}
+
+void controlChange(byte channel, byte number, byte value)
+{
+  switch (number)
+  {
+  }
+}
+
+void Clock()
+{
+  DivClock++;
+  if (DivClock > 5) // divide by 6
+  {
+    digitalWrite(BUSY, 1);
+    DivClock = 0;
+  }
+  else
+  {
+    digitalWrite(BUSY, 0);
+  }
+}
+
+void pitchBend(byte channel, int bend)
+{
+
+  midipitch = map(bend, 8191, -8192, 10, 0);
+  trackuserpitch = 0;
+  Sprintln(midipitch);
+}
+
+void Start()
+{
+  // DivClock = 0;
+  Sprintln("Start");
+}
+
+void Stop()
+{
+  Sprint("Stop");
+}
 
 bool isTxtFile(char *filename, int type)
 {
@@ -321,7 +425,7 @@ void flashFirmare()
   initSD();
   root = SD.open("/");
   root.rewindDirectory();
-  SD.remove("firmware.bin"); 
+  SD.remove("firmware.bin");
   GetFilesList(root, 3);
   interruptCount = 0;
   rotF = 1;
@@ -776,7 +880,7 @@ void getUser()
   mode = digitalRead(SW0) + digitalRead(SW1) * 2;
   speed = map(potReadFast(A1, 30), 4095, 0, 0, 10);
   pitch = map(potReadFast(A2, 20), 4095, 0, 0, 10);
-  voice = map(potReadFast(A3, 10), 4095, 5, 0, 5);
+  voice = map(potReadFast(A3, 10), 4095, 0, 0, 5);
   volume = map(potReadFast(A4, 20), 4095, 0, 0, 10);
 
   switch (function)
@@ -884,6 +988,28 @@ void getUser()
       displayCleared = false;
     }
     break;
+  case 4:
+    language = map(potReadFast(A5, 2), 0, 4095, 0, 2);
+    language = constrain(language, 0, 1);
+    if (language != lastLanguage)
+    {
+
+      display.setRow(6);
+      display.clearToEOL();
+      if (language == 1)
+      {
+        display.println("Pinyin");
+      }
+      else
+      {
+        display.println("English");
+      }
+
+      lastLanguage = language;
+      lastchanged = millis();
+      displayCleared = false;
+    }
+    break;
   }
 
   // display.setFont(Arial14);
@@ -899,6 +1025,7 @@ void getUser()
   }
   if (pitch != lastPitch)
   {
+    trackuserpitch = true;
     display.setRow(6);
     display.clearToEOL();
     display.print("Pitch ");
@@ -1000,6 +1127,8 @@ void setup()
   pinMode(BSY, INPUT_PULLUP);
   pinMode(RST, OUTPUT);
   Reset();
+  pinMode(BUSY, OUTPUT);
+  digitalWrite(BUSY, OFF);
   pinMode(SW0, INPUT_PULLUP);
   pinMode(SW1, INPUT_PULLUP);
   pinMode(ROTA, INPUT_PULLUP);
@@ -1050,6 +1179,27 @@ void setup()
   speak(buf);
   waitForSpeech();
   delay(1000);
+
+  // Initialize MIDI, and listen to all MIDI channels
+  // This will also call usb_midi's begin()
+  MIDI.begin(MIDI_CHANNEL_OMNI);
+
+  // Attach the handleNoteOn function to the MIDI Library. It will
+  // be called whenever the Bluefruit receives MIDI Note On messages.
+  MIDI.setHandleNoteOn(handleNoteOn);
+
+  // Do the same for MIDI Note Off messages.
+  MIDI.setHandleNoteOff(handleNoteOff);
+
+  MIDI.setHandleControlChange(controlChange);
+
+  MIDI.setHandlePitchBend(pitchBend);
+
+  MIDI.setHandleClock(Clock);
+
+  MIDI.setHandleStart(Start);
+
+  MIDI.setHandleStop(Stop);
 }
 
 /*
@@ -1171,9 +1321,9 @@ void loop()
     display.clear();
     display.println("USB TTS");
     // display.println("com: 115.2 kBd 8n1");
-    Serial.print("\033\143");   // ANSI   clear screen
+    Serial.print("\033\143");     // ANSI   clear screen
     memset(&serialtext, 0, COLS); // or COLS ?
-    rd = 0;                     // no need for extra rotary functions
+    rd = 0;                       // no need for extra rotary functions
     triggered = false;
     pressed = false;
     do
@@ -1386,6 +1536,52 @@ void loop()
   } // end of case
     display.clear();
     break;
+  case 4:
+  {
+    sprintf(buf, "[d][h2][i0]");
+    speak(buf);
+    waitForSpeech();
+    display.clear();
+    display.clear();
+    display.println("MIDI");
+
+    memset(&serialtext, 0, COLS); //
+    rd = 0;                       // no need for extra rotary functions
+    triggered = false;
+    pressed = false;
+
+    do
+    { // main
+      fin = 0;
+      getUser();
+      MIDI.read();
+
+      if (!digitalRead(BSY) && triggered)
+      {
+        triggered = 0;
+        if (!trackuserpitch)
+
+        {
+          pitch = midipitch;
+        }
+        //getUser();
+        sprintf(buf, "[i%d][h2][t%d][s%d][m%d][v%d] %s", language, pitch, speed, voice, volume, serialtext);
+        speak(buf);
+        serialPointer = 0;
+        memset(&serialtext, 0, COLS);
+      }
+
+      do
+      {
+        fin++;
+
+        if (fin > LPRESS)
+          break;
+      } while (digitalRead(PUSH) == 0);
+    } while (fin < LPRESS);
+    display.clear();
+  } // end of case
+  break;
 
   } // end of switch
 } // end of loop
@@ -1403,10 +1599,10 @@ case 1:
       {
         fin++;
 
-        if (fin > 100000L)
+        if (fin > LPRESS)
           break;
       } while (digitalRead(PUSH) == 0);
-    } while (fin < 100000L);
+    } while (fin < LPRESS);
     display.clear();
   } // end of case
   break;

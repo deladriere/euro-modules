@@ -190,9 +190,10 @@ char *SW2abel[] = {
 };
 
 char *SW3abel[] = {
-    "Char.",
-    "Space",
-    "Line",
+    "Letter trigger",
+    "Space trigger",
+    "Line trigger",
+    "Random Skip",
 };
 char *SW4abel[] = {
     "Letter",
@@ -224,6 +225,7 @@ int serialPointer = 0;
 
 // waiting for speech
 bool done = false;
+int pseudoR;
 
 struct menuCode
 {
@@ -954,7 +956,7 @@ void getUser()
     {
       display.setRow(6);
       display.clearToEOL();
-      display.print("Spell ");
+      display.print("Read ");
       display.println(SW4abel[spell - 1]);
 
       lastSpell = spell;
@@ -972,7 +974,7 @@ void getUser()
       lastchanged = millis();
       displayCleared = false;
     }
-    sound = map(potReadFast(A6, 10), 4095, 10, 3, 0);
+    sound = map(potReadFast(A6, 10), 4095, 10, 4, 0); //
     if (sound < 1)
     {
       sound = 1;
@@ -981,7 +983,6 @@ void getUser()
     {
       display.setRow(6);
       display.clearToEOL();
-      display.print("Trig. ");
       display.println(SW3abel[sound - 1]);
       lastSound = sound;
       lastchanged = millis();
@@ -1407,16 +1408,16 @@ void loop()
 
         if (!digitalRead(BSY) && (mode == 2 || (mode == 3 && triggered) || (mode == 1 && pressed)))
         {
-          triggered = false;
-          pressed = false;
+          // triggered = false;
+          // pressed = false; TODO:remove if not needed
 
           switch (sound)
           {
-          case 1:
+          case 1: // character mode
             inputChar = myfile.read();
             serialtext[0] = inputChar;
             break;
-          case 2:
+          case 2: // line and space mode
             do
             {
               inputChar = myfile.read();
@@ -1427,7 +1428,7 @@ void loop()
               }
             } while (myfile.available() && inputChar != 32 && inputChar != 10);
             break;
-          case 3:
+          case 3: // line mode
             do
             {
               inputChar = myfile.read();
@@ -1438,17 +1439,42 @@ void loop()
               }
             } while (myfile.available() && inputChar != 10);
             break;
+          case 4: // pseudo random words
+            pseudoR = random(10);
+
+            do
+            {
+              inputChar = myfile.read();
+              if (inputChar != 10 && pseudoR == 1)
+              {
+                serialtext[serialPointer] = inputChar;
+                serialPointer++;
+              }
+              else
+              {
+                pressed = true;   // pretend to be pressed to skip
+                triggered = true; // pretend to be triggered
+              }
+
+            } while (myfile.available() && inputChar != 32 && inputChar != 10);
+
+            break;
+
           default:
             break;
           }
+          if (sound < 4 || pseudoR == 1) // Skip word in random mode
+          {
+            sprintf(buf, "[i0][h%d][t%d][s%d][m%d][v%d] %s", spell, pitch, speed, voice, volume, serialtext);
 
-          sprintf(buf, "[i0][h%d][t%d][s%d][m%d][v%d] %s", spell, pitch, speed, voice, volume, serialtext);
-
-          speak(buf);
-          Serial.println(serialtext);
-          display.setRow(4);
-          display.clearToEOL();
-          display.println(serialtext);
+            speak(buf);
+            Serial.println(serialtext);
+            display.setRow(4);
+            display.clearToEOL();
+            display.println(serialtext);
+            triggered = false;
+            pressed = false;
+          }
           memset(&serialtext, 0, COLS);
           serialPointer = 0;
         }

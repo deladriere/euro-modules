@@ -110,7 +110,7 @@ FlashStorage(gain_store, int);
   ╚═══╝  ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝╚══════╝
                                                                     
 */
-//#define CALIB
+#define CALIB
 //#define DEBUG_TRACE
 
 #define VERSION 0.22

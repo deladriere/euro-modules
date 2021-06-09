@@ -16,12 +16,13 @@ String letter;
 
 
 void setup() {
-  size(920, 540, P2D);
+ // size(920, 540, P2D);
+  fullScreen(P2D,2);
   textSize(32);
   textAlign(CENTER);
   
   mouth = loadShape("mouth2D.svg");
-  mouth.scale(0.5); 
+  mouth.scale(0.2); 
   mouth.translate(width/2, height/2);
   
   th = mouth.getChild("th");
@@ -44,7 +45,7 @@ void setup() {
   info = join(phonems, "");
   
   
-    myPort = new Serial(this, Serial.list()[2], 115200);
+    myPort = new Serial(this, Serial.list()[1], 115200);
     myPort.bufferUntil(lf); 
    inString="";
    letter="PA0";
@@ -121,7 +122,7 @@ void draw()
 
  if (letter!= "PA0")
   {
-  text(letter,width/2,100); 
+ // text(letter,width/2,100); 
   }
 
   

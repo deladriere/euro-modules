@@ -73,6 +73,7 @@ byte mode;
 bool triggered;
 bool pressed;
 bool gated;
+bool ungated;
 bool longPressed;
 
 volatile bool rotF;              // because use in rot
@@ -215,46 +216,72 @@ void phonSynth()
         repeat = constrain(repeat, 0, 10);
         int volume = map(analogRead(5), 0, 1023, 127, 0);
         volume = constrain(volume, 0, 127);
-
+        if (voiceState)
+        {
+                Serial << voiceState << " ";
+        }
         switch (voiceState)
         {
         case 0: // idle
                 if (gated)
+                //  if (gated && !IS_SPEAKING)
                 {
-
-                        //  Serial << "Gated " << endl;
-                        gated = false;
-                        Serial5.print("\\0"); // Entrer en Mode Controle SCP
-                        Serial5.print("R");   // READY
-                        Serial5.print("x");
-                        SpeakJet.write(0x15);        //Send speed command
-                        SpeakJet.write(speechSpeed); //Send speed value mapped to hex
-                        SpeakJet.write(0x16);        //Send pitch command
-                        SpeakJet.write(pitch);       //Send pitch value mapped to hex
-                        SpeakJet.write(0x17);        //Send bend command
-                        SpeakJet.write(bend);        //Send bend value mapped to hex
-                        SpeakJet.write(20);          // volume
-                        SpeakJet.write(volume);
-                        SpeakJet.write(26); // repeat
-                        SpeakJet.write(repeat);
-                        SpeakJet.write(phoneme); //Send phoneme value mapped to hex
-                        Serial << phonL[phoneme - 128].label << endl;
-                        Serial << repeat << endl;
-                        //Serial5.print("x")
-                       
+                        voiceState = 1;
+                        break;
                 }
+                if (ungated)
+                {
+                        voiceState = 2;
+                }
+
                 break;
-        case 1:
-                if (digitalRead(GATE))
+        case 1: // start speaking
+                if (mode == 2)
                 {
                         Serial5.print("\\0"); // Entrer en Mode Controle SCP
-                        Serial5.print("S");   // READY
-                        Serial5.print("x");
-                        voiceState = 0;
+                        Serial5.print("R");   // Clear Buffer
+                        Serial5.print("x");   // Exit SCP
                 }
+
+                SpeakJet.write(0x15);        //Send speed command
+                SpeakJet.write(speechSpeed); //Send speed value mapped to hex
+                SpeakJet.write(0x16);        //Send pitch command
+                SpeakJet.write(pitch);       //Send pitch value mapped to hex
+                SpeakJet.write(0x17);        //Send bend command
+                SpeakJet.write(bend);        //Send bend value mapped to hex
+                SpeakJet.write(20);          // volume
+                SpeakJet.write(volume);
+                SpeakJet.write(26); // repeat
+                SpeakJet.write(repeat);
+                SpeakJet.write(phoneme); //Send phoneme value mapped to hex
+                Serial << phonL[phoneme - 128].label << endl;
+                //Serial5.print("x")
+                voiceState = 0;
+                gated = false;
+
                 break;
 
-        case 2: // done ?
+        case 2: // end of speak
+
+                //   Serial5.print("\\0"); // Entrer en Mode Controle SCP
+                //  Serial5.print("R");   // Clear Buffer
+                //   Serial5.print("x");
+                if (mode == 2)
+                {
+                        Serial5.print("\\0"); // Entrer en Mode Controle SCP
+
+                        Serial5.print("R"); // Clear Buffer
+                                            //     Serial5.print("S"); // stop
+
+                        Serial5.print("x"); // Exit SCP
+
+                        //   SpeakJet.write(255);
+                }
+
+                Serial << "low" << endl;
+                ungated = false;
+                voiceState = 0;
+
                 break;
         default:
                 break;
@@ -328,9 +355,15 @@ void justPressed()
 
 void justGated()
 {
-        gated = true;
+        if (!digitalRead(GATE))
+        {
+                gated = true;
+        }
+        else
+        {
+                ungated = true;
+        }
 }
-
 /*
  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄         ▄  ▄▄▄▄▄▄▄▄▄▄▄ 
 ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░▌       ▐░▌▐░░░░░░░░░░░▌
@@ -354,7 +387,7 @@ void setup()
         attachInterrupt(PIN_SPEAKING, Speaking, CHANGE);
         attachInterrupt(PIN_BHF, Buffer, CHANGE); //TODO: why full in synth mode ?
         attachInterrupt(PUSH, justPressed, FALLING);
-        attachInterrupt(GATE, justGated, FALLING);
+        attachInterrupt(GATE, justGated, CHANGE);
         attachInterrupt(ROTA, Rotary, CHANGE);
 
         //  button.attachDuringLongPress(longPress);

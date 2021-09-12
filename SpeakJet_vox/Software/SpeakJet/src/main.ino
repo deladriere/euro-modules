@@ -34,6 +34,7 @@ electronic font
 #define PIN_BHF 9
 
 #define IS_SPEAKING digitalRead(PIN_SPEAKING)
+#define IS_BHF digitalRead(PIN_BHF)
 
 #define ON 0
 #define OFF 1
@@ -218,16 +219,23 @@ void phonSynth()
         volume = constrain(volume, 0, 127);
         if (voiceState)
         {
-                Serial << voiceState << " ";
+                // Serial << voiceState << " ";
         }
         switch (voiceState)
         {
         case 0: // idle
                 if (gated)
-                //  if (gated && !IS_SPEAKING)
                 {
+                        if (mode == 1 && IS_SPEAKING) // wait for speech to complete in mode 1
+                        {
+
+                                return;
+                        }
+                        if (mode == 3 && IS_BHF)
+                        {
+                                return;
+                        }
                         voiceState = 1;
-                        break;
                 }
                 if (ungated)
                 {
@@ -238,9 +246,9 @@ void phonSynth()
         case 1: // start speaking
                 if (mode == 2)
                 {
-                        Serial5.print("\\0"); // Entrer en Mode Controle SCP
-                        Serial5.print("R");   // Clear Buffer
-                        Serial5.print("x");   // Exit SCP
+                        SpeakJet.print("\\0"); // Entrer en Mode Controle SCP
+                        SpeakJet.print("R");   // Clear Buffer
+                        SpeakJet.print("x");   // Exit SCP
                 }
 
                 SpeakJet.write(0x15);        //Send speed command
@@ -268,17 +276,16 @@ void phonSynth()
                 //   Serial5.print("x");
                 if (mode == 2)
                 {
-                        Serial5.print("\\0"); // Entrer en Mode Controle SCP
+                        SpeakJet.print("\\0"); // Entrer en Mode Controle SCP
 
-                        Serial5.print("R"); // Clear Buffer
-                                            //     Serial5.print("S"); // stop
+                        SpeakJet.print("R"); // Clear Buffer
+                                             //     Serial5.print("S"); // stop
 
-                        Serial5.print("x"); // Exit SCP
+                        SpeakJet.print("x"); // Exit SCP
 
                         //   SpeakJet.write(255);
                 }
 
-                Serial << "low" << endl;
                 ungated = false;
                 voiceState = 0;
 
@@ -428,11 +435,11 @@ void loop()
         getUser();
         button.tick();
         //    Serial << "voice " << mainState << endl;
-        if (button.getPressedTicks() > 500 && mainState)
+        if (button.getPressedTicks() > 500 && mainState) // check for long press
         {
-                Serial5.print("\\0"); // Entrer en Mode Controle SCP
-                Serial5.print("W");   // READY
-                Serial5.print("x");
+                SpeakJet.print("\\0"); // Entrer en Mode Controle SCP
+                SpeakJet.print("W");   // READY
+                SpeakJet.print("x");
                 display.clear();
                 delay(400);
                 display.println(">");

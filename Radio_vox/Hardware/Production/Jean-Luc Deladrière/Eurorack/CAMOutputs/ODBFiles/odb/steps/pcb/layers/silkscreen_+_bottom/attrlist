@@ -1,0 +1,14 @@
+UNITS=MM
+.out_mirror = no
+.lpol_done = no
+.comment = 
+.inp_file = 
+.eda_layers = "bPlace","bNames","bDocu"
+.layer_side = Bottom
+.out_angle = 0.0
+.out_polarity = positive
+.layer_hdi_type = buildup
+.out_x_scale = 1.000000
+.out_y_scale = 1.000000
+.out_comp = 0.000000
+.et_adjacency = 508

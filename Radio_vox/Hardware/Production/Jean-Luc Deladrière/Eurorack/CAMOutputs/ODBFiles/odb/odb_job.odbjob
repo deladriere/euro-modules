@@ -1,0 +1,24 @@
+{
+    "Header": {
+        "Comment": "All values are metric (mm)",
+        "CreationDate": "2021-09-08T05:39:45Z",
+        "GenerationSoftware": {
+            "Application": "EAGLE",
+            "Vendor": "Autodesk",
+            "Version": "9.7.0"
+        },
+        "Part": "Single"
+    },
+    "Overall": {
+        "BoardThickness": 1.57,
+        "LayerNumber": 2,
+        "Name": {
+            "ProjectId": "PCB v20"
+        },
+        "Owner": "Jean-Luc Deladrière <deladriere@gmail.com>",
+        "Size": {
+            "X": 25.4,
+            "Y": 26.035
+        }
+    }
+}

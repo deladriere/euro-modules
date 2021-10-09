@@ -130,6 +130,7 @@ RADIO_FREQ preset[] = {
 int i_sidx = 14; ///< Start at Station with index=5
 // mode
 u_int8_t mode;
+u_int8_t modeState;
 u_int8_t lastMode;
 // serial
 static char command;
@@ -383,9 +384,6 @@ void displayMode()
 {
   char s[12];
   radio.formatFrequency(s, sizeof(s));
-  display.setTextSize(2); // Draw 2X-scale text
-  display.setTextColor(WHITE, BLACK);
-  display.setTextWrap(false);
 
   if (f != lastf)
   {
@@ -399,7 +397,7 @@ void displayMode()
     touched = 1;
     lastf = 0;
     clearScreen();
-    // radio.clearRDS(); // force RDS read
+    modeState = 0;
   }
   switch (mode)
   {
@@ -408,7 +406,7 @@ void displayMode()
     break;
   case UP:
 
-    if (gotRDS)
+    if (1) //if gotRDS ?
     {
       display.setCursor(0, 24);
       display.println(sName);
@@ -416,6 +414,7 @@ void displayMode()
     }
 
     scrollText();
+
     if (f != lastf)
     {
 
@@ -424,16 +423,26 @@ void displayMode()
       display.display();
       lastf = f;
     }
+
     break;
   case MIDDLE:
     if (!displayCleared)
     {
-      break;
+      break; // avoid display freq until message is gone
     }
+
+    //if (f != lastf)
+    //{
+
+    display.setCursor(0, 48); //48
+    display.println(s);
+    display.display();
+    lastf = f;
+
     // MeterValue = 2*MeterValue - 34; // shifts needle to zero position
     //MeterValue = -34;
-    display.clearDisplay();
-
+    //display.clearDisplay();
+    /*
     // refresh display for next step
     display.drawBitmap(0, 0, VUMeter, 128, 64, WHITE); // draws background
     display.setTextSize(1);                            // Normal 1:1 pixel scale
@@ -448,17 +457,16 @@ void displayMode()
     int a2 = (vMeter - (cos(MeterValue / 57.296) * rMeter)); // meter needle vertical coordinate
     display.drawLine(a1, a2, hMeter, vMeter, WHITE);         // draws needle
 
+    char s[12];
+    radio.formatFrequency(s, sizeof(s));
     display.setTextSize(2); // Draw 2X-scale text
+    display.setTextColor(WHITE, BLACK);
+    display.setTextWrap(false);
+    display.setCursor(0, 48); //58
+    display.println(s);
+    display.display();
+    */
 
-    if (f != lastf)
-    {
-
-      //display.setTextWrap(false);
-      display.setCursor(0, 48); //48
-      display.println(s);
-      display.display();
-      lastf = f;
-    }
     break;
   }
 }
@@ -508,7 +516,6 @@ int potReadFast(int pot, int readings)
   for (int i = 0; i < readings; i++)
   {
     moy = moy + analogReadFast(pot);
-    //  moy=moy +analogReadFast(pot,2);
   }
   return moy / readings;
 }
@@ -529,25 +536,16 @@ void getUser()
   bassBoost = map(potReadFast(A4, 2), 0, 4095, 0, 2);
   bassBoost = constrain(bassBoost, 0, 1);
 
-  band = map(potReadFast(A6, 2), 0, 4095, 2, 0);
+  band = map(potReadFast(A6, 2), 0, 4095, 0, 2);
   band = constrain(band, 0, 1);
 
-  /* if (band == 1)
-  {
-    ten = map(potReadFast(A1, 20), 4090, 20, 8, 10);
-  }
-  else
-  {
-    ten = map(potReadFast(A1, 20), 4090, 20, 7, 10);
-  }
-*/
   ten = map(potReadFast(A1, 20), 4090, 20, 7, 10);
   unit = map(potReadFast(A2, 20), 4090, 20, 0, 9);
   decimal = map(potReadFast(A3, 20), 4090, 20, 0, 9);
 
   Pfrequency = ten * 1000 + unit * 100 + decimal * 10;
 
-  if (band == 1)
+  if (band == 0)
   {
     Pfrequency = constrain(Pfrequency, 8750, 10800);
   }
@@ -559,22 +557,23 @@ void getUser()
   {
     Serial.println(Pfrequency);
     lastPfrequency = Pfrequency;
-    interruptCount = Pfrequency; // to force display
-    // radio.setFrequency(Rfrequency);
+    interruptCount = Pfrequency; // to force display attention
+                                 // radio.setFrequency(Rfrequency)
+    touched = 1;
   }
 
   if (band != lastband)
   {
-    display.setTextColor(WHITE, BLACK);
+
     display.setCursor(0, 48);
-
     touched = 1;
-
-    if (band == 1)
+    if (band == 0)
     {
       display.println("87.5-108MHz");
+
       radio.setBandFrequency(RADIO_BAND_FM, 8750);
       radio.clearRDS(); // force RDS read
+
       interruptCount = 8750;
       for (int i = 0; i < 63; i++)
       {
@@ -584,14 +583,17 @@ void getUser()
     else
     {
       display.println("76.0-108MHz");
+
       radio.setBandFrequency(RADIO_BAND_FMWORLD, 7600);
       radio.clearRDS(); // force RDS read
+
       interruptCount = 7600;
       for (int i = 0; i < 63; i++)
       {
         message[i] = 0;
       }
     }
+
     display.display();
     lastband = band;
     lastchanged = millis();
@@ -601,7 +603,7 @@ void getUser()
   if (bassBoost != lastBassBoost)
   {
     touched = 1;
-    display.setTextColor(WHITE, BLACK);
+
     display.setCursor(0, 48);
 
     if (bassBoost == 1)
@@ -622,7 +624,7 @@ void getUser()
   if (volume != lastVolume)
   {
     touched = 1;
-    display.setTextColor(WHITE, BLACK);
+
     display.setCursor(0, 48);
     display.print("Volume ");
     if (volume < 10)
@@ -1028,35 +1030,49 @@ void setup()
 
 void loop()
 {
-  screenSaver();
+  // screenSaver();
   getUser();
-  getSerial();
+  // getSerial();
   radio.checkRDS();
   seekCheck();
   infoUpdate();
   displayMode();
   Rfrequency = interruptCount;
+
   if (Rfrequency != lastRfrequency)
   {
-    Serial.println(Rfrequency / 100.0);
+
+    // Serial.println(Rfrequency / 100.0);
     lastRfrequency = Rfrequency;
-    lastTouch = millis();
     radio.setFrequency(Rfrequency);
+    Serial.println(Rfrequency);
+    if (Rfrequency == 8750 || Rfrequency == 7600) //hack to avoid clearing message line to fast
+    {
+      Serial.println("do not erase");
+    }
+    else
+    {
+      clearText();
+    }
     clearRDS();
-    clearText();
+    // clearRDS();
+    // clearText();
+    /*r
     if (Rfrequency < 10000)
 
     {
 
-      display.setCursor(12, (mode - 2) * 48);
+      //  display.setCursor(12, (mode - 2) * 48);
+      Serial.println(mode);
     }
     else
     {
 
-      display.setCursor(0, (mode - 2) * 48);
+      //   display.setCursor(0, (mode - 2) * 48);
     }
-    display.println(Rfrequency / 100.0);
-    display.display();
+    //  display.println(Rfrequency / 100.0);
+    // display.display();
+    */
   }
 
 } // loop

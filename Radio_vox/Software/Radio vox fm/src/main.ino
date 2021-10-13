@@ -40,7 +40,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-
+#include "OneButton.h"
 #include <Adafruit_I2CDevice.h>
 
 #include "avdweb_AnalogReadFast.h"
@@ -127,6 +127,17 @@ RADIO_FREQ preset[] = {
          ▀          ▀         ▀  ▀         ▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀         ▀  ▀▀▀▀▀▀▀▀▀▀   ▀▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀▀ 
                                                                                                                            
 */
+
+char *mainFunctions[] = {
+    "Radio",
+    "Code",
+    "",
+    "",
+    ""};
+
+int numFunctions = (sizeof(mainFunctions) / sizeof(mainFunctions[0]));
+int function;
+
 int i_sidx = 14; ///< Start at Station with index=5
 // mode
 u_int8_t mode;
@@ -155,12 +166,14 @@ u_int16_t lastRfrequency;
 u_int16_t Pfrequency;
 u_int16_t lastPfrequency;
 
-int moy; // for analogfast
+int moy;           // for analogfast
+int mainState = 0; // for mainState
 
 // rotary
 volatile int interruptCount = 0; // The rotary counter
 //volatile int endRange;           // because use in rot
 volatile bool touched = 0; // for screensaver
+volatile bool rotF;
 
 char c;
 // station name
@@ -169,7 +182,8 @@ static RADIO_FREQ lastf = 0;
 RADIO_FREQ f = 0;
 bool gotRDS = 0; // to refresh display
 
-bool pressed; // detect button or keyboard pressed
+bool pressed;  // detect button or keyboard pressed
+bool Lpressed; // detect button long press
 unsigned long lastPressed = 0;
 unsigned long now = millis();
 unsigned long lastchanged;             // to clear message line
@@ -296,6 +310,7 @@ enum RADIO_STATE
 };
 
 RADIO_STATE state; ///< The state variable is used for parsing input characters.
+OneButton button(PUSH, true);
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -312,6 +327,54 @@ RADIO_STATE state; ///< The state variable is used for parsing input characters.
 ▐░▌          ▐░░░░░░░░░░░▌▐░▌      ▐░░▌▐░░░░░░░░░░░▌     ▐░▌     ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░▌      ▐░░▌▐░░░░░░░░░░░▌
  ▀            ▀▀▀▀▀▀▀▀▀▀▀  ▀        ▀▀  ▀▀▀▀▀▀▀▀▀▀▀       ▀       ▀▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀        ▀▀  ▀▀▀▀▀▀▀▀▀▀▀ 
 */
+
+void displayFunctionList(int p)
+{
+
+  for (int i = 0; i < 4; i++)
+  { // nbr of lines to display
+
+    display.setCursor(13, i * 8); //
+    String str2 = mainFunctions[i + p];
+    display.print("            ");
+    display.println(str2);
+  }
+}
+void longClick()
+{
+  Lpressed = true;
+}
+void Click()
+{
+  pressed = true;
+}
+
+void Radio()
+{
+  screenSaver();
+  getUser();
+  getSerial();
+  radio.checkRDS();
+  seekCheck();
+  infoUpdate();
+  displayMode();
+  Rfrequency = interruptCount;
+
+  if (Rfrequency != lastRfrequency)
+  {
+    lastRfrequency = Rfrequency;
+    radio.setFrequency(Rfrequency);
+    Serial.println(Rfrequency);
+    if (Rfrequency == 8750 || Rfrequency == 7600) //hack to avoid clearing message line to fast
+    {
+    }
+    else
+    {
+      clearText();
+    }
+    clearRDS();
+  }
+}
 void screenSaver()
 {
   switch (ssaverState)
@@ -434,15 +497,10 @@ void displayMode()
     //if (f != lastf)
     //{
 
-    display.setCursor(0, 48); //48
-    display.println(s);
-    display.display();
-    lastf = f;
-
     // MeterValue = 2*MeterValue - 34; // shifts needle to zero position
     //MeterValue = -34;
-    //display.clearDisplay();
-    /*
+    display.clearDisplay();
+
     // refresh display for next step
     display.drawBitmap(0, 0, VUMeter, 128, 64, WHITE); // draws background
     display.setTextSize(1);                            // Normal 1:1 pixel scale
@@ -457,6 +515,12 @@ void displayMode()
     int a2 = (vMeter - (cos(MeterValue / 57.296) * rMeter)); // meter needle vertical coordinate
     display.drawLine(a1, a2, hMeter, vMeter, WHITE);         // draws needle
 
+    display.setTextSize(2);
+    display.setCursor(0, 48); //48
+    display.println(s);
+    display.display();
+    lastf = f; // error ?
+               /*
     char s[12];
     radio.formatFrequency(s, sizeof(s));
     display.setTextSize(2); // Draw 2X-scale text
@@ -659,7 +723,7 @@ void clearRDS()
 {
   display.setTextColor(WHITE, BLACK);
   display.setCursor(0, 24);
-  display.println("        ");
+  display.println("          ");
   display.display();
   for (int i = 0; i < 8; i++)
   {
@@ -1004,12 +1068,16 @@ void setup()
   rds.attachTimeCallback(DisplayTime);
 
   runSerialCommand('?', 0);
-  attachInterrupt(PUSH, justPressed, FALLING);
+  // attachInterrupt(PUSH, justPressed, FALLING); no more needed
   attachInterrupt(GATE, justPressed, FALLING);
   attachInterrupt(ROTA, rot, CHANGE);
 
+  button.attachClick(Click);
+  button.attachLongPressStart(longClick);
+
   x = display.width();
   minX = -12 * 64; // 12 = 6 pixels/character * text size 2
+  mainState = 1;
 
 } // Setup
 
@@ -1029,50 +1097,36 @@ void setup()
 */
 
 void loop()
+
 {
-  // screenSaver();
-  getUser();
-  // getSerial();
-  radio.checkRDS();
-  seekCheck();
-  infoUpdate();
-  displayMode();
-  Rfrequency = interruptCount;
-
-  if (Rfrequency != lastRfrequency)
+  button.tick();
+  if (Lpressed && mainState) // check for long press
   {
-
-    // Serial.println(Rfrequency / 100.0);
-    lastRfrequency = Rfrequency;
-    radio.setFrequency(Rfrequency);
-    Serial.println(Rfrequency);
-    if (Rfrequency == 8750 || Rfrequency == 7600) //hack to avoid clearing message line to fast
+    // interruptCount = 0;
+    mainState = 0;
+    rotF = 1;
+    pressed = false;
+    Lpressed = false;
+  }
+  switch (mainState)
+  {
+  case 0:
+    if (rotF) // rotary is rotated
     {
-      Serial.println("do not erase");
+      interruptCount = constrain(interruptCount, 0, numFunctions - 4);
+      function = interruptCount;
+      displayFunctionList(function);
+      rotF = 0;
     }
-    else
-    {
-      clearText();
-    }
-    clearRDS();
-    // clearRDS();
-    // clearText();
-    /*r
-    if (Rfrequency < 10000)
+    break;
 
-    {
-
-      //  display.setCursor(12, (mode - 2) * 48);
-      Serial.println(mode);
-    }
-    else
-    {
-
-      //   display.setCursor(0, (mode - 2) * 48);
-    }
-    //  display.println(Rfrequency / 100.0);
-    // display.display();
-    */
+  case 1:
+    Radio();
+  default:
+    break;
+  case 2:
+    //Code();
+    break;
   }
 
 } // loop

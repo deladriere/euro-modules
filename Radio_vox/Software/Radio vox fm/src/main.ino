@@ -138,6 +138,17 @@ char *mainFunctions[] = {
 int numFunctions = (sizeof(mainFunctions) / sizeof(mainFunctions[0]));
 int function;
 
+struct menuCode
+{
+  char *label;
+};
+
+menuCode Code[]{
+    ">Version",
+    ">Calibrate",
+    ">Flash",
+};
+
 int i_sidx = 14; ///< Start at Station with index=5
 // mode
 u_int8_t mode;
@@ -327,17 +338,20 @@ OneButton button(PUSH, true);
 ▐░▌          ▐░░░░░░░░░░░▌▐░▌      ▐░░▌▐░░░░░░░░░░░▌     ▐░▌     ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░▌      ▐░░▌▐░░░░░░░░░░░▌
  ▀            ▀▀▀▀▀▀▀▀▀▀▀  ▀        ▀▀  ▀▀▀▀▀▀▀▀▀▀▀       ▀       ▀▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀        ▀▀  ▀▀▀▀▀▀▀▀▀▀▀ 
 */
+void codeFunctions()
+{
 
+}
 void displayFunctionList(int p)
 {
 
   for (int i = 0; i < 4; i++)
   { // nbr of lines to display
 
-    display.setCursor(13, i * 8); //
+    display.setCursor(15, i * 20); //
     String str2 = mainFunctions[i + p];
-    display.print("            ");
     display.println(str2);
+    display.display();
   }
 }
 void longClick()
@@ -351,7 +365,7 @@ void Click()
 
 void Radio()
 {
-  screenSaver();
+
   getUser();
   getSerial();
   radio.checkRDS();
@@ -389,7 +403,7 @@ void screenSaver()
       break;
     }
 
-    if (millis() - lastTouch > 600000) // start screen saver after 20 minutes
+    if (millis() - lastTouch > 6000) // start screen saver after 10 minutes
     {
       display.ssd1306_command(SSD1306_DISPLAYOFF);
       ssaverState = 2;
@@ -436,6 +450,7 @@ void rot()
       interruptCount = interruptCount + 10;
     }
     touched = 1;
+    rotF = 1;
   }
 }
 void clearScreen()
@@ -1100,13 +1115,22 @@ void loop()
 
 {
   button.tick();
+  screenSaver();
   if (Lpressed && mainState) // check for long press
   {
-    // interruptCount = 0;
+
+    radio.term();
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.println(">");
+    display.display();
+
+    interruptCount = 0;
     mainState = 0;
-    rotF = 1;
+    touched = 1; // to stop screen saver
     pressed = false;
     Lpressed = false;
+    rotF = 1; // force display
   }
   switch (mainState)
   {
@@ -1115,8 +1139,26 @@ void loop()
     {
       interruptCount = constrain(interruptCount, 0, numFunctions - 4);
       function = interruptCount;
+      display.clearDisplay();
+      display.setCursor(0, 0);
+      display.println(">");
+      display.display();
       displayFunctionList(function);
       rotF = 0;
+      // touched = 0; // will be done in screen saver
+    }
+    if (pressed) // function is selected
+    {
+      mainState = function + 1;
+      display.clearDisplay();
+      String str2 = mainFunctions[function];
+      display.print(str2);
+      display.display();
+      pressed = false;
+      if (mainState == 1)
+      {
+        radio.init();
+      }
     }
     break;
 
@@ -1125,7 +1167,8 @@ void loop()
   default:
     break;
   case 2:
-    //Code();
+    mainState = 0;
+    codeFunctions();
     break;
   }
 

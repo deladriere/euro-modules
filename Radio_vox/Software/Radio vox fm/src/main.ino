@@ -37,6 +37,8 @@
 /// * 05.08.2014 created.
 /// * 04.10.2014 working.
 
+#include <FlashAsEEPROM.h>
+#include "SAMD_AnalogCorrection.h"
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -81,6 +83,8 @@
 #define GREEN_LED 12
 #define RED_LED 13
 
+#define CALIB
+#define VERSION "0.1"
 #define ON 0
 #define OFF 1
 
@@ -287,6 +291,31 @@ static const unsigned char PROGMEM VUMeter[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 /*
+
+ ██████╗ █████╗ ██╗     ██╗██████╗ ██████╗  █████╗ ████████╗███████╗
+██╔════╝██╔══██╗██║     ██║██╔══██╗██╔══██╗██╔══██╗╚══██╔══╝██╔════╝
+██║     ███████║██║     ██║██████╔╝██████╔╝███████║   ██║   █████╗  
+██║     ██╔══██║██║     ██║██╔══██╗██╔══██╗██╔══██║   ██║   ██╔══╝  
+╚██████╗██║  ██║███████╗██║██████╔╝██║  ██║██║  ██║   ██║   ███████╗
+ ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
+ */
+
+#define ADC_GND_PIN A4
+#define ADC_3V3_PIN A6
+
+#define ADC_READS_SHIFT 8
+#define ADC_READS_COUNT (1 << ADC_READS_SHIFT)
+
+#define ADC_MIN_GAIN 0x0400
+#define ADC_UNITY_GAIN 0x0800
+#define ADC_MAX_GAIN (0x1000 - 1)
+#define ADC_RESOLUTION_BITS 12
+#define ADC_RANGE (1 << ADC_RESOLUTION_BITS)
+#define ADC_TOP_VALUE (ADC_RANGE - 1)
+
+#define MAX_TOP_VALUE_READS 10
+
+/*
  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄ 
 ▐░░░░░░░░░░░▌▐░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌
 ▐░█▀▀▀▀▀▀▀█░▌▐░█▀▀▀▀▀▀▀█░▌▀▀▀▀▀█░█▀▀▀ ▐░█▀▀▀▀▀▀▀▀▀ ▐░█▀▀▀▀▀▀▀▀▀  ▀▀▀▀█░█▀▀▀▀ ▐░█▀▀▀▀▀▀▀▀▀ 
@@ -323,6 +352,9 @@ enum RADIO_STATE
 RADIO_STATE state; ///< The state variable is used for parsing input characters.
 OneButton button(PUSH, true);
 
+FlashStorage(offset_store, int);
+FlashStorage(gain_store, int);
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 /*
@@ -338,10 +370,271 @@ OneButton button(PUSH, true);
 ▐░▌          ▐░░░░░░░░░░░▌▐░▌      ▐░░▌▐░░░░░░░░░░░▌     ▐░▌     ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░▌      ▐░░▌▐░░░░░░░░░░░▌
  ▀            ▀▀▀▀▀▀▀▀▀▀▀  ▀        ▀▀  ▀▀▀▀▀▀▀▀▀▀▀       ▀       ▀▀▀▀▀▀▀▀▀▀▀  ▀▀▀▀▀▀▀▀▀▀▀  ▀        ▀▀  ▀▀▀▀▀▀▀▀▀▀▀ 
 */
+
+//<start>[MK]::LogEnhancement v0.0.1 toggle 'Sprintln()' and 'Serial.print()'
+//       on/off with preprocessor variable 'DEBUG_TRACE' (https://forum.arduino.cc/index.php?topic=46900.0)
+#ifdef DEBUG_TRACE
+#define Sprintln(MSG) Serial.println(MSG)
+#define Sprint(MSG) Serial.print(MSG)
+#else
+#define Sprintln(MSG)
+#define Sprint(MSG)
+#endif
+//<end>[MK]::LogEnhancement
+
+uint16_t readGndLevel()
+{
+  uint32_t readAccumulator = 0;
+
+  for (int i = 0; i < ADC_READS_COUNT; ++i)
+    readAccumulator += analogRead(ADC_GND_PIN);
+
+  uint16_t readValue = readAccumulator >> ADC_READS_SHIFT;
+
+  //  display.print("CW A1(GND) = ");
+  //  display.println(readValue);
+
+  return readValue;
+}
+
+uint16_t read3V3Level()
+{
+  uint32_t readAccumulator = 0;
+
+  for (int i = 0; i < ADC_READS_COUNT; ++i)
+    readAccumulator += analogRead(ADC_3V3_PIN);
+
+  uint16_t readValue = readAccumulator >> ADC_READS_SHIFT;
+
+  if (readValue < (ADC_RANGE >> 1))
+    readValue += ADC_RANGE;
+
+  //  display.print("CCW A2(3.3V) = ");
+  //  display.println(readValue);
+
+  return readValue;
+}
+
+void calibration()
+{
+  display.clearDisplay();
+  display.display();
+  display.setCursor(0, 0);
+  display.println("Calib. : ");
+ // display.setCursor(0, 20);
+  display.print(offset_store.read());
+  display.print(",");
+  display.print(gain_store.read());
+  display.display();
+
+  delay(1500);
+  display.clearDisplay();
+
+  do
+  {
+    /* code */
+
+    display.setCursor(0, 0);
+    display.println("Turn pots :");
+    display.println("SOUND<=CCW");
+    display.println("P4 => CW");
+    display.println(",then push.");
+    display.display();
+
+  } while (digitalRead(PUSH));
+  delay(400);
+  digitalWrite(RED_LED, LOW);
+  display.clearDisplay();
+  display.setCursor(0, 20);
+
+  display.println("Wait");
+  display.display();
+
+  int offsetCorrectionValue = 0;
+  uint16_t gainCorrectionValue = ADC_UNITY_GAIN;
+
+  Sprint("\r\nOffset correction (@gain = ");
+  Sprint(gainCorrectionValue);
+  Sprintln(" (unity gain))");
+
+  // Set default correction values and enable correction
+  analogReadCorrection(offsetCorrectionValue, gainCorrectionValue);
+
+  for (int offset = 0; offset < (int)(ADC_OFFSETCORR_MASK >> 1); ++offset)
+  {
+    analogReadCorrection(offset, gainCorrectionValue);
+
+    Sprint("   Offset = ");
+    Sprint(offset);
+    Sprint(", ");
+
+    if (readGndLevel() == 0)
+    {
+      offsetCorrectionValue = offset;
+      break;
+    }
+  }
+
+  Sprintln("\r\nGain correction");
+
+  uint8_t topValueReadsCount = 0U;
+
+  uint16_t minGain = 0U,
+           maxGain = 0U;
+
+  analogReadCorrection(offsetCorrectionValue, gainCorrectionValue);
+  Sprint("   Gain = ");
+  Sprint(gainCorrectionValue);
+  Sprint(", ");
+  uint16_t highLevelRead = read3V3Level();
+
+  if (highLevelRead < ADC_TOP_VALUE)
+  {
+    for (uint16_t gain = ADC_UNITY_GAIN + 1; gain <= ADC_MAX_GAIN; ++gain)
+    {
+      analogReadCorrection(offsetCorrectionValue, gain);
+
+      Sprint("   Gain = ");
+      Sprint(gain);
+      Sprint(", ");
+      highLevelRead = read3V3Level();
+
+      if (highLevelRead == ADC_TOP_VALUE)
+      {
+        if (minGain == 0U)
+          minGain = gain;
+
+        if (++topValueReadsCount >= MAX_TOP_VALUE_READS)
+        {
+          maxGain = minGain;
+          break;
+        }
+
+        maxGain = gain;
+      }
+
+      if (highLevelRead > ADC_TOP_VALUE)
+        break;
+    }
+  }
+  else if (highLevelRead >= ADC_TOP_VALUE)
+  {
+    if (highLevelRead == ADC_TOP_VALUE)
+      maxGain = ADC_UNITY_GAIN;
+
+    for (uint16_t gain = ADC_UNITY_GAIN - 1; gain >= ADC_MIN_GAIN; --gain)
+    {
+      analogReadCorrection(offsetCorrectionValue, gain);
+
+      Sprint("   Gain = ");
+      Sprint(gain);
+      Sprint(", ");
+      highLevelRead = read3V3Level();
+
+      if (highLevelRead == ADC_TOP_VALUE)
+      {
+        if (maxGain == 0U)
+          maxGain = gain;
+
+        minGain = gain;
+      }
+
+      if (highLevelRead < ADC_TOP_VALUE)
+        break;
+    }
+  }
+
+  gainCorrectionValue = (minGain + maxGain) >> 1;
+
+  analogReadCorrection(offsetCorrectionValue, gainCorrectionValue);
+
+  Sprintln("\r\nReadings after corrections");
+  Sprint("   ");
+  readGndLevel();
+  Sprint("   ");
+  read3V3Level();
+
+  Sprintln("\r\n==================");
+  Sprintln("\r\nCorrection values:");
+  Sprint("   Offset = ");
+  Sprintln(offsetCorrectionValue);
+  Sprint("   Gain = ");
+  Sprintln(gainCorrectionValue);
+  Sprintln("\r\nAdd the next line to your sketch:");
+  Sprint("   analogReadCorrection(");
+  Sprint(offsetCorrectionValue);
+  Sprint(", ");
+  Sprint(gainCorrectionValue);
+  Sprintln(");");
+  Sprintln("\r\n==================");
+
+  digitalWrite(RED_LED, HIGH);
+
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println("Apply cal.");
+  display.print(offsetCorrectionValue);
+  display.print(" , ");
+  display.println(gainCorrectionValue);
+  display.println("Press to \napply");
+  display.display();
+
+  while (digitalRead(PUSH))
+    ;
+  offset_store.write(offsetCorrectionValue);
+  gain_store.write(gainCorrectionValue);
+
+  analogReadCorrection(offsetCorrectionValue, gainCorrectionValue);
+}
+
+void splashScreen()
+{
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  digitalWrite(RED_LED, OFF);
+  display.println("Version");
+  display.setCursor(0, 20);
+  display.println("FM RADIO");
+  display.setCursor(0, 40);
+  display.println(VERSION);
+  display.display();
+  delay(1500);
+}
 void codeFunctions()
 {
-
+  delay(100);
+  if (rotF)
+  {
+    interruptCount = constrain(interruptCount, 0, 20);
+    display.setCursor(0, 20);
+    display.print(Code[interruptCount / 10].label);
+    display.println("       ");
+    Serial.println(Code[interruptCount / 10].label);
+    display.display();
+    rotF = 0;
+  }
+  if (pressed)
+  {
+    pressed = false;
+    switch (interruptCount / 10)
+    {
+    case 0:
+      splashScreen();
+      mainState = 0;
+      rotF = 1;
+      break;
+    case 1:
+      calibration();
+      mainState = 0;
+      rotF = 1;
+      interruptCount=0;
+    delay(400); // dirty debounce push
+    default:
+      break;
+    }
+  }
 }
+
 void displayFunctionList(int p)
 {
 
@@ -403,7 +696,7 @@ void screenSaver()
       break;
     }
 
-    if (millis() - lastTouch > 6000) // start screen saver after 10 minutes
+    if (millis() - lastTouch > 60000) // start screen saver after 10 minutes
     {
       display.ssd1306_command(SSD1306_DISPLAYOFF);
       ssaverState = 2;
@@ -1050,9 +1343,21 @@ void setup()
   display.setTextSize(2); // Draw 2X-scale text
   display.setTextColor(WHITE, BLACK);
   display.setTextWrap(false);
-  display.setCursor(0, 0);
-  display.println(F("Radio Vox"));
-  display.display(); // Show initial text
+
+  if ((digitalRead(PUSH) == 0) | (gain_store.read() == 0))
+  {
+#ifdef CALIB
+    calibration();
+#endif
+  }
+  else
+  { // apply correction
+    analogReadCorrection(offset_store.read(), gain_store.read());
+  }
+
+  splashScreen();
+
+
   // Initialize the Radio
   radio.term();
   delay(1000);
@@ -1151,23 +1456,28 @@ void loop()
     {
       mainState = function + 1;
       display.clearDisplay();
+      display.setCursor(0, 0);
       String str2 = mainFunctions[function];
-      display.print(str2);
+      display.println(str2);
+      Serial.print(str2);
       display.display();
       pressed = false;
       if (mainState == 1)
       {
         radio.init();
       }
+      else if (mainState == 2)
+      {
+        interruptCount = 0; // reset rotary
+        rotF = 1;           // to force first display
+      }
     }
     break;
 
   case 1:
     Radio();
-  default:
     break;
   case 2:
-    mainState = 0;
     codeFunctions();
     break;
   }

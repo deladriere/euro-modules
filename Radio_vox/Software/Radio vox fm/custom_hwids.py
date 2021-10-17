@@ -5,7 +5,7 @@ print(env.BoardConfig().get("build.hwids")[0][0])
 
 board_config.update("vendor", "Polaxis")
 print(env.BoardConfig().get("vendor"))
-board_config.update("build.usb_product", "RadioFM")
+board_config.update("build.usb_product", "FM Radio")
 print(env.BoardConfig().get("build.usb_product"))
 
 # should be array of VID:PID pairs
@@ -21,4 +21,4 @@ print(env.BoardConfig().get("build.hwids")[0][0])
 # Robovox 0104
 # Sino 0105
 # Speakjet 0106
-# RadioFM 0107
+# FM Radio 0107

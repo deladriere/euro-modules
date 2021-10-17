@@ -1,7 +1,0 @@
-Partlist exported from Team Hub: Jean-Luc Deladrière   Project: Eurorack  Board: PCB v23 at 8/09/21 07:39
-
-Qty Value            Device           Package         Parts Description           
-1                    ANTENNA          ANTENNA         U$3   Antenna - single wire 
-1   MIKROE_CLICKMINI MIKROE_CLICKMINI MIKROE_BUS_MINI U$2                         
-1   PJ-320B          PJ-320B          FOOTPRINT       JCK1                        
-1   RDA              RDA              RDA             U$1                         

@@ -44,7 +44,7 @@
 #include <Adafruit_SSD1306.h>
 #include "OneButton.h"
 #include <Adafruit_I2CDevice.h>
-
+#include <SD.h>
 #include "avdweb_AnalogReadFast.h"
 
 #include <radio.h>
@@ -95,28 +95,8 @@
 // Define some stations available at your locations here:
 // 89.40 MHz as 8940
 
-RADIO_FREQ preset[] = {
-    8770,
-    8810, // hr1
-    8820,
-    8850, // Bayern2
-    8890, // ???
-    8930, // * hr3
-    9050,
-    9080,
-    9220, 9350,
-    9440, // * hr1
-    9510, // - Antenne Frankfurt
-    9530,
-    9560, // Bayern 1
-    9630, 9880,
-    10020, // planet
-    10090, // ffh
-    10110, // SWR3
-    10030, 10260, 10380, 10400,
-    10500 // * FFH
-};
-
+RADIO_FREQ preset[20];
+int arraycount = 0;
 /*
  ▄               ▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄   ▄            ▄▄▄▄▄▄▄▄▄▄▄  ▄▄▄▄▄▄▄▄▄▄▄ 
 ▐░▌             ▐░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌▐░░░░░░░░░░▌ ▐░▌          ▐░░░░░░░░░░░▌▐░░░░░░░░░░░▌
@@ -153,7 +133,7 @@ menuCode Code[]{
     ">Flash",
 };
 
-int i_sidx = 14; ///< Start at Station with index=5
+int i_sidx = 0; // preset index
 // mode
 u_int8_t mode;
 u_int8_t modeState;
@@ -199,6 +179,8 @@ bool gotRDS = 0; // to refresh display
 
 bool pressed;  // detect button or keyboard pressed
 bool Lpressed; // detect button long press
+bool Dpressed; // double click
+
 unsigned long lastPressed = 0;
 unsigned long now = millis();
 unsigned long lastchanged;             // to clear message line
@@ -355,6 +337,8 @@ OneButton button(PUSH, true);
 FlashStorage(offset_store, int);
 FlashStorage(gain_store, int);
 
+File root;
+
 // - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 /*
@@ -381,6 +365,76 @@ FlashStorage(gain_store, int);
 #define Sprint(MSG)
 #endif
 //<end>[MK]::LogEnhancement
+
+void readIni()
+{
+  initSD();
+  root.rewindDirectory();
+  File myFile = SD.open("radio.ini");
+  if (myFile)
+  {
+    while (myFile.available())
+    {
+
+      switch ((char)myFile.peek())
+      {
+      case ',':
+        myFile.read();
+        break;
+      case '\r':
+        myFile.read();
+        myFile.read();
+        break;
+
+      default:
+        int newvalue = myFile.parseInt();
+        preset[arraycount] = newvalue;
+        // Serial.print(arraycount);
+        // Serial.println(newvalue);
+        arraycount++;
+        break;
+      }
+    }
+    arraycount--;
+    myFile.close();
+    for (int i = 0; i < arraycount; i++)
+    {
+      Serial.println(preset[i]);
+    }
+  }
+}
+void initSD()
+{
+
+  if (!SD.begin(10))
+  {
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.println("Error");
+    display.println("SD card");
+    display.println("failed to ");
+    display.println("initialize");
+    display.display();
+    while (1)
+      ;
+  }
+  root = SD.open("/");
+}
+
+void radioStart()
+{
+
+  radio.init();
+
+  // Enable information to the Serial port
+  radio.debugEnable();
+  radio.setBandFrequency(RADIO_BAND_FM, 9080); // 5. preset.
+  radio.setMono(true);
+  radio.setMute(false);
+  radio.setSoftMute(false);
+  radio.setVolume(8);
+  interruptCount = 9080;
+}
 
 uint16_t readGndLevel()
 {
@@ -421,7 +475,7 @@ void calibration()
   display.display();
   display.setCursor(0, 0);
   display.println("Calib. : ");
- // display.setCursor(0, 20);
+  // display.setCursor(0, 20);
   display.print(offset_store.read());
   display.print(",");
   display.print(gain_store.read());
@@ -602,7 +656,6 @@ void splashScreen()
 }
 void codeFunctions()
 {
-  delay(100);
   if (rotF)
   {
     interruptCount = constrain(interruptCount, 0, 20);
@@ -627,8 +680,8 @@ void codeFunctions()
       calibration();
       mainState = 0;
       rotF = 1;
-      interruptCount=0;
-    delay(400); // dirty debounce push
+      interruptCount = 0;
+      delay(400); // dirty debounce push
     default:
       break;
     }
@@ -656,6 +709,11 @@ void Click()
   pressed = true;
 }
 
+void doubleClick()
+{
+  Dpressed = true;
+}
+
 void Radio()
 {
 
@@ -663,6 +721,7 @@ void Radio()
   getSerial();
   radio.checkRDS();
   seekCheck();
+  nextPreset();
   infoUpdate();
   displayMode();
   Rfrequency = interruptCount;
@@ -696,7 +755,7 @@ void screenSaver()
       break;
     }
 
-    if (millis() - lastTouch > 60000) // start screen saver after 10 minutes
+    if (millis() - lastTouch > 600000) // start screen saver after 10 minutes
     {
       display.ssd1306_command(SSD1306_DISPLAYOFF);
       ssaverState = 2;
@@ -1060,6 +1119,18 @@ void initPins()
   digitalWrite(13, HIGH);
 }
 
+void nextPreset()
+{
+  if (Dpressed)
+  {
+    Dpressed = false;
+    touched = 1; // stop screen saver
+    i_sidx++;
+    radio.setFrequency(preset[i_sidx % arraycount]);
+    clearRDS();
+    clearText();
+  }
+}
 void seekCheck()
 
 {
@@ -1357,25 +1428,14 @@ void setup()
 
   splashScreen();
 
-
+  // read SD card
+  // initSD();
+  readIni();
   // Initialize the Radio
   radio.term();
   delay(1000);
-  radio.init();
 
-  // Enable information to the Serial port
-  radio.debugEnable();
-
-  radio.setBandFrequency(RADIO_BAND_FM, preset[i_sidx]); // 5. preset.
-
-  // delay(100);
-
-  radio.setMono(true);
-  radio.setMute(false);
-  radio.setSoftMute(false);
-
-  // radio._wireDebug();
-  radio.setVolume(8);
+  radioStart();
 
   Serial.write('>');
 
@@ -1387,13 +1447,14 @@ void setup()
   rds.attachTextCallback(DisplayText);
   rds.attachTimeCallback(DisplayTime);
 
-  runSerialCommand('?', 0);
+  // runSerialCommand('?', 0);
   // attachInterrupt(PUSH, justPressed, FALLING); no more needed
-  attachInterrupt(GATE, justPressed, FALLING);
+  attachInterrupt(GATE, doubleClick, FALLING);
   attachInterrupt(ROTA, rot, CHANGE);
 
   button.attachClick(Click);
   button.attachLongPressStart(longClick);
+  button.attachDoubleClick(doubleClick);
 
   x = display.width();
   minX = -12 * 64; // 12 = 6 pixels/character * text size 2
@@ -1464,7 +1525,7 @@ void loop()
       pressed = false;
       if (mainState == 1)
       {
-        radio.init();
+        radioStart();
       }
       else if (mainState == 2)
       {

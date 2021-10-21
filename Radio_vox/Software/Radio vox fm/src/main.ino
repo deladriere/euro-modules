@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "SDU.h"
+#include "SDU.h" // do not forget the boot folder
 
 ///
 /// \file SerialRadio.ino
@@ -84,7 +84,8 @@
 #define RED_LED 13
 
 #define CALIB
-#define VERSION "0.1"
+#define DEBUG_TRACE
+#define VERSION "1.0"
 #define ON 0
 #define OFF 1
 
@@ -112,6 +113,14 @@ int arraycount = 0;
                                                                                                                            
 */
 
+// handling files
+
+int filePointer = 0;
+int fileCounter = 0; // file index
+int fileNumber = 0;  // file number
+
+char *filetype[4] = {".txt", ".spk", ".tts", ".bin"};
+char *myFiles[25]; //
 char *mainFunctions[] = {
     "Radio",
     "Code",
@@ -366,6 +375,160 @@ File root;
 #endif
 //<end>[MK]::LogEnhancement
 
+void drawProgressbar(int x, int y, int width, int height, int progress)
+{
+  progress = progress > 100 ? 100 : progress; // set the progress value to 100
+  progress = progress < 0 ? 0 : progress;     // start the counting to 0-100
+  float bar = ((float)(width - 4) / 100) * progress;
+  display.drawRect(x, y, width, height, WHITE);
+  display.fillRect(x + 2, y + 2, bar, height - 4, WHITE); // initailize the graphics fillRect(int x, int y, int width, int height)
+}
+
+void displayFilesList(int p)
+{
+
+  for (int i = 0; i < 3; i++)
+  {
+
+    display.setCursor(15, i * 20); //
+    String str2 = myFiles[i + p];
+    str2.remove(str2.length() - 4);
+    display.print(str2);
+    display.println("         ");
+    display.display();
+  }
+}
+
+bool isTxtFile(char *filename, int type)
+{
+  bool result;
+  Sprint(type);
+  Sprint(" ");
+  Sprintln(filetype[type]);
+  if (strstr(strlwr(filename), filetype[type]) && !strstr(strlwr(filename), "_")) // filtering out just ".txt" file not containing "_"
+  {
+    result = true;
+  }
+  else
+  {
+    result = false;
+  }
+  return result;
+}
+
+void GetFilesList(File dir, int type)
+{
+  fileNumber = 0;
+  fileCounter = 0;
+  for (int8_t i = 0; i < 20; i++)
+  {
+    myFiles[i] = ""; // to emty the list
+  }
+
+  while (true)
+  {
+
+    File entry = dir.openNextFile(); // was dir
+    if (!entry)
+    {
+      // no more files
+      break;
+    }
+
+    if (isTxtFile(entry.name(), type)) //check if it's a .txt file
+    {
+
+      String str = entry.name();
+      //  str.remove(str.length()-4);
+
+      // Length (with one extra character for the null terminator)
+      int str_len = str.length() + 1;
+
+      // Prepare the character array (the buffer)
+      char char_array[str_len];
+
+      // Copy it over
+      str.toCharArray(char_array, str_len);
+      //Sprintln(char_array);
+
+      myFiles[fileCounter] = strdup(char_array); //WTF is strdup ?
+      fileCounter++;
+    }
+    entry.close();
+  }
+  fileNumber = fileCounter;
+}
+
+void flashFirmware()
+{
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println(">");
+  display.display();
+  initSD();
+  root = SD.open("/");
+  root.rewindDirectory();
+  SD.remove("firmware.bin");
+  GetFilesList(root, 3);
+  interruptCount = 0;
+  rotF = 1;
+  do
+  {
+    // choose the file
+    if (rotF)
+    {
+      interruptCount = constrain(interruptCount, 0, (fileNumber - 1) * 10);
+      filePointer = interruptCount / 10;
+      displayFilesList(filePointer);
+      Sprintln(filePointer);
+      rotF = 0;
+    }
+  } while (digitalRead(PUSH));
+  delay(400); // ok when have a file
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  Sprint("Reading file:");
+  //display.println("Reading:");
+  //display.setCursor(0, 20); //
+  display.println(myFiles[filePointer]);
+
+  // let's go
+
+  File myFileIn = SD.open(myFiles[filePointer]);
+  File myFileOut = SD.open("firmware.bin", FILE_WRITE);
+  int cnt = 0;
+  float full = myFileIn.size();
+  display.setCursor(0, 20); //
+  display.println(full);
+  display.display();
+  Sprintln(full);
+  int lastpercent = 0;
+  int percent;
+  size_t n;
+  uint8_t buf[128];
+  display.setCursor(0, 6);
+  while ((n = myFileIn.read(buf, sizeof(buf))) > 0)
+  {
+    cnt++;
+    percent = cnt * 128 * 100 / full;
+    if (lastpercent != percent)
+    {
+      Sprintln(percent);
+      lastpercent = percent;
+      drawProgressbar(0, 42, 126, 10, percent);
+      display.display();
+    }
+    myFileOut.write(buf, n);
+  }
+
+  myFileIn.close();
+  Serial.println("closing");
+  myFileOut.close();
+  display.clearDisplay();
+  display.display();
+  NVIC_SystemReset(); // bye bye
+}
+
 void readIni()
 {
   initSD();
@@ -395,12 +558,13 @@ void readIni()
         break;
       }
     }
-    arraycount--;
+    
     myFile.close();
     for (int i = 0; i < arraycount; i++)
     {
       Serial.println(preset[i]);
     }
+   // arraycount--;
   }
 }
 void initSD()
@@ -662,7 +826,7 @@ void codeFunctions()
     display.setCursor(0, 20);
     display.print(Code[interruptCount / 10].label);
     display.println("       ");
-    Serial.println(Code[interruptCount / 10].label);
+    // Serial.println(Code[interruptCount / 10].label);
     display.display();
     rotF = 0;
   }
@@ -682,6 +846,10 @@ void codeFunctions()
       rotF = 1;
       interruptCount = 0;
       delay(400); // dirty debounce push
+      break;
+    case 2:
+      flashFirmware();
+      break;
     default:
       break;
     }
@@ -1000,7 +1168,7 @@ void getUser()
     touched = 1;
     if (band == 0)
     {
-      display.println("87.5-108MHz");
+      display.println("USA,Europe ");
 
       radio.setBandFrequency(RADIO_BAND_FM, 8750);
       radio.clearRDS(); // force RDS read
@@ -1013,7 +1181,7 @@ void getUser()
     }
     else
     {
-      display.println("76.0-108MHz");
+      display.println("Japan,World");
 
       radio.setBandFrequency(RADIO_BAND_FMWORLD, 7600);
       radio.clearRDS(); // force RDS read
@@ -1433,7 +1601,7 @@ void setup()
   readIni();
   // Initialize the Radio
   radio.term();
-  delay(1000);
+  delay(200);
 
   radioStart();
 
@@ -1520,7 +1688,7 @@ void loop()
       display.setCursor(0, 0);
       String str2 = mainFunctions[function];
       display.println(str2);
-      Serial.print(str2);
+      //Serial.print(str2);
       display.display();
       pressed = false;
       if (mainState == 1)

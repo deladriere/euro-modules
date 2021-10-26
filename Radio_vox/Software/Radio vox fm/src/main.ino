@@ -558,13 +558,13 @@ void readIni()
         break;
       }
     }
-    
+
     myFile.close();
     for (int i = 0; i < arraycount; i++)
     {
       Serial.println(preset[i]);
     }
-   // arraycount--;
+    // arraycount--;
   }
 }
 void initSD()
@@ -1086,9 +1086,12 @@ void infoUpdate()
 }
 void clearText()
 {
-  display.setCursor(0, 48);
-  display.print("             ");
-  display.display();
+  if (displayCleared)
+  {
+    display.setCursor(0, 48);
+    display.print("             ");
+    display.display();
+  }
   for (int i = 0; i < 63; i++)
   {
     message[i] = 0;
@@ -1138,13 +1141,52 @@ void getUser()
   band = map(potReadFast(A6, 2), 0, 4095, 0, 2);
   band = constrain(band, 0, 1);
 
-  ten = map(potReadFast(A1, 20), 4090, 20, 7, 10);
+  ten = map(potReadFast(A1, 20), 4090, 20, 7 + band, 10);
   unit = map(potReadFast(A2, 20), 4090, 20, 0, 9);
   decimal = map(potReadFast(A3, 20), 4090, 20, 0, 9);
 
+  if (ten != lastTen)
+  {
+    display.setCursor(0, 48);
+
+    display.print(ten);
+    display.println("0 MHz      ");
+    display.display();
+    lastTen = ten;
+    lastchanged = millis();
+    displayCleared = false;
+    // touched handled lower
+  }
+
+  if (unit != lastUnit)
+  {
+    display.setCursor(0, 48);
+
+    display.print(unit);
+    display.println(" MHz       ");
+    display.display();
+    lastUnit = unit;
+    lastchanged = millis();
+    displayCleared = false;
+    // touched handled lower
+  }
+
+  if (decimal != lastDecimal)
+  {
+    display.setCursor(0, 48);
+    display.print("0.");
+    display.print(decimal);
+    display.println(" MHz       ");
+    display.display();
+    lastDecimal = decimal;
+    lastchanged = millis();
+    displayCleared = false;
+    // touched handled lower
+  }
+
   Pfrequency = ten * 1000 + unit * 100 + decimal * 10;
 
-  if (band == 0)
+  if (band == 1)
   {
     Pfrequency = constrain(Pfrequency, 8750, 10800);
   }
@@ -1166,7 +1208,7 @@ void getUser()
 
     display.setCursor(0, 48);
     touched = 1;
-    if (band == 0)
+    if (band == 1)
     {
       display.println("USA,Europe ");
 

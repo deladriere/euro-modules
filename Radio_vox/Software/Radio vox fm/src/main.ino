@@ -375,6 +375,25 @@ File root;
 #endif
 //<end>[MK]::LogEnhancement
 
+void setDisplayDIM()
+{
+  display.ssd1306_command(SSD1306_SETPRECHARGE);
+  display.ssd1306_command(0);
+  display.ssd1306_command(SSD1306_SETVCOMDETECT);
+  display.ssd1306_command(0);
+  display.ssd1306_command(SSD1306_SETCONTRAST);
+  display.ssd1306_command(10);
+}
+void setDisplayNORMAL()
+{
+  display.ssd1306_command(SSD1306_SETPRECHARGE);
+  display.ssd1306_command(0xF1);
+  display.ssd1306_command(SSD1306_SETVCOMDETECT);
+  display.ssd1306_command(0x20);
+  display.ssd1306_command(SSD1306_SETCONTRAST);
+  display.ssd1306_command(0xAF);
+}
+
 void drawProgressbar(int x, int y, int width, int height, int progress)
 {
   progress = progress > 100 ? 100 : progress; // set the progress value to 100
@@ -925,7 +944,8 @@ void screenSaver()
 
     if (millis() - lastTouch > 600000) // start screen saver after 10 minutes
     {
-      display.ssd1306_command(SSD1306_DISPLAYOFF);
+      setDisplayDIM();
+      //display.ssd1306_command(SSD1306_DISPLAYOFF);
       ssaverState = 2;
     }
 
@@ -942,12 +962,13 @@ void screenSaver()
       ssaverState = 0;
       // touched=0;
       // lastRot = millis();
-      display.ssd1306_command(SSD1306_DISPLAYON);
+      //display.ssd1306_command(SSD1306_DISPLAYON);
+      setDisplayNORMAL();
       digitalWrite(GREEN_LED, OFF);
     }
     break;
   case 3:
-    if (millis() - lastBlink > 30) // LED on duration
+    if (millis() - lastBlink > 100) // LED on duration
     {
       digitalWrite(GREEN_LED, OFF);
       lastBlink = millis(); // memorize LED ON

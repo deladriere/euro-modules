@@ -113,9 +113,14 @@ FlashStorage(gain_store, int);
 #define CALIB
 //#define DEBUG_TRACE
 
-#define VERSION 0.22
+#define VERSION "0.3"
 #define ON 0
 #define OFF 1
+
+// screen saver
+unsigned long lastRot;
+unsigned long lastBlink;
+int ssaverState;
 
 char buf[256];
 int speed = 0;
@@ -257,6 +262,25 @@ menuCode Code[]{
 #define Sprint(MSG)
 #endif
 //<end>[MK]::LogEnhancement
+
+void setDisplayDIM()
+{
+  display.ssd1306WriteCmd(SSD1306_SETPRECHARGE);
+  display.ssd1306WriteCmd(0);
+  display.ssd1306WriteCmd(SSD1306_SETVCOMDETECT);
+  display.ssd1306WriteCmd(0);
+  display.ssd1306WriteCmd(SSD1306_SETCONTRAST);
+  display.ssd1306WriteCmd(10);
+}
+void setDisplayNORMAL()
+{
+  display.ssd1306WriteCmd(SSD1306_SETPRECHARGE);
+  display.ssd1306WriteCmd(0xF1);
+  display.ssd1306WriteCmd(SSD1306_SETVCOMDETECT);
+  display.ssd1306WriteCmd(0x20);
+  display.ssd1306WriteCmd(SSD1306_SETCONTRAST);
+  display.ssd1306WriteCmd(0xAF);
+}
 
 void handleNoteOn(byte channel, byte pitch, byte velocity)
 {
@@ -1225,18 +1249,73 @@ void loop()
   display.println(">");
   rotF = 1;
   //rd = 0;
+  ssaverState = 0;
+  lastRot = millis();
   do
   {
 
-    if (rotF)
+    switch (ssaverState)
     {
+    case 0: // idle
+
+      if (rotF)
+      {
+        // display.ssd1306WriteCmd(SSD1306_DISPLAYON);
+        setDisplayNORMAL();
+        ssaverState = 1;
+      }
+
+      if (millis() - lastRot > 600000) // start screen saver after 10 minutes
+      {
+        // display.ssd1306WriteCmd(SSD1306_DISPLAYOFF);
+        setDisplayDIM();
+        ssaverState = 2;
+      }
+      if (!digitalRead(PUSH))
+      {
+        ssaverState = 4;
+        setDisplayNORMAL();
+        // display.ssd1306WriteCmd(SSD1306_DISPLAYON);
+      }
+
+      break;
+    case 1: // display functions
       interruptCount = constrain(interruptCount, 0, numFunctions - 1);
-      function = interruptCount;
-      displayFunctionList(function);
+
+      displayFunctionList(interruptCount);
       rotF = 0;
+
+      lastRot = millis();
+
+      ssaverState = 0;
+      break;
+    case 2:                            // led on
+      if (millis() - lastBlink > 3000) // timer between blink
+      {
+        digitalWrite(RED_LED, ON);
+        ssaverState = 3;
+      }
+      if (rotF) // exit screen saver
+      {
+        ssaverState = 0;
+        lastRot = millis();
+        display.ssd1306WriteCmd(SSD1306_DISPLAYON);
+        digitalWrite(RED_LED, OFF);
+      }
+      break;
+    case 3:                            // led off
+      if (millis() - lastBlink > 3050) // add blink duration to timer
+      {
+        digitalWrite(RED_LED, OFF);
+        lastBlink = millis();
+        ssaverState = 2;
+      }
+
+      break;
     }
 
-  } while (digitalRead(PUSH));
+  } while (ssaverState < 4);
+  function = interruptCount;
   delay(400);
   switch (function)
   {
